@@ -6,10 +6,10 @@ Types of Methods Included
 ==========================
 
 CanoPy includes classes for the following types of methods:
-    - Linear Multistep Methods
-    - Runge-Kutta Methods
-    - Two-step Runge-Kutta Methods
-    - Low-storage Runge-Kutta Methods
+    - :ref:`Linear Multistep Methods <create_lmm>`
+    - :ref:`Runge-Kutta Methods <create_rkm>`
+    - :ref:`Two-step Runge-Kutta Methods <create_tsrkm>`
+    - :ref:`Low-storage Runge-Kutta Methods <create_lsrkm>`
 
 
 Properties Included

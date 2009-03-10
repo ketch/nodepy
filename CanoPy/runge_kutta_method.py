@@ -76,6 +76,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                    dimensions; or
                 #. Shu-Osher arrays `\alpha` and `\beta` with valid and
                    consistent dimensions but not both.
+
             The Butcher arrays are used as the primary representation of
             the method.  If Shu-Osher arrays are provided instead, the
             Butcher arrays are computed by :ref:`shu_osher_to_butcher`.
