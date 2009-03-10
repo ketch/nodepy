@@ -217,13 +217,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
             (need more recursion loops to go higher).
 
             Other possibilities, already in place, are:
-            1. Use hard code, generated once and for all
-                by Albrecht's recursion or another method.
-                Advantages: fastest
-                Disadvantages: Less satisfying
-            2. Use Butcher's recursive product on trees.
-                Advantages: Most satisfying, no maximum order
-                Disadvantages: way too slow for high order
+            #. Use hard code, generated once and for all
+               by Albrecht's recursion or another method.
+               Advantages: fastest
+               Disadvantages: Less satisfying
+
+            #. Use Butcher's recursive product on trees.
+               Advantages: Most satisfying, no maximum order
+               Disadvantages: way too slow for high order
 
             TODO: Decide on something and fill in this docstring.
         """
@@ -355,7 +356,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             **Output**:
                 - p -- Numpy poly representing the numerator
-                * q -- Numpy poly representing the denominator
+                - q -- Numpy poly representing the denominator
 
             Uses the formula $\\phi(z)=p(z)/q(z)$, where
 
@@ -462,11 +463,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
             The method is absolutely monotonic if $(I+rA)^{-1}$ exists
             and
                 $$K(I+rA)^{-1} \\ge 0$$
-               $$rK(I+rA)^{-1} e_m \\le e_{m+1}$$
+                $$rK(I+rA)^{-1} e_m \\le e_{m+1}$$
 
             where $e_m$ is the m-by-1 vector of ones and
                   K=[ A
                      b^T].
+
             The inequalities are interpreted componentwise.
 
             **References**:
@@ -903,6 +905,7 @@ def SSPRK3(m):
         **Output**: A RungeKuttaMethod
 
         **Examples**::
+
             Load the 4-stage method:
             >>> SSP43=SSPRK3(4)
 

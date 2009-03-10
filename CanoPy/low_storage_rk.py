@@ -2,11 +2,13 @@
 Class for low-storage Runge-Kutta methods, and various functions related to
 them.
 
-AUTHOR: David Ketcheson (10-07-2008)
+**Author**: David Ketcheson (10-07-2008)
 
-EXAMPLES:
+**Examples**::
 
-TODO:
+    >>>
+
+**To Do**:
     - Add 2N (Williamson) methods
 """
 from runge_kutta_method import *
@@ -234,13 +236,14 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
             (need more recursion loops to go higher).
 
             Other possibilities, already in place, are:
-            1. Use hard code, generated once and for all
-                by Albrecht's recursion or another method.
-                Advantages: fastest
-                Disadvantages: Less satisfying
-            2. Use Butcher's recursive product on trees.
-                Advantages: Most satisfying, no maximum order
-                Disadvantages: way too slow for high order
+            #. Use hard code, generated once and for all
+               by Albrecht's recursion or another method.
+               Advantages: fastest
+               Disadvantages: Less satisfying
+
+            #. Use Butcher's recursive product on trees.
+               Advantages: Most satisfying, no maximum order
+               Disadvantages: way too slow for high order
 
             TODO: Decide on something and fill in this docstring.
         """

@@ -19,6 +19,7 @@ Modules
 
 .. toctree::
 
+    modules/rooted_trees
     modules/runge_kutta_method
     modules/low_storage_rk
 
