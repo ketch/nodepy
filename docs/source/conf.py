@@ -17,12 +17,14 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.append(os.path.abspath(os.path.dirname(__file__)+'/../../'))
+sys.path.append(os.path.abspath('../ext'))
+
 
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.jsmath', 'sphinx.ext.graphviz', 'sphinx.ext.inheritance_diagram']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.doctest', 'sphinx.ext.todo', 'sphinx.ext.coverage', 'sphinx.ext.jsmath', 'sphinx.ext.graphviz', 'sphinx.ext.inheritance_diagram','plot_directive','only_directives']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -196,3 +198,4 @@ latex_documents = [
 #jsmath_path = 'jsMath/easy/load.js'
 jsmath_path = '/Users/ketch/jsMath/easy/load.js'
 default_role = 'math'
+keep_warnings = 'True'

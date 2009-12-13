@@ -27,6 +27,7 @@ def ctest(methods,ode,T,grids=[20,40,80,160,320,640]):
 
     """
     pl.clf()
+    pl.draw()
     pl.hold(True)
     if not isinstance(methods,list): methods=[methods]
     err=[]
@@ -39,8 +40,10 @@ def ctest(methods,ode,T,grids=[20,40,80,160,320,640]):
         err.append(err0)
         work=[grid*len(method) for grid in grids]
         pl.loglog(work,err0,label=method.name)
+        pl.xlabel('Function evaluations')
+        pl.ylabel('Error at $t_{final}$')
     pl.legend()
     pl.hold(False)
-    pl.show()
+    pl.draw()
     pl.ioff()
     return err

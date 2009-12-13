@@ -47,7 +47,6 @@ import numpy as np
 import pylab as pl
 import rooted_trees as rt
 from sympy import Symbol, factorial
-import pdb
 
 #=====================================================
 # TODO:
@@ -65,8 +64,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         It is assumed everywhere that  `c_i=\sum_j A_{ij}`.
 
         **References**:  
-            #. *J. C. Butcher, "Numerical Methods for Ordinary Differential Equations"*
-            #. *Hairer & Wanner, "Solving Ordinary Differential Equations I: Nonstiff Problems" Chapter II*
+            #. [butcher2003]_
+            #. [hairer1993]_
     """
     def __init__(self,A=None,b=None,alpha=None,beta=None,
             name='Runge-Kutta Method',description=''):
@@ -75,7 +74,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 #. Butcher arrays $A$ and $b$ with valid and consistent 
                    dimensions; or
                 #. Shu-Osher arrays `\alpha` and `\beta` with valid and
-                   consistent dimensions but not both.
+                   consistent dimensions 
+
+            but not both.
 
             The Butcher arrays are used as the primary representation of
             the method.  If Shu-Osher arrays are provided instead, the
@@ -110,7 +111,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if len(self)>1:
             self.c=np.sum(A,1)
         else:
-            self.c=A
+            self.c=b
         self.name=name
         self.info=description
 
@@ -172,9 +173,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
             TODO: Think about whether this is the right thing to return.
         """
         A=np.vstack([
-            hstack([RK2.A,np.zeros([np.size(RK2.A,0),np.size(self.A,1)])]),
-            hstack([np.tile(RK2.b,(len(self),1)),self.A])])
-        b=hstack([RK2.b,self.b])
+            np.hstack([RK2.A,np.zeros([np.size(RK2.A,0),np.size(self.A,1)])]),
+            np.hstack([np.tile(RK2.b,(len(self),1)),self.A])])
+        b=np.hstack([RK2.b,self.b])
         return RungeKuttaMethod(A=A/2.,b=b/2.)
 
     def error_coefficient(self,tree):
@@ -186,13 +187,31 @@ class RungeKuttaMethod(GeneralLinearMethod):
         exec('coeff=('+code+'-1./'+str(tree.density())+')')
         return coeff/tree.symmetry()
 
+    def error_coeffs(self,p):
+        forest=rt.recursive_trees(p)
+        err_coeffs=[]
+        for tree in forest:
+            err_coeffs.append(self.error_coefficient(tree))
+        return err_coeffs
+
+    def error_metrics(self):
+        q=self.order(1.e-13)
+        tau_1=self.error_coeffs(q+1)
+        tau_2=self.error_coeffs(q+2)
+        print tau_1
+        A_qp1=np.sqrt(float(np.sum(np.array(tau_1)**2)))
+        A_qp1_max=max([abs(tau) for tau in tau_1])
+        A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
+        A_qp2_max=max([abs(tau) for tau in tau_2])
+        return A_qp1, A_qp1_max, A_qp2, A_qp2_max
+
     def principal_error_norm(self):
         p=self.order(1.e-13)
         forest=rt.recursive_trees(p+1)
         errs=[]
         for tree in forest:
             errs.append(self.error_coefficient(tree))
-        return np.sqrt(np.sum(np.array(errs)**2))
+        return np.sqrt(float(np.sum(np.array(errs)**2)))
 #        return max([abs(err) for err in errs])
 
     def order(self,tol=1.e-14):
@@ -217,14 +236,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
             (need more recursion loops to go higher).
 
             Other possibilities, already in place, are:
-            #. Use hard code, generated once and for all
-               by Albrecht's recursion or another method.
-               Advantages: fastest
-               Disadvantages: Less satisfying
+                #. Use hard code, generated once and for all
+                   by Albrecht's recursion or another method.
+                   Advantages: fastest
+                   Disadvantages: Less satisfying
 
-            #. Use Butcher's recursive product on trees.
-               Advantages: Most satisfying, no maximum order
-               Disadvantages: way too slow for high order
+                #. Use Butcher's recursive product on trees.
+                   Advantages: Most satisfying, no maximum order
+                   Disadvantages: way too slow for high order
 
             TODO: Decide on something and fill in this docstring.
         """
@@ -257,7 +276,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - dt   -- the timestep
 
             The formula for $G$ is (if $L$ is a scalar):
-
             $G = 1 + b^T L (I-A L)^{-1} e$
 
             where $A$ and $b$ are the Butcher arrays and $e$ is the vector
@@ -298,7 +316,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                      b^T].
 
             **References**: 
-                #. *I. Higueras, "Representations of Runge-Kutta methods and strong stability preserving methods", SINUM 43 pp. 924-948 (2005)*
+                #. [higueras2005]_
 
         """
         r=self.absolute_monotonicity_radius()
@@ -322,7 +340,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             **References**:
                 #. Dekker and Verwer
-                #. Butcher
+                #. [butcher2003]_
         """
         k,B,C=0,0.,0.
         while np.all(abs(B)<tol) and np.all(abs(C)<tol):
@@ -370,7 +388,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return p,q
 
     def plot_stability_region(self,N=200,bounds=[-10,1,-5,5],
-                    color='r',filled=True):
+                    color='r',filled=True,scaled=False):
         r""" 
             Plot the region of absolute stability
             of a Runge-Kutta method, i.e. the set
@@ -386,24 +404,27 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
         p,q=self.stability_function()
+        m=len(p)
+        print m
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))
         Y=np.tile(y[:,np.newaxis],(1,N))
         Z=X+Y*1j
-        R=np.abs(p(Z)/q(Z))
-        pl.clf()
+        if not scaled: R=np.abs(p(Z)/q(Z))
+        else: R=np.abs(p(Z*m)/q(Z*m))
+        #pl.clf()
         if filled:
             pl.contourf(X,Y,R,[0,1],colors=color)
         else:
             pl.contour(X,Y,R,[0,1],colors=color)
         pl.title('Absolute Stability Region for '+self.name)
         pl.hold(True)
-        pl.plot([0,0],[bounds[2],bounds[3]],'--k')
-        pl.plot([bounds[0],bounds[1]],[0,0],'--k')
+        pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+        pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         pl.axis('Image')
         pl.hold(False)
-        pl.show()
+        #pl.show()
 
     def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
                     color='r',filled=True):
@@ -432,7 +453,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             pl.contourf(X,Y,R,[0,1],colors=color)
         else:
             pl.contour(X,Y,R,[0,1],colors=color)
-        pl.title('Absolute Stability Region for '+self.name)
+        pl.title('Order star for '+self.name)
         pl.hold(True)
         pl.plot([0,0],[bounds[2],bounds[3]],'--k')
         pl.plot([bounds[0],bounds[1]],[0,0],'--k')
@@ -462,8 +483,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             The method is absolutely monotonic if $(I+rA)^{-1}$ exists
             and
-                $$K(I+rA)^{-1} \\ge 0$$
-                $$rK(I+rA)^{-1} e_m \\le e_{m+1}$$
+            $$K(I+rA)^{-1} \\ge 0$$
+            $$rK(I+rA)^{-1} e_m \\le e_{m+1}$$
 
             where $e_m$ is the m-by-1 vector of ones and
                   K=[ A
@@ -472,7 +493,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             The inequalities are interpreted componentwise.
 
             **References**:
-                #. JFBM Kraaijevanger, "Contractivity of Runge-Kutta Methods", BIT 1991
+                #. [kraaijevanger1991]
         """
         K=np.vstack([self.A,self.b])
         X=np.eye(len(self))+r*self.A
@@ -483,6 +504,49 @@ class RungeKuttaMethod(GeneralLinearMethod):
         else:
             return 1
         # Need an exception here if rhi==rmax
+
+    def spijker_form(self,r):
+        r""" Return d,P where P isthe matrix P=r(I+rK)^{-1}K 
+             and d is the vector d=(I+rK)^{-1}e=(I-P)e
+        """
+        s=len(self)
+        K=np.vstack([self.A,self.b])
+        K=np.hstack([K,np.zeros([s+1,1])])
+        I=np.eye(s+1)
+        P=np.dot(r*np.linalg.inv(I+r*K),K)
+        d=(I-P).sum(1)
+        return d,P
+
+    def split(self,r,tol=1.e-15):
+        s=len(self)
+        I=np.eye(s+1)
+        d,P=self.spijker_form(r)
+        alpha=P*(P>0)
+        alphatilde=-P*(P<0)
+        x=np.dot(np.linalg.inv(I-alphatilde),2*alphatilde)
+        M=np.linalg.inv(I+x)
+        #Equivalently:
+        M=np.dot(np.linalg.inv(I+alphatilde),I-alphatilde)
+        alphanew=np.dot(M,alpha)
+        dnew=np.dot(M,d)
+        print np.dot(M-I,alphatilde)
+        alphatildenew=np.dot(M,x-alphatilde)
+        return dnew, alphanew, alphatildenew
+
+    def is_splittable(self,r,tol=1.e-15):
+        d,alpha,alphatilde=self.split(r,tol=tol)
+        if max(abs(self.A[0,:]))<tol: alpha[1:,0]+=d[1:]/2.
+        if alpha.min()>=-tol and d.min()>=-tol: return True
+        else: return False
+
+    def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13):
+        r"""
+            Return the optimal downwind splitting of the method
+            along with the optimal downwind SSP coefficient.
+        """
+        r=bisect(0,rmax,acc,tol,self.is_splittable)
+        d,alpha,alphatilde=self.split(r,tol=tol)
+        return r,d,alpha,alphatilde
 
 
 #=====================================================
@@ -520,13 +584,14 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         """
         p,q=self.stability_function()
         if q.order!=0 or q[0]!=1:
+            print q
             print 'Not yet implemented for rational functions'
             return 0
         else:
             r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
         return r
 
-    def __step__(self,f,t,u,dt):
+    def __step__(self,f,t,u,dt,x=None):
         """
             Take a time step on the ODE u'=f(t,u).
 
@@ -543,13 +608,16 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         """
         m=len(self)
         y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
-        fy=[f(t[-1],y[0])]
+        if x is not None: fy=[f(t[-1],y[0],x)]
+        else: fy=[f(t[-1],y[0])]
         for i in range(1,m):
             y.append(u[-1]+0)
             for j in range(i):
                y[i]+=self.A[i,j]*dt*fy[j]
-            fy.append(f(t[-1]+self.c[i]*dt,y[i]))
-        fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
+            if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
+            else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
+        if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
+        else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
         unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
         return unew
 
@@ -606,6 +674,121 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         the solution, while the lower order method is
         used to obtain an error estimate.
     """
+
+    def embedded_order(self,tol=1.e-14):
+        """ 
+            Returns the order of the embedded method of a Runge-Kutta pair.
+        """
+        p=0
+        while True:
+            z=self.embedded_order_conditions(p+1)
+            if np.any(abs(z)>tol): return p
+            p=p+1
+
+    def embedded_order_conditions(self,p):
+        """
+            Generates and evaluates code to test whether a method
+            satisfies the order conditions of order p (only).
+
+            Currently uses Albrecht's recursion to generate the
+            order conditions.  This is fast and requires less code
+            than if they were hard-coded up to some high order,
+            although it still only works up to some fixed order
+            (need more recursion loops to go higher).
+
+            Other possibilities, already in place, are:
+                #. Use hard code, generated once and for all
+                   by Albrecht's recursion or another method.
+                   Advantages: fastest
+                   Disadvantages: Less satisfying
+
+                #. Use Butcher's recursive product on trees.
+                   Advantages: Most satisfying, no maximum order
+                   Disadvantages: way too slow for high order
+
+            TODO: Decide on something and fill in this docstring.
+        """
+        A,b,c=self.A,self.bhat,self.c
+        D=np.diag(c)
+        code=runge_kutta_order_conditions(p)
+        z=np.zeros(len(code)+1)
+        gamma=np.zeros([p,len(self)])
+        for j in range(1,p):
+            gamma[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
+        for i in range(len(code)):
+            exec('z[i]='+code[i])
+        z[-1]=np.dot(b,c**(p-1))-1./p
+        return z
+
+    def error_coefficient(self,tree,method='principal'):
+        from numpy import dot
+        code=elementary_weight_str(tree)
+        b=self.b
+        if method=='embedded':
+            b=self.bhat
+        A=self.A
+        c=self.c
+        exec('coeff=('+code+'-1./'+str(tree.density())+')')
+        return coeff/tree.symmetry()
+
+    def error_coeffs(self,p,method='principal'):
+        forest=rt.recursive_trees(p)
+        err_coeffs=[]
+        for tree in forest:
+            err_coeffs.append(self.error_coefficient(tree,method=method))
+        return err_coeffs
+
+    def error_metrics(self):
+        r"""Return full set of error metrics
+            See Kennedy et. al. 2000 p. 181"""
+        q=self.order(1.e-13)
+        p=self.embmeth.order(1.e-13)
+
+        tau_qp1=self.error_coeffs(q+1)
+        tau_qp2=self.error_coeffs(q+2)
+        tau_pp2=self.error_coeffs(p+2)
+
+        tau_pp1_hat=self.error_coeffs(p+1,method='embedded')
+        tau_pp2_hat=self.error_coeffs(p+2,method='embedded')
+
+        A_qp1=    np.sqrt(float(np.sum(np.array(tau_qp1)**2)))
+        A_qp1_max=    max([abs(tau) for tau in tau_qp1])
+        A_qp2=    np.sqrt(float(np.sum(np.array(tau_qp2)**2)))
+        A_qp2_max=    max([abs(tau) for tau in tau_qp2])
+
+        A_pp1_hat=np.sqrt(float(np.sum(np.array(tau_pp1_hat)**2)))
+        A_pp1_hat_max=max([abs(tau) for tau in tau_pp1_hat])
+
+        A_pp2=    np.sqrt(float(np.sum(np.array(tau_pp2)**2)))
+        A_pp2_hat=np.sqrt(float(np.sum(np.array(tau_pp2_hat)**2)))
+        A_pp2_max=    max([abs(tau) for tau in tau_pp2])
+        A_pp2_hat_max=max([abs(tau) for tau in tau_pp2_hat])
+
+        B_pp2=    A_pp2_hat    /A_pp1_hat
+        B_pp2_max=A_pp2_hat_max/A_pp1_hat_max
+
+        tau2diff=np.array(tau_pp2_hat)-np.array(tau_pp2)
+        C_pp2=    np.sqrt(float(np.sum(tau2diff**2)))/A_pp1_hat
+        C_pp2_max=max([abs(tau) for tau in tau2diff])/A_pp1_hat_max
+
+        D=max(np.max(self.A),np.max(self.b),np.max(self.bhat),np.max(self.c))
+
+        E_pp2=    A_pp2    /A_pp1_hat
+        E_pp2_max=A_pp2_max/A_pp1_hat_max
+
+        return A_qp1, A_qp1_max, A_qp2, A_qp2_max, A_pp1_hat, A_pp1_hat_max, B_pp2, B_pp2_max, C_pp2, C_pp2_max, D, E_pp2, E_pp2_max
+
+    def principal_error_norm(self):
+        p=self.order(1.e-13)
+        forest=rt.recursive_trees(p+1)
+        errs=[]
+        for tree in forest:
+            errs.append(self.error_coefficient(tree))
+        return np.sqrt(float(np.sum(np.array(errs)**2)))
+#        return max([abs(err) for err in errs])
+
+
+
 #=====================================================
 #End of ExplicitRungeKuttaPair class
 #=====================================================
@@ -634,15 +817,16 @@ def elementary_weight(tree):
         Currently doesn't work because of SAGE bug.
 
         **References**:
-            Butcher
+            [butcher2003]_
     """
     print 'Non-commutativity not working!'
     b=Symbol('b',False)
     ew=b*tree.Gprod(rt.RKeta,rt.Dmap)
     return ew
 
-def elementary_weight_str(tree):
-    from strmanip import collect_powers
+def elementary_weight_str(tree,style='pythoncode'):
+    from strmanip import collect_powers, mysimp
+    from python2matlab import python_to_matlab
     """
         Constructs Butcher's elementary weights for a Runge-Kutta method
         as strings suitable for numpy execution.
@@ -650,8 +834,21 @@ def elementary_weight_str(tree):
     ewstr='dot(b,'+tree.Gprod_str(rt.RKeta_str,rt.Dmap_str)+')'
     ewstr=ewstr.replace('1*','')
     ewstr=collect_powers(ewstr,'c')
+    ewstr=mysimp(ewstr)
+    #ewstr=python_to_matlab(ewstr)
     return ewstr
 
+def discrete_adjoint(meth):
+    """
+        Returns the discrete adjoint of a Runge-Kutta method
+    """
+    A=np.zeros([len(meth),len(meth)])
+    b=meth.b
+    for i in range(len(meth)):
+        for j in range(len(meth)):
+            #A[i,j]=meth.A[j,i]*b[j]/b[i]
+            A[i,j]=(b[i]*b[j]-meth.A[j,i]*b[j])/b[i]
+    return RungeKuttaMethod(A,b)
 
 def bisect(rlo, rhi, acc, tol, fun, params=None):
     """ 
@@ -730,8 +927,8 @@ def shu_osher_to_butcher(alpha,beta):
         b = & \\beta_1 + \\alpha_1
         \\end{align*}
 
-        **References**:  Gottlieb, Ketcheson, & Shu, "High Order Strong 
-             Stability Preserving Time Discretizations", J. Sci. Comput. 2008
+        **References**:  
+             #. [gottlieb2009]_
     """
     m=np.size(alpha,1)
     if not np.all([np.size(alpha,0),np.size(beta,0),
@@ -757,6 +954,33 @@ def loadRKM(which='All'):
     RK['FE11']=ExplicitRungeKuttaMethod(A,b,name='Forward Euler')
 
     #================================================
+    alpha=np.array([[0,0],[1.,0],[0.261583187659478,0.738416812340522]])
+    beta=np.array([[0,0],[0.822875655532364,0],[-0.215250437021539,0.607625218510713]])
+    RK['SSP22star']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name='SSPRK22star',
+                description=
+                "The optimal 2-stage, 2nd order downwind SSP Runge-Kutta method with one star")
+
+    #================================================
+    A=np.array([[0.,0.],[1./2,1./2]])
+    b=np.array([1./2,1./2])
+    RK['LobattoIIIA2']=RungeKuttaMethod(A,b,name='LobattoIIIA2',
+                description="The LobattoIIIA method with 2 stages")
+
+    #================================================
+    A=np.array([[5./12,-1./12],[3./4,1./4]])
+    b=np.array([3./4,1./4])
+    RK['RadauIIA2']=RungeKuttaMethod(A,b,name='RadauIIA2',
+                description="The RadauIIA method with 2 stages")
+
+    #================================================
+    A=np.array([[(88-7*np.sqrt(6))/360,(296-169*np.sqrt(6))/1800,(-2+3*np.sqrt(6))/225],
+                [(296+169*np.sqrt(6))/1800,(88+7*np.sqrt(6))/360,(-2-3*np.sqrt(6))/225],
+                [(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9]]);
+    b=np.array([(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9]);
+    RK['RadauIIA3']=RungeKuttaMethod(A,b,name='RadauIIA3',
+                description="The RadauIIA method with 3 stages")
+
+    #================================================
     A=np.array([[0,0],[1.,0]])
     b=np.array([1./2,1./2])
     RK['SSP22']=ExplicitRungeKuttaMethod(A,b,name='SSPRK22',
@@ -771,6 +995,24 @@ def loadRKM(which='All'):
                 "The optimal 3-stage, 3rd order SSP Runge-Kutta method")
 
     #================================================
+    A=np.array([[0,0,0],[1./3,0,0],[0.,2./3,0]])
+    b=np.array([1./4,0.,3./4])
+    RK['Heun33']=ExplicitRungeKuttaMethod(A,b,name='Heun33',
+                description= "Heun's 3-stage, 3rd order")
+
+    #================================================
+    A=np.array([[0,0,0],[1./3,0,0],[0.,1.,0]])
+    b=np.array([1./2,0.,1./2])
+    RK['NSSP32']=ExplicitRungeKuttaMethod(A,b,name='NSSPRK32',
+                description= "Wang and Spiteri NSSP32")
+
+    #================================================
+    A=np.array([[0,0,0],[-4./9,0,0],[7./6,-1./2,0]])
+    b=np.array([1./4,0.,3./4])
+    RK['NSSP33']=ExplicitRungeKuttaMethod(A,b,name='NSSPRK33',
+                description= "Wang and Spiteri NSSP33")
+
+    #================================================
     m=10
     r=6.
     alpha=np.diag(np.ones(m),-1)
@@ -782,7 +1024,28 @@ def loadRKM(which='All'):
     RK['SSP104']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
                     name='SSPRK10,4',description=
                     "The optimal ten-stage, fourth order Runge-Kutta method")
-    
+    #================================================
+    alpha=np.zeros([7,6])
+    beta=np.zeros([7,6])
+    alpha[1,0]=1.
+    alpha[2,0:2]=[3./4,1./4]
+    alpha[3,0:3]=[3./8,1./8,1./2]
+    alpha[4,0:4]=[1./4,1./8,1./8,1./2]
+    alpha[5,0:5]=[89537./2880000,407023./2880000,1511./12000,87./200,4./15]
+    alpha[6,:]  =[4./9,1./15,0.,8./45,0.,14./45]
+    beta[1,0]=1./2
+    beta[2,0:2]=[0.,1./8]
+    beta[3,0:3]=[-1./8,-1./16,1./2]
+    beta[4,0:4]=[-5./64,-13./64,1./8,9./16]
+    beta[5,0:5]=[2276219./40320000,407023./672000,1511./2800,-261./140,8./7]
+    beta[6,:]  =[0.,-8./45,0.,2./3,0.,7./90]
+    RK['Lambert65']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
+                        name='Lambert65',description='From Shu-Osher paper')
+    #================================================
+    A=np.array([[0,0],[2./3,0]])
+    b=np.array([1./4,3./4])
+    RK['MTE22']=ExplicitRungeKuttaMethod(A,b,name='Minimal Truncation Error 22')
+
     #================================================
     A=np.array([[0,0],[1./2,0]])
     b=np.array([0.,1.])
@@ -818,6 +1081,15 @@ def loadRKM(which='All'):
         [-8./27,2.,-3544./2565,1859./4104,-11./40,0]])
     b=np.array([16./135,0,6656./12825,28561./56430,-9./50,2./55])
     RK['Fehlberg45']=ExplicitRungeKuttaMethod(A,b,name='Fehlberg RK45')
+    #================================================
+    A=np.array([[0,0,0,0,0,0,0],[1./5,0,0,0,0,0,0],[3./40,9./40,0,0,0,0,0],
+        [44./45,-56/15,32./9,0,0,0,0],
+        [19372./6561,-25360./2187,64448./6561,-212./729,0,0,0],
+        [9017./3168,-355./33,46732./5247,49./176,-5103./18656,0,0],
+        [35./384,0.,500./1113,125./192,-2187./6784,11./84,0]])
+    b=np.array([35./384,0.,500./1113,125./192,-2187./6784,11./84,0])
+    RK['DP5']=ExplicitRungeKuttaMethod(A,b,name='Dormand-Prince RK75')
+
 
     if which=='All':
         return RK
@@ -849,9 +1121,8 @@ def SSPRK2(m):
             >>> SSP42.absolute_monotonicity_radius()
             2.9999999999745341
 
-        **References**: D.I. Ketcheson, "Highly efficient strong stability 
-                preserving Runge-Kutta methods with low-storage
-                implementations", SISC 2008 [Ketcheson2008]
+        **References**: 
+            #. [ketcheson2008]_
     """
     assert m>=2, "SSPRKm2 methods must have m>=2"
     r=m-1.
@@ -875,7 +1146,7 @@ def SSPIRK2(m):
             >>> ISSP42=SSPIRK2(4)
             >>> ISSP42
 
-            SSPRK42
+            SSPIRK42
 
              0.000 |  0.000  0.000  0.000  0.000
              0.333 |  0.333  0.000  0.000  0.000
@@ -887,7 +1158,8 @@ def SSPIRK2(m):
             >>> ISSP42.absolute_monotonicity_radius()
             2.9999999999745341
 
-        **References**: D.I. Ketcheson,
+        **References**:
+            #. [ketcheson2009]_
     """
     r=2.*m
     alpha=np.vstack([np.zeros(m),np.eye(m)])
@@ -895,6 +1167,69 @@ def SSPIRK2(m):
     for i in range(m): beta[i,i]=1./r
     name='SSPIRK'+str(m)+'2'
     return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+
+def SSPIRK3(m):
+    """ Construct the optimal m-stage, third order SSP 
+        Implicit Runge-Kutta method (m>=2).
+
+        **Input**: m -- number of stages
+        **Output**: A RungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> ISSP43=SSPIRK3(4)
+            >>> ISSP43
+
+            SSPIRK43
+
+             0.113 |  0.113  0.000  0.000  0.000
+             0.371 |  0.258  0.113  0.000  0.000
+             0.629 |  0.258  0.258  0.113  0.000
+             0.887 |  0.258  0.258  0.258  0.113
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+
+            >>> ISSP43.absolute_monotonicity_radius()
+            6.8729833461475209
+
+        **References**:
+            #. [ketcheson2009]_
+    """
+    r=m-1+np.sqrt(m**2-1)
+    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    alpha[-1,-1]=((m+1)*r)/(m*(r+2))
+    beta=alpha/r
+    for i in range(m): beta[i,i]=1./2*(1-np.sqrt((m-1.)/(m+1.)))
+    name='SSPIRK'+str(m)+'3'
+    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+def RK22_family(gamma):
+    """ 
+        Construct a 2-stage second order Runge-Kutta method 
+
+        **Input**: w -- family parameter
+        **Output**: An ExplicitRungeKuttaMethod
+
+    """
+    A=np.array([[0,0],[1./(2.*gamma),0]])
+    b=np.array([1.-gamma,gamma])
+    return ExplicitRungeKuttaMethod(A,b)
+
+def RK44_family(w):
+    """ 
+        Construct a 4-stage fourth order Runge-Kutta method 
+
+        **Input**: w -- family parameter
+        **Output**: An ExplicitRungeKuttaMethod
+
+    """
+    A=np.array([[0,0,0,0],[1./2,0,0,0],[1./2-1./(6*w),1./(6*w),0,0],
+                [0,1.-3.*w,3.*w,0]])
+    b=np.array([1./6,2./3-w,w,1./6])
+    return ExplicitRungeKuttaMethod(A,b)
+
 
 def SSPRK3(m):
     """ 
@@ -919,9 +1254,8 @@ def SSPRK3(m):
                   |  0.167  0.167  0.167  0.500
 
 
-        **References**: D.I. Ketcheson, "Highly efficient strong stability 
-                preserving Runge-Kutta methods with low-storage
-                implementations", SISC 2008 [Ketcheson2008]
+        **References**: 
+            #. [ketcheson2008]_
 
     """
     n=np.sqrt(m)
@@ -932,7 +1266,8 @@ def SSPRK3(m):
     alpha[n*(n+1)/2,n*(n+1)/2-1]=(n-1.)/(2*n-1.)
     beta=alpha/r
     alpha[n*(n+1)/2,(n-1)*(n-2)/2]=n/(2*n-1.)
-    return RungeKuttaMethod(alpha=alpha,beta=beta)
+    name='SSPRK'+str(m)+'3'
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
 
 if __name__== "__main__":

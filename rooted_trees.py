@@ -7,7 +7,7 @@ linear methods.
 
 AUTHOR: David Ketcheson (08-29-2008)
 
-EXAMPLES:
+**Examples**::
 
     >>> from rooted_trees import *
     >>> tree=RootedTree('{T^2{T{T}}{T}}')
@@ -19,7 +19,8 @@ EXAMPLES:
     >>> tree.symmetry()
     2
 
-    Topologically equivalent trees are considered equal:
+Topologically equivalent trees are considered equal::
+
     >>> tree2=RootedTree('{T^2{T}{T{T}}}')
     >>> tree2==tree
     True
@@ -27,9 +28,10 @@ EXAMPLES:
 """
 import numpy as np
 import pylab as pl
-from sympy import Symbol, factorial, sympify
+from sympy import Symbol, factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
-from canopy_utils import permutations
+from nodepy_utils import permutations
+from strmanip import *
 
 #=====================================================
 class RootedTree(str):
@@ -57,10 +59,9 @@ class RootedTree(str):
 
         is not.  This may change in the future.
 
-        References:  
-            Butcher, "Numerical Methods for Ordinary Differential Equations"
-            Hairer & Wanner, "Solving Ordinary Differential Equations I:
-                Nonstiff Problems" 
+        **References**:  
+            #. [butcher2003]_
+            #. [hairer1993]_
     """
     def __init__(self,strg):
         """
@@ -97,7 +98,8 @@ class RootedTree(str):
         """
         Returns the density gamma(t) of the rooted tree.
         Density is the product of the orders of the subtrees.
-        Reference: Butcher, p. 127, eq. 301(c)
+        **Reference**: 
+            - [butcher2003]_ p. 127, eq. 301(c)
         """
         gamma=self.order()
         nleaves,subtrees=self.parse_subtrees()
@@ -108,7 +110,8 @@ class RootedTree(str):
     def symmetry(self):
         """ 
         Returns the symmetry sigma(t) of a rooted tree 
-        Reference: Butcher, p. 127, eq. 301(b)
+        **Reference**: 
+            - [butcher2003]_ p. 127, eq. 301(b)
         """
         if self=='T': return 1
         sigma=1
@@ -128,17 +131,18 @@ class RootedTree(str):
         Butcher's function E^a(t).
         Gives the B-series for the exact solution advanced 'a' steps
         in time.
-        Reference: J.C. Butcher & S. Tracogna, "Order Conditions for
-            Two-Step Runge-Kutta methods", APNUM 24 pp. 351-364 (1997)
+        **Reference**: 
+            [butcher1997]_
         """
-        return a**self.order()/(self.density())
+        return Rational(a**self.order(),(self.density()))
 
     def Dmap(self):
         """ 
         Butcher's function D(t).  Represents differentiation.
         Defined by D(t)=0 except for D('T')=1.
-        Reference: J.C. Butcher & S. Tracogna, "Order Conditions for
-            Two-Step Runge-Kutta methods", APNUM 24 pp. 351-364 (1997)
+
+        **Reference**: 
+            #. [butcher1997]_
         """
         return self=='T'
 
@@ -160,7 +164,8 @@ class RootedTree(str):
             The meaning of the output is that 
             \lambda(\alpha,t)(\beta)=a1*\beta(t1)+a2*\beta(t2)+... 
 
-            Reference: Butcher, pp. 275-276
+            **Reference**: 
+                [butcher2003]_ pp. 275-276
         """
         if self=='': return [RootedTree('')],[0]
         if self=='T': return [RootedTree('T')],[1]
@@ -216,11 +221,13 @@ class RootedTree(str):
         """ 
             Returns two rooted trees, t and u, such that self=t*u.
 
-            INPUT: self -- any rooted tree
-            OUTPUT: t,u -- a pair of rooted trees whose product t*u
-                            is equal to self.
+            **Input**: 
+                - self -- any rooted tree
+            **Output**: 
+                - t,u -- a pair of rooted trees whose product t*u is equal to self.
 
-            EXAMPLES:
+            **Examples**::
+
                 >>> tree=RootedTree('{T^2{T}}')
                 >>> t,u=tree.factor()
                 >>> t
@@ -230,7 +237,7 @@ class RootedTree(str):
                 >>> t*u==tree
                 True
 
-            NOTES: This function is typically only called by lamda().
+            .. note:: This function is typically only called by lamda().
         """
         nleaves,subtrees=self.parse_subtrees()
         if nleaves==0: # Root has no leaves
@@ -271,12 +278,12 @@ class RootedTree(str):
             (\alpha*\beta)('')=\beta('')
             (\alpha*\beta)(t) = \lambda(alpha,t)(\beta) + \alpha(t)\beta('')
 
-            NOTES:
+            .. note::
                 Gprod can be used to compute products of more than two
                 functions by passing Gprod itself in as beta, and providing
                 the remaining functions to be multiplied as betaargs.
 
-            REFERENCE: Butcher p. 276, Thm. 386A 
+            **Reference**: [butcher2003]_ p. 276, Thm. 386A 
         """
         exec('trees,facs=self.lamda(alpha,'+alphaargs+')')
         s=0
@@ -305,7 +312,7 @@ class RootedTree(str):
             s+="+"+str(sympify(alph+'*'+bet))
         return s
 
-    def plot(self,nrows=1,ncols=1,iplot=1):
+    def plot(self,nrows=1,ncols=1,iplot=1,ttitle=''):
         """
             Plots the rooted tree.
 
@@ -328,17 +335,16 @@ class RootedTree(str):
         pl.subplot(nrows,ncols,iplot)
         pl.hold(True)
         pl.scatter([0],[0])
-        if self=='T': return
+        if self!='T': self.plot_subtree(0,0,1.)
 
-        self.plot_subtree(0,0,1.)
-
-        fs=pl.ceil(40./nrows)
-        pl.title(self,{'fontsize': fs})
+        fs=int(pl.ceil(30./nrows))
+        pl.title(ttitle,{'fontsize': fs})
         pl.xticks([])
         pl.yticks([])
         pl.hold(False)
-        pl.show()
-        pl.ioff()
+        pl.axis('off')
+        #pl.show()
+        #pl.ioff()
 
 
     def plot_subtree(self,xroot,yroot,xwidth):
@@ -488,6 +494,7 @@ class TreeError(Exception):
 def plot_all_trees(p):
 #=====================================================
     """ Plots all rooted trees of order p """
+    from twostep_runge_kutta_method import tsrk_elementary_weight_str
 
     forest=recursive_trees(p)
     nplots=len(forest)
@@ -495,45 +502,8 @@ def plot_all_trees(p):
     ncols=int(np.floor(np.sqrt(float(nplots))))
     if nrows*ncols<nplots: ncols=ncols+1
     for tree in forest:
-        tree.plot(nrows,ncols,forest.index(tree)+1)
-
-
-#=====================================================
-def get_substring(st,startpos):
-#=====================================================
-    """
-        Extracts everything between an open and close
-        brace from a string.
-
-        INPUT:
-            st       -- any string (usually a RootedTree)
-            startpos -- an integer such that st[startpos] is
-                        the open brace ('{') of the desired substring
-
-        OUTPUT:
-            A string containing everything from st[startpos] to
-            the corresponding close brace ('}') (inclusive).
-    """
-    return st[startpos:open_to_close(st,startpos)+1]
-
-#=====================================================
-def open_to_close(st,startpos):
-#=====================================================
-    """ 
-        Finds end of a substring enclosed by braces starting at startpos.
-        Used by get_substring.
-    """
-
-    pos=startpos
-    openchar=st[pos]
-    if openchar=='{':  closechar='}'
-    count=1
-    while count>0:
-        pos+=1
-        if st[pos]==openchar:  count+=1
-        if st[pos]==closechar: count-=1
-    return pos
-
+        ttitle=tsrk_elementary_weight_str(tree)+'-1/'+str(tree.density())
+        tree.plot(nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
 
 #=====================================================
 def recursive_trees(p,ind='all'):
@@ -550,9 +520,10 @@ def recursive_trees(p,ind='all'):
     
     Generates the rooted trees using Albrecht's 'Recursion 3'.
 
-    EXAMPLES:
+    **Examples**:
 
-        Produce column of Butcher's Table 302(I):
+    Produce column of Butcher's Table 302(I)::
+
         >>> for i in range(1,11):
         >>>     forest=recursive_trees(i)
         >>>     print len(forest)
@@ -567,14 +538,13 @@ def recursive_trees(p,ind='all'):
         286
         719
 
-    NOTES: Generates all trees up to order at least 10.  Above some order
+    .. note:: Generates all trees up to order at least 10.  Above some order
             it will not get them all (need to code more subloops).
 
     TODO: Implement Butcher's formula (Theorem 302B) for the number
             of trees and determine to what order this is valid.
 
-    REFERENCE: Albrecht, "The Runge-Kutta Theory in a Nutshell", 
-                (1996) p. 1727
+    **Reference**: [albrecht1996]_
   """
 
   if p==0: return [RootedTree('')]
@@ -706,10 +676,10 @@ def Emap(tree,a=1):
     Gives the B-series for the exact solution advanced 'a' steps
     in time.
     """
-    return a**tree.order()/(tree.density())
+    return Rational(a**tree.order(),(tree.density()))
 
 def Emap_str(tree,a=1):
-    return str(a**tree.order()/(tree.density()))
+    return str(Rational(a**tree.order(),(tree.density())))
 
 #=====================================================
 #Runge-Kutta functions
@@ -743,6 +713,30 @@ def TSRKeta_str(tree):
     if tree=='T': return 'c'
     return '(d*'+str(tree.Emap(-1))+'+dot(Ahat,'+tree.Gprod_str(Emap_str,Dprod_str,betaargs='TSRKeta_str',alphaargs='-1')+')'+'+dot(A,'+Dprod_str(tree,TSRKeta_str)+'))'
 
+#=====================================================
+#Three-step Runge-Kutta functions ???
+#=====================================================
+def ThSRKeta(tree):
+    if tree=='':  return 1
+    if tree=='T': return Symbol('c',False)
+    return Symbol('d2',False)*tree.Emap(-1)+Symbol('d3',False)*tree.Emap(-2)+Symbol('A',False)*Dprod(tree,ThSRKeta)
+
+def ThSRKeta_str(tree):
+    """
+    Computes eta(t) for Two-step Runge-Kutta methods -- Python string
+    """
+    if tree=='':  return 'e'
+    if tree=='T': return 'c'
+    return '(d2*'+str(tree.Emap(-1))+'+(d3*'+str(tree.Emap(-2))+'+dot(A,'+Dprod_str(tree,ThSRKeta_str)+'))'
+
+def ThSRKeta_str_matlab(tree):
+    """
+    Computes eta(t) for Two-step Runge-Kutta methods -- Matlab string
+    """
+    if tree=='':  return 'e'
+    if tree=='T': return 'c'
+    return "("+str(tree.Emap(-1))+")*d2+("+str(tree.Emap(-2))+")*d3+(A*"+Dprod_str(tree,ThSRKeta_str_matlab)+')'
+
 
 #=====================================================
 #=====================================================
@@ -756,7 +750,7 @@ def recursiveVectors(p,ind='all'):
   """ 
     Generate recursive vectors using Albrecht's 'recursion 1' 
 
-    Follows Albrecht (1996) p. 1718
+    Follows [albrecht1996]_ p. 1718
     Need to extend it for p>10?
   """
   W=[[],[]]
@@ -815,4 +809,11 @@ def recursiveVectors(p,ind='all'):
   if ind=='all': return W[p-1]
   else: return W[p-1][ind]
 
+def py2tex(codestr):
+    """Convert a python code string to LaTex"""
 
+    strout=codestr.replace("'","^T")
+    strout=strout.replace("*","")
+    strout=strout.replace(".^","^")
+    strout='$'+strout+'$'
+    return strout

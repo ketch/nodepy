@@ -20,10 +20,25 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
     """ General class for Two-step Runge-Kutta Methods """
     def __init__(self,d,theta,Ahat,A,bhat,b):
+        r"""
+            Initialize a 2-step Runge-Kutta method.  The representation
+            uses the form and notation of [Ketcheson2009]_.
+
+            \\begin{align*}
+            y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \\Delta t \\sum_{k=1}^{s}
+            (\\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1\\le j \\le s) \\\\
+            u^{n+1} = & \\theta u^{n-1} + (1-\\theta)u^n + \\Delta t \\sum_{j=1}^{s}(\\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
+            \\end{align*}
+
+        """
         self.d,self.theta,self.Ahat,self.A,self.bhat,self.b=d,theta,Ahat,A,bhat,b
 
-    def order(self,tol=1.e-14):
-        """ Returns the order of a Two-step Runge-Kutta method """
+    def order(self,tol=1.e-13):
+        r""" 
+            Return the order of a Two-step Runge-Kutta method.
+            Computed by computing the elementary weights corresponding
+            to the appropriate rooted trees.
+        """
         p=0
         while True:
             z=self.orderConditions(p+1)
@@ -31,6 +46,14 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             p=p+1
 
     def orderConditions(self,p):
+        r"""
+            Evaluate the order conditions corresponding to rooted trees
+            of order $p$.
+
+            **Output**:
+                - A vector $z$ of residuals (the amount by which each
+                  order condition is violated)
+        """
         from numpy import dot
         d,theta,Ahat,A,bhat,b=self.d,self.theta,self.Ahat,self.A,self.bhat,self.b
         e=np.ones(len(d))
@@ -39,7 +62,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         z=np.zeros(len(code))
         for i in range(len(code)):
             exec('z[i]='+code[i])
-            print p,z
+            #print p,z
         return z
 
 #================================================================
@@ -78,6 +101,9 @@ def tsrk_elementary_weight_str(tree):
 #================================================================
 
 def loadTSRK(which='All'):
+    r"""
+        Load a particular TSRK method (I think from [Jackiewicz1994]_).
+    """
     TSRK={}
     #================================================
     d=np.array([-113./88,-103./88])
@@ -97,3 +123,5 @@ def loadTSRK(which='All'):
     TSRK['order5']=TwoStepRungeKuttaMethod(d,theta,Ahat,A,bhat,b)
     if which=='All': return TSRK
     else: return TSRK[which]
+
+

@@ -13,6 +13,7 @@ Contents:
    install
    features
    userguide
+   bib
 
 Modules
 =======
@@ -22,6 +23,7 @@ Modules
     modules/rooted_trees
     modules/runge_kutta_method
     modules/low_storage_rk
+    modules/linear_multistep_method
 
 Indices and tables
 ==================

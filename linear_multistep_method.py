@@ -1,27 +1,27 @@
 """
 Class for linear multistep methods, and various functions related to them.
 
-AUTHOR: David Ketcheson (08-29-2008)
+**Author**: David Ketcheson (08-29-2008)
 
-EXAMPLES:
+**Examples**::
 
-    sage: import sys
-    sage: print sys.path
+    >>> import sys
+    >>> print sys.path
 
-    sage: import linear_multistep_method as lmm
-    sage: ab3=lmm.Adams_Bashforth(3)
-    sage: ab3.order()
+    >>> import linear_multistep_method as lmm
+    >>> ab3=lmm.Adams_Bashforth(3)
+    >>> ab3.order()
     3
-    sage: am3=lmm.Adams_Moulton(3)
-    sage: am3.order()
+    >>> am3=lmm.Adams_Moulton(3)
+    >>> am3.order()
     4
-    sage: bdf2=lmm.backwards_difference(2)
-    sage: bdf2.order()
+    >>> bdf2=lmm.backwards_difference(2)
+    >>> bdf2.order()
     2
-    sage: ssp32=lmm.lmm_ssp2(3)
-    sage: ssp32.order()
+    >>> ssp32=lmm.lmm_ssp2(3)
+    >>> ssp32.order()
     2
-    sage: ssp32.ssp_coefficient()
+    >>> ssp32.ssp_coefficient()
     0.5
 
 """
@@ -33,17 +33,17 @@ class LinearMultistepMethod(GeneralLinearMethod):
 #=====================================================
     r"""
         Implementation of linear multistep methods in the form:
-        \alpha_k y_{n+k} + \alpha_{k-1} y_{n+k-1} + ... + \alpha_0 y_n
-        = h ( \beta_k f_{n+k} + ... + \beta_0 f_n )
+
+        `\alpha_k y_{n+k} + \alpha_{k-1} y_{n+k-1} + ... + \alpha_0 y_n
+        = h ( \beta_k f_{n+k} + ... + \beta_0 f_n )`
 
         Methods are automatically normalized so that \alpha_k=1.
 
         Notes: Representation follows Hairer & Wanner p. 368, NOT Butcher.
 
-        References:  
-            Hairer & Wanner, "Solving Ordinary Differential Equations I:
-                Nonstiff Problems" Chapter III
-            Butcher, "Numerical Methods for Ordinary Differential Equations"
+        **References**:  
+            #. [hairer1993]_ Chapter III
+            #. [butcher2003]_
     """
     def __init__(self,alpha,beta,name='Linear multistep method'):
         self.beta=beta/float(alpha[-1])
@@ -55,19 +55,19 @@ class LinearMultistepMethod(GeneralLinearMethod):
         Returns the characteristic polynomials (also known as generating
         polynomials) of a linear multistep method.  They are:
 
-        \rho(z) = \sum_{j=0}^k \alpha_k z^k
-        \sigma(z) = \sum_{j=0}^k \beta_k z^k
+        '\rho(z) = \sum_{j=0}^k \alpha_k z^k'
 
-        References:  
-            Hairer & Wanner, "Solving Ordinary Differential Equations I:
-                Nonstiff Problems", p. 370, eq. 2.4
+        '\sigma(z) = \sum_{j=0}^k \beta_k z^k'
+
+        **References**:
+            #. [hairer2003]_ p. 370, eq. 2.4
         """
         rho=np.poly1d(self.alpha[::-1])
         sigma=np.poly1d(self.beta[::-1])
         return rho, sigma
 
     def order(self,tol=1.e-10):
-        """ Returns the order of a linear multistep method """
+        """ Return the order of a linear multistep method """
         p=0
         if abs(sum(self.alpha))>tol: return 0
         ocHolds=True
@@ -77,19 +77,19 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return p-1
 
     def satisfies_order_conditions(self,p,tol):
-        """ Returns True if the linear multistep method satisfies 
+        """ Return True if the linear multistep method satisfies 
             the conditions of order p (only) """
         #Roundoff errors seem to be amplified here...
         ii=np.arange(len(self.alpha))
         return abs(sum(ii**p*self.alpha-p*self.beta*ii**(p-1)))<tol
 
     def ssp_coefficient(self):
-        r""" Returns the SSP coefficient of the method.
+        r""" Return the SSP coefficient of the method.
              The SSP coefficient is given by
             
-            \min_{0 \le j < k} -\alpha_k/beta_k
+            `\min_{0 \le j < k} -\alpha_k/beta_k`
 
-            if \alpha_j<0 and \beta_j>0 for all j, and is equal to
+            if `\alpha_j<0` and `\beta_j>0` for all `j`, and is equal to
             zero otherwise
         """
         if np.any(self.alpha[:-1]>0) or np.any(self.beta<0): return 0
@@ -104,10 +104,9 @@ class LinearMultistepMethod(GeneralLinearMethod):
             Uses the boundary locus method.  The stability boundary is
             given by the set of points z:
 
-            \{z | z=\rho(exp(i*theta))/\sigma(exp(i*theta)), 
-                0\le \theta \le 2*\pi \}
+            `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
 
-            Here \rho and \sigma are the characteristic polynomials 
+            Here `\rho` and `\sigma` are the characteristic polynomials 
             of the method.
 
             References:
@@ -118,17 +117,17 @@ class LinearMultistepMethod(GeneralLinearMethod):
                     region boundary crosses itself.
         """
         import pylab as pl
-        theta=np.linspace(0.,2*pi,N)
-        z=exp(theta*1j)
+        theta=np.linspace(0.,2*np.pi,N)
+        z=np.exp(theta*1j)
         rho,sigma=self.characteristic_polynomials()
         val=rho(z)/sigma(z)
         #clf()
-        pl.plot(real(val),imag(val),color=color)
+        pl.plot(np.real(val),np.imag(val),color=color,linewidth=2)
         pl.title('Absolute Stability Region for '+self.name)
         pl.axis('Image')
         pl.hold(True)
-        pl.plot([0,0],[-10,10],'--k')
-        pl.plot([-10,2],[0,0],'--k')
+        pl.plot([0,0],[-10,10],'--k',linewidth=2)
+        pl.plot([-10,2],[0,0],'--k',linewidth=2)
         pl.hold(False)
         pl.show()
 
@@ -141,18 +140,18 @@ def Adams_Bashforth(k):
         The methods are explicit and have order k.
         They have the form:
 
-        y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)
+        `y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
 
         They are generated using equations (1.5) and (1.7) from 
-        Hairer & Wanner III.1, along with the binomial expansion.
+        [hairer2003]_ III.1, along with the binomial expansion.
 
-        NOTES:
+        .. note::
             Somehow we lose accuracy when evaluating the order conditions
             for methods with many steps.  Maybe we should use SAGE datatypes
             instead of NumPy arrays?
 
         References:
-            Hairer & Wanner, pp. 357-358
+            #. [hairer1993]_
     """
     from scipy import comb
     alpha=np.zeros(k+1)
@@ -177,7 +176,7 @@ def Adams_Moulton(k):
         The methods are implicit and have order k+1.
         They have the form:
 
-        y_{n+1} = y_n + h \sum_{j=0}^{k} \beta_j f(y_n-k+j+1)
+        `y_{n+1} = y_n + h \sum_{j=0}^{k} \beta_j f(y_n-k+j+1)`
 
         They are generated using equation (1.9) and the equation in 
         Exercise 3 from Hairer & Wanner III.1, along with the binomial 
@@ -189,9 +188,8 @@ def Adams_Moulton(k):
             instead of NumPy arrays?
 
         References:
-            Hairer & Wanner, pp. 359-360
+            [hairer1993]_
     """
-    """ Construct the k-step, order k+1 Adams-Moulton method """
     from scipy import comb
     alpha=np.zeros(k+1)
     beta=np.zeros(k+1)
@@ -215,7 +213,7 @@ def backward_difference_formula(k):
         The methods are implicit and have order k.
         They have the form:
 
-        \sum_{j=0}^{k} \alpha_j y_{n+k-j+1} = h \beta_j f(y_n+1)
+        `\sum_{j=0}^{k} \alpha_j y_{n+k-j+1} = h \beta_j f(y_n+1)`
 
         They are generated using equation (1.22') from Hairer & Wanner III.1,
         along with the binomial expansion.
@@ -225,8 +223,8 @@ def backward_difference_formula(k):
             for methods with many steps.  Maybe we should use SAGE datatypes
             instead of NumPy arrays?
 
-        References:
-            Hairer & Wanner, pp. 364-365
+        **References**:
+            #.[hairer1993]_ pp. 364-365
     """
     from scipy import comb
     alpha=np.zeros(k+1)
@@ -255,3 +253,23 @@ def elmm_ssp2(k):
     beta[k-1]=k/(k-1.)
     name='Optimal '+str(k)+'-step, 2nd order SSP method.'
     return LinearMultistepMethod(alpha,beta,name=name)
+
+
+def loadLMM(which='All'):
+    """ 
+        Load a set of standard Runge-Kutta methods for testing.
+
+        TODO: 
+            - Others?
+    """
+    LM={}
+    #================================================
+    alpha=np.array([-12.,75.,-200.,300.,-300.,137.])/137.
+    beta=np.array([60.,-300.,600.,-600.,300.,0.])/137
+    LM['eBDF5']=LinearMultistepMethod(alpha,beta,'eBDF 5')
+    if which=='All':
+        return LM
+    else:
+        return LM[which]
+
+

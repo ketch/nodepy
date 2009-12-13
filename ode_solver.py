@@ -1,4 +1,3 @@
-import numpy as np
 #=====================================================
 class ODESolver:
 #=====================================================
@@ -6,7 +5,7 @@ class ODESolver:
     def __init__(self):
         pass
 
-    def __call__(self,f,u0,T,N=100,dt=None):
+    def __call__(self,f,u0,T,N=100,dt=None,x=None):
         """
             Calling an ODESolver numerically integrates the function 
             f(t,u(t)) up to t=T using the solver.
@@ -17,10 +16,12 @@ class ODESolver:
         t=[t0]
         t1=T[-1]
         if dt is None: dt=(t1-t0)/N
-        while (t[-1]+dt)<t1: 
-            u.append(self.__step__(f,t,u,dt))
+        while abs(t[-1]+dt-t1)>1.e-13: 
+            if x is not None: u.append(self.__step__(f,t,u,dt,x=x))
+            else: u.append(self.__step__(f,t,u,dt))
             t.append(t[-1]+dt)
         dt_final=t1-t[-1]
-        u.append(self.__step__(f,t,u,dt_final))
+        if x is not None: u.append(self.__step__(f,t,u,dt_final,x=x))
+        else: u.append(self.__step__(f,t,u,dt_final))
         t.append(t[-1]+dt)
         return t,u

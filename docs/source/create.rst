@@ -31,3 +31,5 @@ Creating Low-Storage Runge-Kutta methods
 
 .. automethod:: CanoPy.low_storage_rk.LowStorageRungeKuttaMethod.__init__
 
+`blah <../../source/conf.py>`_
+`<index.html>`_

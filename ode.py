@@ -7,7 +7,7 @@ class ODE:
     """
 
 # Some simple functions for convergence testing
-class exp_fun:
+class exp_fun(ODE):
     def __init__(self,u0=1):
         self.u0=u0
     def rhs(self,t,u):
@@ -15,7 +15,7 @@ class exp_fun:
     def exact(self,t):
         return self.u0*exp(t)
 
-class nlsin_fun:
+class nlsin_fun(ODE):
     def __init__(self,u0=1):
         self.u0=u0
     def rhs(self,t,u):
