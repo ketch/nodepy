@@ -11,9 +11,9 @@ class SemiDiscretization(ODE):
     """
 
 class Advection(SemiDiscretization):
-    def __init__(self,x,u0):
-        self.x=x
-        self.u0=u0
+    def __init__(self):
+        pass
+
     def exact(self,t):
         return self.u0(self.x-t)
 

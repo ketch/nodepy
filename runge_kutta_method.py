@@ -106,12 +106,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if alpha is not None: #Initialize with Shu-Osher arrays
             A,b=shu_osher_to_butcher(alpha,beta)
         # Set Butcher arrays
-        self.A=A
+        if len(np.shape(A))==2: self.A=A
+        else: self.A=np.array([A]) #Fix for 1-stage methods
         self.b=b
-        if len(self)>1:
-            self.c=np.sum(A,1)
-        else:
-            self.c=b
+        self.c=np.sum(self.A,1)
         self.name=name
         self.info=description
 
@@ -154,7 +152,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         return np.size(self.A,0) 
 
-    def __mul__(self,RK2):
+    def __mul__(self,RK2,h1=1,h2=1):
         """ Multiplication is interpreted as composition:
             RK1*RK2 gives the method obtained by applying
             RK2, followed by RK1, each with half the timestep.
@@ -172,11 +170,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             TODO: Think about whether this is the right thing to return.
         """
+        f1=h1/(h1+h2)
+        f2=h2/(h1+h2)
+        A1=self.A
+        A2=RK2.A
         A=np.vstack([
-            np.hstack([RK2.A,np.zeros([np.size(RK2.A,0),np.size(self.A,1)])]),
-            np.hstack([np.tile(RK2.b,(len(self),1)),self.A])])
-        b=np.hstack([RK2.b,self.b])
-        return RungeKuttaMethod(A=A/2.,b=b/2.)
+            np.hstack([A2*f2,np.zeros([np.size(A2,0),np.size(A1,1)])]),
+            np.hstack([np.tile(RK2.b*f2,(len(self),1)),A1*f1])]).squeeze()
+        b=np.hstack([RK2.b*f2,self.b*f1]).squeeze()
+        return RungeKuttaMethod(A,b)
 
     def error_coefficient(self,tree):
         from numpy import dot
@@ -296,7 +298,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         return G,Xinv
 
-    def standard_shu_osher_form(self):
+    def standard_shu_osher_form(self,r=None):
         r"""
             Gives a Shu-Osher form in which the SSP coefficient is
             evident (i.e., in which $\\alpha_{ij},\\beta_{ij} \\ge 0$ and
@@ -319,7 +321,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 #. [higueras2005]_
 
         """
-        r=self.absolute_monotonicity_radius()
+        if r is None: r=self.absolute_monotonicity_radius()
         K=np.vstack([self.A,self.b])
         X=np.eye(len(self))+r*self.A
         beta=np.linalg.solve(X.T,K.T).T
@@ -358,7 +360,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         r=bisect(0,rmax,acc,tol,self.is_circle_contractive)
         return r
 
-    def absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
+    def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
                     tol=3.e-16):
         r""" 
             Returns the radius of absolute monotonicity
@@ -366,6 +368,35 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
+
+    def linear_monotonicity_radius(self,acc=1.e-10,tol=1.e-15):
+      r"""
+          Computes Horvath's monotonicity radius of the stability
+          function.  Not sure yet if this is M_lin of the method.
+      """
+      p,q=self.stability_function()
+      #First check extreme cases
+      if p.order>q.order: return 0
+      phi = lambda z: p(z)/q(z)
+      #Get the negative real zeroes of the derivative of p/q:
+      phip=p.deriv()*q-q.deriv()*p
+      zeroes=[z for z in phip.r if np.isreal(z) and z<0]
+      #Find the extremum of phi on (-inf,0):
+      if len(zeroes)>0:
+          zmax=max(abs(phi(zeroes)))
+          rlo=max(zeroes)
+          if p.order==q.order: 
+              zmax=max(zmax, abs(p[0]/q[0]))
+      else:
+          if p.order<q.order: return -np.inf
+          if p.order==q.order: 
+              zmax=abs(p[0]/q[0])
+              rlo=-10000
+
+      phim=lambda z,tol: p(z)/q(z)<zmax
+
+      r=bisect(rlo,0,acc,tol,phim)
+      return float(np.real(r))
 
     def stability_function(self):
         r""" 
@@ -459,7 +490,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.plot([bounds[0],bounds[1]],[0,0],'--k')
         pl.axis('Image')
         pl.hold(False)
-        pl.show()
 
     def is_circle_contractive(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method has radius of circle
@@ -484,7 +514,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             The method is absolutely monotonic if $(I+rA)^{-1}$ exists
             and
             $$K(I+rA)^{-1} \\ge 0$$
-            $$rK(I+rA)^{-1} e_m \\le e_{m+1}$$
+            $$(I+rA)^{-1} e_m \\ge 0$$
 
             where $e_m$ is the m-by-1 vector of ones and
                   K=[ A
@@ -498,8 +528,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         K=np.vstack([self.A,self.b])
         X=np.eye(len(self))+r*self.A
         beta=np.linalg.solve(X.T,K.T).T
-        ech=r*K*np.linalg.solve(X,np.ones(len(self)))
-        if beta.min()<-tol or ech.max()-1>tol:
+        ech=np.linalg.solve(X,np.ones(len(self)))
+        if beta.min()<-tol or ech.min()<-tol:
             return 0
         else:
             return 1
@@ -915,7 +945,8 @@ def shu_osher_zero_beta_ij(alpha,beta,i,j):
         **Output**: 
             - Shu-Osher arrays alph, bet with bet[i,j]=0.
     """
-    return shu_osher_change_alpha_ij(alpha,beta,i,j,-alpha[i,j])
+    t=-beta[i,j]/beta[j,j]
+    return shu_osher_change_alpha_ij(alpha,beta,i,j,-t)
 
 
 def shu_osher_to_butcher(alpha,beta):
@@ -941,6 +972,7 @@ def shu_osher_to_butcher(alpha,beta):
     return A,b
 
 def loadRKM(which='All'):
+    from numpy import sqrt
     """ 
         Load a set of standard Runge-Kutta methods for testing.
 
@@ -948,6 +980,11 @@ def loadRKM(which='All'):
             - Others?
     """
     RK={}
+    #================================================
+    A=np.array([1])
+    b=np.array([1])
+    RK['BE11']=RungeKuttaMethod(A,b,name='Implicit Euler')
+
     #================================================
     A=np.array([0])
     b=np.array([1])
@@ -959,6 +996,24 @@ def loadRKM(which='All'):
     RK['SSP22star']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name='SSPRK22star',
                 description=
                 "The optimal 2-stage, 2nd order downwind SSP Runge-Kutta method with one star")
+
+    #================================================
+    A=np.array([[1.,-sqrt(5),sqrt(5),-1.],[1.,3.,(10-7.*sqrt(5))/5.,sqrt(5)/5.],[1.,(10.+7*sqrt(5))/12.,3.,-sqrt(5)/5.],[1.,5.,5.,1.]])/12.
+    b=np.array([1.,5.,5.,1.])/12.
+    RK['LobattoIIIC4']=RungeKuttaMethod(A,b,name='LobattoIIIC4',
+                description="The LobattoIIIC method with 4 stages")
+
+    #================================================
+    A=np.array([[1./6,-1./3,1./6],[1./6,5./12,-1./12],[1./6,2./3,1./6]])
+    b=np.array([1./6,2./3,1./6])
+    RK['LobattoIIIC3']=RungeKuttaMethod(A,b,name='LobattoIIIC3',
+                description="The LobattoIIIC method with 3 stages")
+
+    #================================================
+    A=np.array([[1./2,-1./2],[1./2,1./2]])
+    b=np.array([1./2,1./2])
+    RK['LobattoIIIC2']=RungeKuttaMethod(A,b,name='LobattoIIIC2',
+                description="The LobattoIIIC method with 2 stages")
 
     #================================================
     A=np.array([[0.,0.],[1./2,1./2]])
@@ -1133,6 +1188,35 @@ def SSPRK2(m):
     name='SSPRK'+str(m)+'2'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
+def SSPIRK1(m):
+    """ Construct the m-stage, first order unconditionally SSP 
+        Implicit Runge-Kutta method with smallest 
+        coefficient of z^2 (in the stability polynomial)
+
+        **Input**: m -- number of stages
+        **Output**: A RungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> ISSP41=SSPIRK1(4)
+            >>> ISSP41
+
+            SSPIRK41
+
+             0.250 |  0.250  0.000  0.000  0.000
+             0.500 |  0.250  0.250  0.000  0.000
+             0.750 |  0.250  0.250  0.250  0.000
+             1.000 |  0.250  0.250  0.250  0.250
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+    """
+    A=np.tri(m)/m
+    b=np.ones(m)/m
+    name='SSPIRK'+str(m)+'1'
+    return RungeKuttaMethod(A,b,name=name)
+
+
 def SSPIRK2(m):
     """ Construct the optimal m-stage, second order SSP 
         Implicit Runge-Kutta method (m>=2).
@@ -1274,6 +1358,245 @@ if __name__== "__main__":
     RK=loadRKM()
 
 
+def RKC1(m,eps=0):
+    """ Construct the m-stage, first order 
+        Explicit Runge-Kutta-Chebyshev methods of Verwer (m>=1).
+
+        **Input**: m -- number of stages
+        **Output**: A ExplicitRungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> RKC41=RKC1(4)
+            >>> RKC41
+
+            RKC41
+
+             0.000 |  0.000  0.000  0.000  0.000
+             0.333 |  0.333  0.000  0.000  0.000
+             0.667 |  0.333  0.333  0.000  0.000
+             1.000 |  0.333  0.333  0.333  0.000
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+
+        **References**: 
+            #. [verwer2004]_
+    """
+
+    import scipy.special.orthogonal as orth
+
+    Tm=orth.chebyt(m)
+    w0=1.+eps/m**2
+    w1=Tm(w0)/Tm.deriv()(w0)
+
+    alpha=np.zeros([m+1,m])
+    beta=np.zeros([m+1,m])
+
+    b=np.zeros(m+1)
+    a=np.zeros(m+1)
+    mu=np.zeros(m+1)
+    nu=np.zeros(m+1)
+    mut=np.zeros(m+1)
+    gamt=np.zeros(m+1)
+
+    b[0]=1.
+    b[1]=1./w0
+    mut[1] = b[1]*w1
+    alpha[1,0]=1.
+    beta[1,0]=mut[1]
+
+    for j in range(2,m+1):
+      b[j] = 1./orth.eval_chebyt(j,w0)
+      a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
+      mu[j]= 2.*b[j]*w0/b[j-1]
+      nu[j]= -b[j]/b[j-2]
+      mut[j] = mu[j]*w1/w0
+      gamt[j] = -a[j-1]*mut[j]
+
+      alpha[j,0]=1.-mu[j]-nu[j]
+      alpha[j,j-1]=mu[j]
+      alpha[j,j-2]=nu[j]
+      beta[j,j-1]=mut[j]
+      beta[j,0]=gamt[j]
+
+    name='RKC'+str(m)+'1'
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+
+def RKC2(m,eps=0):
+    """ Construct the m-stage, second order 
+        Explicit Runge-Kutta-Chebyshev methods of Verwer (m>=2).
+
+        **Input**: m -- number of stages
+        **Output**: A ExplicitRungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> RKC42=RKC2(4)
+            >>> RKC42
+
+            RKC42
+
+             0.000 |  0.000  0.000  0.000  0.000
+             0.333 |  0.333  0.000  0.000  0.000
+             0.667 |  0.333  0.333  0.000  0.000
+             1.000 |  0.333  0.333  0.333  0.000
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+
+        **References**: 
+            #. [verwer2004]_
+    """
+
+    import scipy.special.orthogonal as orth
+
+    Tm=orth.chebyt(m)
+    w0=1.+eps/m**2
+    w1=Tm.deriv()(w0)/Tm.deriv(2)(w0)
+
+    alpha=np.zeros([m+1,m])
+    beta=np.zeros([m+1,m])
+
+    b=np.zeros(m+1)
+    a=np.zeros(m+1)
+    mu=np.zeros(m+1)
+    nu=np.zeros(m+1)
+    mut=np.zeros(m+1)
+    gamt=np.zeros(m+1)
+
+    T2=orth.chebyt(2)
+    b[0]=T2.deriv(2)(w0)/(T2.deriv()(w0))**2
+    b[1]=1./w0
+    mut[1] = b[1]*w1
+    alpha[1,0]=1.
+    beta[1,0]=mut[1]
+
+    for j in range(2,m+1):
+      Tj=orth.chebyt(j)
+      b[j] = Tj.deriv(2)(w0)/(Tj.deriv()(w0))**2
+      a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
+      mu[j]= 2.*b[j]*w0/b[j-1]
+      nu[j]= -b[j]/b[j-2]
+      mut[j] = mu[j]*w1/w0
+      gamt[j] = -a[j-1]*mut[j]
+
+      alpha[j,0]=1.-mu[j]-nu[j]
+      alpha[j,j-1]=mu[j]
+      alpha[j,j-2]=nu[j]
+      beta[j,j-1]=mut[j]
+      beta[j,0]=gamt[j]
+
+    name='RKC'+str(m)+'1'
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+def dcweights(x):
+    """
+      Takes a set of abscissae x and an index i, and returns
+      the quadrature weights for the interval [x_i,x_{i+1}].
+      Used in construction of deferred correction methods.
+    """
+
+    #Form the vanderMonde matrix:
+    A=np.vander(x).T
+    A=A[::-1,:]
+    F=0*A
+    n=np.arange(len(x))+1
+    for i in range(len(x)-1):
+        a=x[i]; b=x[i+1];
+        f=(b**n-a**n)/n
+        F[:,i]=f
+    w=np.linalg.solve(A,F)
+
+    return w
+
+def DC(s,theta=0.,grid='eq'):
+    """ Construct deferred correction methods.
+        For now, based on explicit Euler and equispaced points.
+        TODO: generalize base method and grid.
+
+        **Input**: s -- number of grid points & number of correction iterations
+
+        **Output**: A ExplicitRungeKuttaMethod
+
+        **Examples**::
+            
+        **References**: 
+            #. [dutt2000]_
+            #. [gottlieb2009]_
+    """
+
+    # Choose the grid:
+    if grid=='eq':
+        t=np.linspace(0.,1.,s+1) # Equispaced
+    elif grid=='cheb':
+        t=0.5*(np.cos(np.arange(0,s+1)*np.pi/s)+1.)  #Chebyshev
+        t=t[::-1]
+    dt=np.diff(t)
+
+    m=s
+    alpha=np.zeros([s**2+m+1,s**2+m])
+    beta=np.zeros([s**2+m+1,s**2+m])
+
+    w=dcweights(t)       #Get the quadrature weights for our grid
+                         #w[i,j] is the weight of node i for the integral
+                         #over [x_j,x_j+1]
+
+    #first iteration (k=1)
+    for i in range(1,s+1):
+        alpha[i,i-1]=1.
+        beta[i,i-1]=dt[i-1]
+
+    #subsequent iterations:
+    for k in range(1,s+1):
+        beta[s*k+1,0]=w[0,0]
+        for i in range(1,s+1):
+            alpha[s*k+1,0]=1.
+            beta[s*k+1,s*(k-1)+i]=w[i,0]
+
+        for m in range(1,s):
+            alpha[s*k+m+1,s*k+m] = 1.
+            beta[s*k+m+1,s*k+m] = theta
+            beta[s*k+m+1,0]=w[0,m]
+            for i in range(1,s+1):
+                beta[s*k+m+1,s*(k-1)+i]=w[i,m]
+                if i==m:
+                    beta[s*k+m+1,s*(k-1)+i]-=theta
+
+    name='DC'+str(s)*2
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+def SSPIRK1(m):
+    """ Construct the m-stage, first order unconditionally SSP 
+        Implicit Runge-Kutta method with smallest 
+        coefficient of z^2 (in the stability polynomial)
+
+        **Input**: m -- number of stages
+        **Output**: A RungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> ISSP41=SSPIRK1(4)
+            >>> ISSP41
+
+            SSPIRK41
+
+             0.250 |  0.250  0.000  0.000  0.000
+             0.500 |  0.250  0.250  0.000  0.000
+             0.750 |  0.250  0.250  0.250  0.000
+             1.000 |  0.250  0.250  0.250  0.250
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+    """
+    A=np.tri(m)/m
+    b=np.ones(m)/m
+    name='SSPIRK'+str(m)+'1'
+    return RungeKuttaMethod(A,b,name=name)
+
+
+
 
 
 def rk_order_conditions_hardcoded(self,p,tol):
@@ -1367,4 +1690,65 @@ def RKOCstr2code(ocstr):
     occode=occode+')'*len(factors)
     return occode
 
+def compose(RK1,RK2,h1=1,h2=1):
+    """ Multiplication is interpreted as composition:
+    RK1*RK2 gives the method obtained by applying
+    RK2, followed by RK1, each with half the timestep.
 
+    **Output**:
+        The method
+             c_2 | A_2  0
+           1+c_1 | b_2 A_1
+           _____________
+                 | b_2 b_1
+
+        but with everything divided by two.
+        The b_2 matrix block consists of m_1 (row) copies of b_2.
+
+
+    TODO: Think about whether this is the right thing to return.
+    """
+    f1=h1/(h1+h2)
+    f2=h2/(h1+h2)
+    A=np.vstack([
+    np.hstack([RK2.A*f2,np.zeros([np.size(RK2.A,0),np.size(RK1.A,1)])]),
+        np.hstack([np.tile(RK2.b*f2,(len(RK1),1)),RK1.A*f1])]).squeeze()
+    b=np.hstack([RK2.b*f2,RK1.b*f1]).squeeze()
+    return RungeKuttaMethod(A,b)
+
+def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
+                          color='r',filled=True,scaled=False):
+    r""" 
+        Plot the region of absolute stability
+        of a rational function i.e. the set
+
+        `\{ z \in C : |R (z)|\le 1 \}`
+
+            where $R(z)=p(z)/q(z)$ is the rational function.
+
+            **Input**: (all optional)
+                - N       -- Number of gridpoints to use in each direction
+                - bounds  -- limits of plotting region
+                - color   -- color to use for this plot
+                - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+    """
+    m=len(p)
+    print m
+    x=np.linspace(bounds[0],bounds[1],N)
+    y=np.linspace(bounds[2],bounds[3],N)
+    X=np.tile(x,(N,1))
+    Y=np.tile(y[:,np.newaxis],(1,N))
+    Z=X+Y*1j
+    if not scaled: R=np.abs(p(Z)/q(Z))
+    else: R=np.abs(p(Z*m)/q(Z*m))
+    #pl.clf()
+    if filled:
+        pl.contourf(X,Y,R,[0,1],colors=color)
+    else:
+        pl.contour(X,Y,R,[0,1],colors=color)
+    pl.hold(True)
+    pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+    pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+    pl.axis('Image')
+    pl.hold(False)
+    #pl.show()

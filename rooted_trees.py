@@ -502,8 +502,11 @@ def plot_all_trees(p):
     ncols=int(np.floor(np.sqrt(float(nplots))))
     if nrows*ncols<nplots: ncols=ncols+1
     for tree in forest:
-        ttitle=tsrk_elementary_weight_str(tree)+'-1/'+str(tree.density())
+        #ttitle=tsrk_elementary_weight_str(tree)+'-1/'+str(tree.density())
+        ttitle=tree
         tree.plot(nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
+    fig=pl.figure(1)
+    pl.setp(fig,facecolor='white')
 
 #=====================================================
 def recursive_trees(p,ind='all'):
