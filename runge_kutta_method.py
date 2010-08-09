@@ -104,6 +104,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
                     raise RungeKuttaError(
                      'Inconsistent dimensions of Butcher arrays')
         if alpha is not None: #Initialize with Shu-Osher arrays
+            self.alpha=alpha
+            self.beta=beta
             A,b=shu_osher_to_butcher(alpha,beta)
         # Set Butcher arrays
         if len(np.shape(A))==2: self.A=A
@@ -179,6 +181,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
             np.hstack([np.tile(RK2.b*f2,(len(self),1)),A1*f1])]).squeeze()
         b=np.hstack([RK2.b*f2,self.b*f1]).squeeze()
         return RungeKuttaMethod(A,b)
+
+    def remove_stage(self,stage):
+        """ Eliminate a stage of a Runge-Kutta method.
+            Typically used to reduce reducible methods.
+        """
+        stage=stage-1 #account for different indexing
+        A=np.delete(np.delete(self.A,stage,1),stage,0)
+        b=np.delete(self.b,stage)
+        c=np.delete(self.c,stage)
+        self.A=A
+        self.b=b
+        self.c=c
 
     def error_coefficient(self,tree):
         from numpy import dot
@@ -436,14 +450,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         p,q=self.stability_function()
         m=len(p)
-        print m
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))
         Y=np.tile(y[:,np.newaxis],(1,N))
         Z=X+Y*1j
-        if not scaled: R=np.abs(p(Z)/q(Z))
-        else: R=np.abs(p(Z*m)/q(Z*m))
+        if scaled: R=np.abs(p(Z*m)/q(Z*m))
+        else: R=np.abs(p(Z)/q(Z))
         #pl.clf()
         if filled:
             pl.contourf(X,Y,R,[0,1],colors=color)
@@ -1565,6 +1578,76 @@ def DC(s,theta=0.,grid='eq'):
                     beta[s*k+m+1,s*(k-1)+i]-=theta
 
     name='DC'+str(s)*2
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+
+def extrap(s,seq='harmonic'):
+    """ Construct extrapolation methods.
+        For now, based on explicit Euler, but allowing arbitrary sequences.
+        TODO: 
+            - generalize base method
+            - Eliminate the unnecessary stages, and make the construction
+                more numerically stable
+
+        **Input**: s -- number of grid points & number of correction iterations
+
+        **Output**: A ExplicitRungeKuttaMethod
+
+        **Examples**::
+            
+        **References**: 
+            #. [Hairer]_ chapter II.9
+    """
+
+    if seq=='harmonic': N=np.arange(s)+1; 
+    elif seq=='Romberg': N=np.arange(s)+1;  N=2**(N-1)
+
+    J=np.cumsum(N)+1
+
+    nrs = J[-1]
+
+    alpha=np.zeros([nrs+s*(s-1)/2.,nrs+s*(s-1)/2.-1])
+    beta=np.zeros([nrs+s*(s-1)/2.,nrs+s*(s-1)/2.-1])
+
+
+    alpha[1,0]=1.
+    beta[1,0]=1./N[0]
+
+    for j in range(1,len(N)):
+        #Form T_j1:
+        alpha[J[j-1],0] = 1.
+        beta[J[j-1],0]=1./N[j]
+
+        for i in range(1,N[j]):
+            alpha[J[j-1]+i,J[j-1]+i-1]=1.
+            beta[J[j-1]+i,J[j-1]+i-1]=1./N[j]
+    
+    #We have formed the T_j1
+    #Now form the rest
+    #
+    #Really there are no more "stages", and we could form T_ss directly
+    #but we need to work out the formula
+    #This is a numerically unstable alternative (fails for s>5)
+
+    for j in range(1,s):
+        #form T_{j+1,2}:
+        alpha[nrs-1+j,J[j]-1]=1.+1./(N[j]/N[j-1]-1.)
+        alpha[nrs-1+j,J[j-1]-1]=-1./(N[j]/N[j-1]-1.)
+
+    #Now form all the rest, up to T_ss
+
+    nsd = nrs-1+s
+    for k in range(2,s):
+        for ind,j in enumerate(range(k,s)):
+            #form T_{j+1,k+1}:
+            alpha[nsd+ind,nsd-(s-k)+ind] = 1+1./(N[j]/N[j-k]-1.)
+            alpha[nsd+ind,nsd-(s-k)+ind-1] = -1./(N[j]/N[j-k]-1.)
+        nsd += s-k
+
+    print alpha
+    print beta
+
+    name='extrap'+str(s)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
 def SSPIRK1(m):
