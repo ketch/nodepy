@@ -758,22 +758,22 @@ def recursiveVectors(p,ind='all'):
   """
   W=[[],[]]
   R=[[],[]]
-  R.append(["gamma[2]"])
-  W.append(["gamma[2]"])
+  R.append(["tau[2]"])
+  W.append(["tau[2]"])
   for i in range(3,p):
      #Construct R[i]
-     R.append(["gamma["+str(i)+"]"])
+     R.append(["tau["+str(i)+"]"])
      for j in range(len(W[i-1])):
         R[i].append("A,"+W[i-1][j])
      #Construct W[i]
      #l=0:
      W.append(R[i][:])
      for l in range(1,i-1): #level 1
-        ps=powerString("D",l,trailchar=",")
+        ps=powerString("C",l,trailchar=",")
         for j in range(len(R[i-l])):
           W[i].append(ps+R[i-l][j])
      for l in range(0,i-3): #level 2
-        ps=powerString("D",l,trailchar=",")
+        ps=powerString("C",l,trailchar=",")
         for n in range(2,i-l-1):
           m=i-n-l
           if m<=n: #Avoid duplicate conditions
@@ -782,7 +782,7 @@ def recursiveVectors(p,ind='all'):
                 for Rn in R[n][lowlim:]:
                   W[i].append(ps+Rm+"*"+Rn)
      for l in range(0,i-5): #level 3
-        ps=powerString("D",l,trailchar=",")
+        ps=powerString("C",l,trailchar=",")
         for n in range(2,i-l-3):
           for m in range(2,i-l-n-1):
              s=i-m-n-l
@@ -794,7 +794,7 @@ def recursiveVectors(p,ind='all'):
                      for Rs in R[s][lowlim2:]:
                         W[i].append(ps+Rm+"*"+Rn+"*"+Rs)
      for l in range(0,i-7): #level 4
-        ps=powerString("D",l,trailchar=",")
+        ps=powerString("C",l,trailchar=",")
         for n in range(2,i-l-5):
           for m in range(2,i-l-n-3):
              for s in range(2,i-l-n-m-1):

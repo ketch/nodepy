@@ -264,12 +264,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
             TODO: Decide on something and fill in this docstring.
         """
         A,b,c=self.A,self.b,self.c
-        D=np.diag(c)
+        C=np.diag(c)
         code=runge_kutta_order_conditions(p)
         z=np.zeros(len(code)+1)
-        gamma=np.zeros([p,len(self)])
+        tau=np.zeros([p,len(self)])
         for j in range(1,p):
-            gamma[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
+            tau[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
         for i in range(len(code)):
             exec('z[i]='+code[i])
         z[-1]=np.dot(b,c**(p-1))-1./p
@@ -538,11 +538,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
             **References**:
                 #. [kraaijevanger1991]
         """
+        s=len(self)
         K=np.vstack([self.A,self.b])
-        X=np.eye(len(self))+r*self.A
-        beta=np.linalg.solve(X.T,K.T).T
-        ech=np.linalg.solve(X,np.ones(len(self)))
-        if beta.min()<-tol or ech.min()<-tol:
+        K=np.hstack([K,np.zeros([s+1,1])])
+        X=np.eye(s+1)+r*K
+        if abs(np.linalg.det(X))<tol: return 0
+        beta_r=np.linalg.solve(X,K)
+        v_r_sum = np.dot(np.eye(s+1)-r*beta_r,np.ones([s+1,1]))
+        if beta_r.min()<-tol or v_r_sum.min()<-tol:
             return 0
         else:
             return 1
@@ -755,9 +758,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         D=np.diag(c)
         code=runge_kutta_order_conditions(p)
         z=np.zeros(len(code)+1)
-        gamma=np.zeros([p,len(self)])
+        tau=np.zeros([p,len(self)])
         for j in range(1,p):
-            gamma[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
+            tau[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
         for i in range(len(code)):
             exec('z[i]='+code[i])
         z[-1]=np.dot(b,c**(p-1))-1./p
