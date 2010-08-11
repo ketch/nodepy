@@ -870,9 +870,8 @@ def elementary_weight(tree):
     ew=b*tree.Gprod(rt.RKeta,rt.Dmap)
     return ew
 
-def elementary_weight_str(tree,style='pythoncode'):
+def elementary_weight_str(tree,style='python'):
     from strmanip import collect_powers, mysimp
-    from python2matlab import python_to_matlab
     """
         Constructs Butcher's elementary weights for a Runge-Kutta method
         as strings suitable for numpy execution.
@@ -881,7 +880,7 @@ def elementary_weight_str(tree,style='pythoncode'):
     ewstr=ewstr.replace('1*','')
     ewstr=collect_powers(ewstr,'c')
     ewstr=mysimp(ewstr)
-    #ewstr=python_to_matlab(ewstr)
+    if style=='matlab': ewstr=python_to_matlab(ewstr)
     return ewstr
 
 def discrete_adjoint(meth):
@@ -1838,3 +1837,22 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
     pl.axis('Image')
     pl.hold(False)
     #pl.show()
+
+def python_to_matlab(code):
+    r"""
+        Convert python code string (order condition) to matlab code string
+        Doesn't really work yet.  We need to do more parsing.
+    """
+    print code
+    outline=code
+    outline=outline.replace("**",".^")
+    outline=outline.replace("*",".*")
+    outline=outline.replace("dot(b,","b'*(")
+    outline=outline.replace("dot(bhat,","bhat'*(")
+    outline=outline.replace("dot(Ahat,","Ahat*(")
+    outline=outline.replace("dot(A,","(A*(")
+    outline=outline.replace("( c)","c")
+    outline=outline.replace("-0","")
+    print outline
+    print '******************'
+    return outline
