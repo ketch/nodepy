@@ -9,19 +9,21 @@ Plotting trees
 ==============
 
 .. plot::
+   :include-source:
 
-    >>> from CanoPy.rooted_trees import *
-    >>> tree=RootedTree('{T^2{T{T}}{T}}')
-    >>> tree.plot()
+   from NodePy.rooted_trees import *
+   tree=RootedTree('{T^2{T{T}}{T}}')
+   tree.plot()
 
 .. plot::
+   :include-source:
 
-    >>> from CanoPy.rooted_trees import *
-    >>> plot_all_trees(5)
+   from NodePy.rooted_trees import *
+   plot_all_trees(5)
 
 
 
-.. automethod:: CanoPy.rooted_trees.RootedTree.plot
+.. automethod:: NodePy.rooted_trees.RootedTree.plot
 
 Computing products on trees
 ===========================

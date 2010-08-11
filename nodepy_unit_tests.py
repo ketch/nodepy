@@ -1,6 +1,6 @@
 """
-Unit tests for the Panos package.
-This needs to be updated to NodePy.:
+Unit tests for NodePy.
+This needs to be updated.
 """
 import linear_multistep_method as lmm
 import runge_kutta_method as rk
@@ -57,7 +57,7 @@ class RKStageOrderTest(RungeKuttaTestCase):
 
     def runTest(self):
         for method, stageorder in self.knownValues:
-            self.assertEqual(self.RKs[method].stageOrder(),stageorder)
+            self.assertEqual(self.RKs[method].stage_order(),stageorder)
 
 class RKAmradTest(RungeKuttaTestCase):
     knownValues = ( ('FE11',1),
@@ -70,7 +70,7 @@ class RKAmradTest(RungeKuttaTestCase):
 
     def runTest(self):
         for method, SSPCoefficient in self.knownValues:
-            self.assertAlmostEqual(self.RKs[method].absoluteMonotonicityRadius(),SSPCoefficient,9)
+            self.assertAlmostEqual(self.RKs[method].absolute_monotonicity_radius(),SSPCoefficient,9)
 
 class linAmradTest(RungeKuttaTestCase):
     knownValues = ( ('FE11',1),
@@ -83,7 +83,7 @@ class linAmradTest(RungeKuttaTestCase):
 
     def runTest(self):
         for method, R in self.knownValues:
-            self.assertAlmostEqual(self.RKs[method].linearAbsoluteMonotonicityRadius(),R,5)
+            self.assertAlmostEqual(self.RKs[method].linear_absolute_monotonicity_radius(),R,3)
 
 if __name__== "__main__":
     ut.main()

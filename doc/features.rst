@@ -1,11 +1,11 @@
 ================
-CanoPy Features
+NodePy Features
 ================
 
 Types of Methods Included
 ==========================
 
-CanoPy includes classes for the following types of methods:
+NodePy includes classes for the following types of methods:
     - :ref:`Linear Multistep Methods <create_lmm>`
     - :ref:`Runge-Kutta Methods <create_rkm>`
     - :ref:`Two-step Runge-Kutta Methods <create_tsrkm>`
@@ -15,7 +15,7 @@ CanoPy includes classes for the following types of methods:
 Properties Included
 ===================
 
-CanoPy includes methods for analyzing many properties, including:
+NodePy includes methods for analyzing many properties, including:
     - Stability:
         - Absolute stability
         - Strong stability preservation
