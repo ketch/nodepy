@@ -13,8 +13,8 @@ class GeneralLinearMethod(ODESolver):
         Generate a list of order conditions up to order p 
         """
 
-        forest=tt.recursiveTrees(0)
-        for i in range(1,p+1): forest+=tt.recursiveTrees(i)
+        forest=tt.recursive_trees(0)
+        for i in range(1,p+1): forest+=tt.recursive_trees(i)
         oc={tt.RootedTree(''):''}
         for tree in forest[1:]:
             oc[tree]=self.elementary_weight(tree)-tree.Emap()

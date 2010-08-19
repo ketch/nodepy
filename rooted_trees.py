@@ -30,7 +30,7 @@ import numpy as np
 import pylab as pl
 from sympy import Symbol, factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
-from nodepy_utils import permutations
+from utils import permutations
 from strmanip import *
 
 #=====================================================

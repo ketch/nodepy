@@ -19,7 +19,7 @@ from strmanip import *
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
     """ General class for Two-step Runge-Kutta Methods """
-    def __init__(self,d,theta,Ahat,A,bhat,b,name='Two-step Runge-Kutta Method'):
+    def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='Type II',name='Two-step Runge-Kutta Method'):
         r"""
             Initialize a 2-step Runge-Kutta method.  The representation
             uses the form and notation of [Jackiewicz1995]_.
@@ -31,8 +31,21 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             \\end{align*}
 
         """
-        self.d,self.theta,self.Ahat,self.A,self.bhat,self.b=d,theta,Ahat,A,bhat,b
+        self.s = max(np.shape(b))
+        self.d,self.theta,self.A,self.b = d,theta,A,b
+        self.Ahat,self.bhat=Ahat,bhat
+        #if type=='General': self.Ahat,self.bhat=Ahat,bhat
+        #elif type=='Type I':
+        #    self.Ahat = np.zeros([self.s,self.s])
+        #    self.bhat = np.zeros([self.s,1])
+        #elif type=='Type II':
+        #    self.Ahat = np.zeros([self.s,self.s])
+        #    self.Ahat[:,0]=Ahat
+        #    self.bhat = np.zeros([self.s,1])
+        #    self.bhat[0]=bhat
+        #else: raise TwoStepRungeKuttaError('Unrecognized type')
         self.name=name
+        self.type=type
 
     def order(self,tol=1.e-13):
         r""" 
@@ -42,11 +55,11 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         """
         p=0
         while True:
-            z=self.orderConditions(p+1)
+            z=self.order_conditions(p+1)
             if np.any(abs(z)>tol): return p
             p=p+1
 
-    def orderConditions(self,p):
+    def order_conditions(self,p):
         r"""
             Evaluate the order conditions corresponding to rooted trees
             of order $p$.
@@ -54,14 +67,19 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             **Output**:
                 - A vector $z$ of residuals (the amount by which each
                   order condition is violated)
+
+            TODO: Implement simple order conditions (a la Albrecht)
+                    for Type I & II TSRKs
         """
         from numpy import dot
         d,theta,Ahat,A,bhat,b=self.d,self.theta,self.Ahat,self.A,self.bhat,self.b
-        e=np.ones(len(d))
+        e=np.ones([len(b),1])
+        b=b.T; bhat=bhat.T
         c=dot(Ahat+A,e)-d
         code=TSRKOrderConditions(p)
         z=np.zeros(len(code))
         for i in range(len(code)):
+            exec('yy='+code[i])
             exec('z[i]='+code[i])
             #print p,z
         return z
@@ -75,11 +93,22 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 
             **Output**:
                 M -- stability matrix evaluated at z
+
+            WARNING: This only works for Type I & Type II methods
+            right now!!!
         """
-        D=np.vstack([1.-self.d,self.d]).T #This may need to be reversed l/r
+        D=np.hstack([1.-self.d,self.d]) 
         thet=np.hstack([1.-self.theta,self.theta])
-        M1=np.linalg.solve(np.eye(len(self.b))-z*self.A,D+z*self.Ahat)
-        L1=thet+z*self.bhat+z*np.dot(self.b,M1)
+        A,b=self.A,self.b
+        if self.type=='Type II':
+            ahat = np.zeros([self.s,1]); ahat[:,0] = self.Ahat[:,0]
+            bh = np.zeros([1,1]); bh[0,0]=self.bhat[0]
+            A=np.hstack([ahat,self.A])
+            A=np.vstack([np.zeros([1,self.s+1]),A])
+            b =  np.vstack([bh,self.b])
+
+        M1=np.linalg.solve(np.eye(self.s)-z*self.A,D)
+        L1=thet+z*np.dot(self.b.T,M1)
         M=np.vstack([L1,[1.,0.]])
         return M
 
@@ -123,6 +152,84 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         pl.axis('Image')
         pl.hold(False)
 
+    def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
+                    tol=3.e-16):
+        r""" 
+            Returns the radius of absolute monotonicity
+            of a TSRK method.
+        """
+        from utils import bisect
+        r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
+        return r
+
+    def spijker_form(self):
+        r""" Returns arrays $S,T$ such that the TSRK can be written
+            $$ w = S x + T f(w),$$
+            and such that $\[S \ \ T\]$ has no two rows equal.
+        """
+        s=self.s
+        if self.type=='General':
+           z0=np.zeros([s,1])
+           z00=np.zeros([1,1])
+           T3 = np.hstack([self.Ahat,z0,self.A,z0])
+           T4 = np.hstack([self.bhat.T,z00,self.b.T,z00])
+           T = np.vstack([np.zeros([s+1,2*s+2]),T3,T4])
+           S1 = np.hstack([np.zeros([s+1,1]),np.eye(s+1)])
+           S2 = np.hstack([self.d,np.zeros([s,s]),1-self.d])
+           S3 = np.hstack([[[self.theta]],np.zeros([1,s]),[[1-self.theta]]])
+           S = np.vstack([S1,S2,S3])
+
+        elif self.type=='Type I':
+           K = np.vstack([self.A,self.b.T])
+           T2 = np.hstack([np.zeros([s+1,1]),K,np.zeros([s+1,1])])
+           T =  np.vstack([np.zeros([1,s+1]),T2])
+           S1 = np.vstack([np.zeros([1,1]),self.d,np.array([[self.theta]])])
+           S2 = np.vstack([np.zeros([1,1]),1-self.d,np.array([[1-self.theta]])])
+           S = np.hstack([S1,S2])
+
+        elif self.type=='Type II':
+           S0 = np.array([1,0])
+           S1 = np.hstack([self.d,1-self.d])
+           S2 = np.array([self.theta,1-self.theta])
+           S =  np.vstack([S0,S1,S2])
+           ahat = np.zeros([s,1])
+           ahat[:,0] = self.Ahat[:,0]
+           bh = np.zeros([1,1])
+           bh[0,0]=self.bhat[0]
+           T0 = np.zeros([1,s+2])
+           T1 =  np.hstack([ahat,self.A,np.zeros([s,1])])
+           T2 =  np.hstack([bh,self.b.T,np.zeros([1,1])])
+           T = np.vstack([T0,T1,T2])
+           
+        return S,T
+
+    def is_absolutely_monotonic(self,r,tol):
+        r""" Returns 1 if the TSRK method is absolutely monotonic
+            at $z=-r$.
+
+            The method is absolutely monotonic if $(I+rT)^{-1}$ exists
+            and
+            $$(I+rT)^{-1}T \\ge 0$$
+            $$(I+rT)^{-1}S \\ge 0$$
+
+            The inequalities are interpreted componentwise.
+
+            **References**:
+                #. [spijker2007]
+        """
+        S,T = self.spijker_form()
+        m=np.shape(T)[0]
+        X=np.eye(m)+r*T
+        if abs(np.linalg.det(X))<tol: return 0
+        P = np.linalg.solve(X,T)
+        R = np.linalg.solve(X,S)
+        if P.min()<-tol or R.min()<-tol:
+            return 0
+        else:
+            return 1
+        # Need an exception here if rhi==rmax
+
+
 
 #================================================================
 # Functions for analyzing Two-step Runge-Kutta order conditions
@@ -165,13 +272,13 @@ def loadTSRK(which='All'):
     """
     TSRK={}
     #================================================
-    d=np.array([-113./88,-103./88])
+    d=np.array([[-113./88,-103./88]]).T
     theta=-4483./8011
     Ahat=np.array([[1435./352,-479./352],[1917./352,-217./352]])
     A=np.eye(2)
-    bhat=np.array([180991./96132,-17777./32044])
-    b=np.array([-44709./32044,48803./96132])
-    TSRK['order4']=TwoStepRungeKuttaMethod(d,theta,Ahat,A,bhat,b)
+    bhat=np.array([[180991./96132,-17777./32044]]).T
+    b=np.array([[-44709./32044,48803./96132]]).T
+    TSRK['order4']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat)
     #================================================
     d=np.array([-0.210299,-0.0995138])
     theta=-0.186912
@@ -179,8 +286,50 @@ def loadTSRK(which='All'):
     A=np.zeros([2,2])
     bhat=np.array([1.45338,0.248242])
     b=np.array([-0.812426,-0.0761097])
-    TSRK['order5']=TwoStepRungeKuttaMethod(d,theta,Ahat,A,bhat,b)
+    TSRK['order5']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat)
     if which=='All': return TSRK
     else: return TSRK[which]
 
 
+#=====================================================
+class TwoStepRungeKuttaError(Exception):
+#=====================================================
+    """
+        Exception class for Two-step Runge Kutta methods.
+    """
+    def __init__(self,msg='Two-step Runge Kutta Error'):
+        self.msg=msg
+
+    def __str__(self):
+        return self.msg
+#=====================================================
+
+def load_type2_TSRK(s,p,type='Type II'):
+    r"""
+    Load a TSRK method from its coefficients in an ASCII file
+    (usually from MATLAB).  The coefficients are stored in the 
+    following order: [s d theta A b Ahat bhat].
+    """
+    path='/Users/ketch/Research/Projects/MRK/methods/TSRK/'
+    file=path+'explicitzr'+str(s)+str(p)+'.tsrk'
+    f=open(file,'r')
+    coeff=[]
+    for line in f:
+        for word in line.split():
+            coeff.append(float(word))
+
+    s=int(coeff[0])
+    A=np.zeros([s,s])
+    Ahat=np.zeros([s,s])
+    b=np.zeros([s,1])
+    bhat=np.zeros([s,1])
+
+    d=np.array(coeff[1:s+1],ndmin=2).T
+    theta = coeff[s+1]
+    for row in range(s):
+        A[row,:] = coeff[s+2+s*row:s+2+s*(row+1)]
+    b = np.array(coeff[s**2+s+2:s**2+2*s+2],ndmin=2).T
+    for row in range(s):
+        Ahat[row,:] = coeff[s**2+2*s+2+s*row:s**2+2*s+2+s*(row+1)]
+    bhat = np.array(coeff[2*s**2+2*s+2:2*s**2+3*s+2],ndmin=2).T
+    return TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat,type=type)

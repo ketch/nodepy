@@ -337,8 +337,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         if r is None: r=self.absolute_monotonicity_radius()
         K=np.vstack([self.A,self.b])
-        X=np.eye(len(self))+r*self.A
-        beta=np.linalg.solve(X.T,K.T).T
+        K=np.hstack([K,np.zeros([s+1,1])])
+        X=np.eye(s+1)+r*K
+        beta=np.linalg.solve(X,K)
+        beta=beta[:,:-1]
         alpha=r*beta
         for i in range(1,len(self)+1):
             alpha[i,0]=1.-np.sum(alpha[i,1:])
@@ -370,6 +372,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Returns the radius of circle contractivity
             of a Runge-Kutta method.
         """
+        from utils import bisect
+
         tol=1.e-14
         r=bisect(0,rmax,acc,tol,self.is_circle_contractive)
         return r
@@ -380,6 +384,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Returns the radius of absolute monotonicity
             of a Runge-Kutta method.
         """
+        from utils import bisect
+
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
 
@@ -388,6 +394,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
           Computes Horvath's monotonicity radius of the stability
           function.  Not sure yet if this is M_lin of the method.
       """
+      from utils import bisect
+
       p,q=self.stability_function()
       #First check extreme cases
       if p.order>q.order: return 0
@@ -551,7 +559,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             return 1
         # Need an exception here if rhi==rmax
 
-    def spijker_form(self,r):
+    def canonical_shu_osher_form(self,r):
         r""" Return d,P where P isthe matrix P=r(I+rK)^{-1}K 
              and d is the vector d=(I+rK)^{-1}e=(I-P)e
         """
@@ -566,7 +574,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def split(self,r,tol=1.e-15):
         s=len(self)
         I=np.eye(s+1)
-        d,P=self.spijker_form(r)
+        d,P=self.canonical_shu_osher_form(r)
         alpha=P*(P>0)
         alphatilde=-P*(P<0)
         x=np.dot(np.linalg.inv(I-alphatilde),2*alphatilde)
@@ -590,6 +598,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Return the optimal downwind splitting of the method
             along with the optimal downwind SSP coefficient.
         """
+        from utils import bisect
+
         r=bisect(0,rmax,acc,tol,self.is_splittable)
         d,alpha,alphatilde=self.split(r,tol=tol)
         return r,d,alpha,alphatilde
@@ -894,23 +904,6 @@ def discrete_adjoint(meth):
             #A[i,j]=meth.A[j,i]*b[j]/b[i]
             A[i,j]=(b[i]*b[j]-meth.A[j,i]*b[j])/b[i]
     return RungeKuttaMethod(A,b)
-
-def bisect(rlo, rhi, acc, tol, fun, params=None):
-    """ 
-        Performs a bisection search.
-
-        **Input**:
-            - fun -- a function such that fun(r)==True iff x_0>r, where x_0 is the value to be found.
-    """
-    while rhi-rlo>acc:
-        r=0.5*(rhi+rlo)
-        if params: isvalid=fun(r,tol,params)
-        else: isvalid=fun(r,tol)
-        if isvalid:
-            rlo=r
-        else:
-            rhi=r
-    return rlo
 
 def is_absolutely_monotonic_poly(r,tol,p):
     """ 
