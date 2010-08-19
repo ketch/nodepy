@@ -12,7 +12,6 @@ from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import numpy as np
 import rooted_trees as tt
-from sympy import Symbol
 from strmanip import *
 
 #=====================================================
@@ -250,6 +249,7 @@ def tsrk_elementary_weight(tree):
         Constructs Butcher's elementary weights 
         for Two-step Runge-Kutta methods
     """
+    from sympy import Symbol
     bhat,b,theta=Symbol('bhat',False),Symbol('b',False),Symbol('theta',False)
     ew=bhat*tree.Gprod(tt.Emap,tt.Gprod,betaargs='TSRKeta,Dmap',alphaargs='-1')+b*tree.Gprod(tt.TSRKeta,tt.Dmap)+theta*tree.Emap(-1)
     return ew
