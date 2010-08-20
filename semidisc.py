@@ -4,10 +4,10 @@ Functions related to semi-discretizations of PDEs
 
 import numpy as np
 
-class SemiDiscretization(ODE):
+class SemiDiscretization(IVP):
     """
         Class for semi-discretizations of PDEs.
-        Inherits from ODE, but also has boundary conditions.
+        Inherits from IVP, but also has boundary conditions.
     """
 
 class Advection(SemiDiscretization):

@@ -30,7 +30,7 @@ class RungeKuttaTestCase(ut.TestCase):
         self.RKs=rk.loadRKM()
 
 class RKOrderTest(RungeKuttaTestCase):
-    knownValues = ( ('FE11',1),
+    knownValues = ( ('FE',1),
             ('SSP22',2),
             ('SSP33',3),
             ('Mid22',2),
@@ -45,7 +45,7 @@ class RKOrderTest(RungeKuttaTestCase):
             self.assertEqual(self.RKs[method].order(),order)
 
 class RKStageOrderTest(RungeKuttaTestCase):
-    knownValues = ( ('FE11',1),
+    knownValues = ( ('FE',1),
             ('SSP22',1),
             ('SSP33',1),
             ('Mid22',1),
@@ -60,7 +60,7 @@ class RKStageOrderTest(RungeKuttaTestCase):
             self.assertEqual(self.RKs[method].stage_order(),stageorder)
 
 class RKAmradTest(RungeKuttaTestCase):
-    knownValues = ( ('FE11',1),
+    knownValues = ( ('FE',1),
             ('SSP22',1),
             ('SSP33',1),
             ('Mid22',0),
@@ -73,7 +73,7 @@ class RKAmradTest(RungeKuttaTestCase):
             self.assertAlmostEqual(self.RKs[method].absolute_monotonicity_radius(),SSPCoefficient,9)
 
 class linAmradTest(RungeKuttaTestCase):
-    knownValues = ( ('FE11',1),
+    knownValues = ( ('FE',1),
             ('SSP22',1),
             ('SSP33',1),
             ('Mid22',1),

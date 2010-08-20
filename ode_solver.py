@@ -11,6 +11,7 @@ class ODESolver:
             f(t,u(t)) up to t=T using the solver.
         """
         u=[u0]
+        if not isinstance(T,list): T=[T]
         if len(T)==2: t0=T[0]
         else: t0=0
         t=[t0]

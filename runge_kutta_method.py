@@ -640,6 +640,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             Returns the radius of absolute monotonicity
             of the stability function of a Runge-Kutta method.
         """
+        from utils import bisect
         p,q=self.stability_function()
         if q.order!=0 or q[0]!=1:
             print q
