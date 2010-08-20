@@ -1,13 +1,13 @@
 from numpy import exp, sin, cos
 
-class ODE:
+class IVP:
     """
-        Class for ordinary differential equations (semi-discretizations
-        of partial differential equations.
+        Class for ordinary differential equations initial value
+        problems.
     """
 
 # Some simple functions for convergence testing
-class exp_fun(ODE):
+class exp_fun(IVP):
     def __init__(self,u0=1):
         self.u0=u0
     def rhs(self,t,u):
@@ -15,7 +15,7 @@ class exp_fun(ODE):
     def exact(self,t):
         return self.u0*exp(t)
 
-class nlsin_fun(ODE):
+class nlsin_fun(IVP):
     def __init__(self,u0=1):
         self.u0=u0
     def rhs(self,t,u):

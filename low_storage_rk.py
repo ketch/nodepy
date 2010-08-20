@@ -289,7 +289,9 @@ def load_LSRK(file,lstype='2S'):
 
 def load_2R(name):
     """
-        Loads the 2R method of Tselios & Simos (2007).
+        Loads 2R low-storage methods.
+
+        TODO: fix broken methods below.
     """
     if name=='DDAS47':
         fullname='DDAS4()7[2R]'

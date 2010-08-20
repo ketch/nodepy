@@ -604,6 +604,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         d,alpha,alphatilde=self.split(r,tol=tol)
         return r,d,alpha,alphatilde
 
+    def is_explicit(self):
+        return False
 
 #=====================================================
 class ExplicitRungeKuttaMethod(RungeKuttaMethod):
@@ -672,6 +674,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                y[i]+=self.A[i,j]*dt*fy[j]
             if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
             else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
+        if m==1: i=0 #fix just for one-stage methods
         if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
         else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
         unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
@@ -712,6 +715,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         notok=np.where(vals>1.+eps)[0]
         if len(notok)==0: return z
         else: return zz[min(notok)]
+
+    def is_explicit(self):
+        return True
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
@@ -983,20 +989,37 @@ def loadRKM(which='All'):
     from numpy import sqrt
     """ 
         Load a set of standard Runge-Kutta methods for testing.
+        The following methods are included:
 
-        TODO: 
-            - Others?
+        Explicit:
+
+        'FE':         Forward Euler
+        'RK44':       Classical 4-stage 4th-order
+        'MTE22':      Minimal truncation error 2-stage 2nd-order
+        'Heun33':     Third-order method of Heun
+        'SSP22':      Trapezoidal rule 2nd-order
+        'DP5':        Dormand-Prince 5th-order
+        'Fehlberg45': 5th-order part of Fehlberg's pair
+        'Lambert65':
+
+        Implicit:
+
+        'BE':         Backward Euler
+        'GL2':        2-stage Gauss-Legendre
+        'GL3':        3-stage Gauss-Legendre
+
+        Also various Lobatto and Radau methods.
     """
     RK={}
     #================================================
     A=np.array([1])
     b=np.array([1])
-    RK['BE11']=RungeKuttaMethod(A,b,name='Implicit Euler')
+    RK['BE']=RungeKuttaMethod(A,b,name='Implicit Euler')
 
     #================================================
     A=np.array([0])
     b=np.array([1])
-    RK['FE11']=ExplicitRungeKuttaMethod(A,b,name='Forward Euler')
+    RK['FE']=ExplicitRungeKuttaMethod(A,b,name='Forward Euler')
 
     #================================================
     alpha=np.array([[0,0],[1.,0],[0.261583187659478,0.738416812340522]])
