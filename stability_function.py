@@ -1,5 +1,6 @@
 import numpy as np
 import pylab as pl
+
 def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
                 color=('w','b'),filled=True,subplot=None):
     r""" Plot the order star of a rational function
@@ -31,7 +32,7 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
     pl.plot([bounds[0],bounds[1]],[0,0],'--k')
     pl.axis('Image')
     pl.hold(False)
-    pl.show()
+    pl.draw()
 
 
 def pade_exp(k,j):

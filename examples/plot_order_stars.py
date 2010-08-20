@@ -1,6 +1,7 @@
-from pade import pade_exp
-from stability_function import plot_order_star
+from NodePy.stability_function import pade_exp
+from NodePy.stability_function import plot_order_star
 import pylab as pl
+
 P=range(5)
 Q=range(5)
 k=(5,4,4,0)

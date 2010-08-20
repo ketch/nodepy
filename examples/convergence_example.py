@@ -15,5 +15,3 @@ myivp=ivp.load_ivp('test')
 T=[0.,5.]
 
 cv.ctest([rk4,SSP2,SSP104],myivp,T)
-
-
