@@ -221,8 +221,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         A_qp2_max=max([abs(tau) for tau in tau_2])
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max
 
-    def principal_error_norm(self):
-        p=self.order(1.e-13)
+    def principal_error_norm(self,tol=1.e-13):
+        p=self.order(tol)
         forest=rt.recursive_trees(p+1)
         errs=[]
         for tree in forest:
@@ -892,16 +892,6 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         E_pp2_max=A_pp2_max/A_pp1_hat_max
 
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, A_pp1_hat, A_pp1_hat_max, B_pp2, B_pp2_max, C_pp2, C_pp2_max, D, E_pp2, E_pp2_max
-
-    def principal_error_norm(self):
-        p=self.order(1.e-13)
-        forest=rt.recursive_trees(p+1)
-        errs=[]
-        for tree in forest:
-            errs.append(self.error_coefficient(tree))
-        return np.sqrt(float(np.sum(np.array(errs)**2)))
-#        return max([abs(err) for err in errs])
-
 
 
 #=====================================================

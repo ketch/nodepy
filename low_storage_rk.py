@@ -17,10 +17,10 @@ from runge_kutta_method import *
 class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
 #=====================================================
     """
-        Class for 2R low-storage Runge-Kutta methods.
-        (van der Houwen)
+        Class for 2R/3R/4R low-storage Runge-Kutta methods.
+        (van der Houwen, Wray, Kennedy)
     """
-    def __init__(self,a,b,bhat,
+    def __init__(self,a,b,bhat,regs=2,
             name='2R Runge-Kutta Method',description=''):
         """
             Initializes the 2R method by storing the
@@ -33,9 +33,17 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
         m=len(b)
         self.A=np.zeros([m,m])
         for i in range(1,m):
-            for j in range(i-1):
+            for j in range(i-2):
                 self.A[i,j]=b[j]
-            self.A[i,i-1]=a[i-1]
+            if regs==2:
+                self.A[i,i-1]=a[i-1]
+            elif regs==3:
+                self.A[i  ,i-1]=a[0,i-1]
+                if i<m-1:
+                    self.A[i+1,i-1]=a[1,i-1]
+            elif regs==4:
+                #NEED TO FILL IN
+                pass
         self.c=np.sum(self.A,1)
         self.embmeth=ExplicitRungeKuttaMethod(self.A,self.bhat)
         self.name=name
@@ -328,6 +336,7 @@ def load_2R(name):
     elif name=='RK45[2R]C':
         fullname='RK4(3)5[2R+]C'
         descript='A 2R Method of Kennedy et. al.'
+        regs=2
         a=np.array([970286171893./4311952581923,
                     6584761158862./12103376702013,
                     2251764453980./15575788980749,
@@ -342,24 +351,37 @@ def load_2R(name):
                       -1563879915014./6823010717585,
                        606302364029./971179775848,
                        1097981568119./3980877426909])
-#    elif name=='RK58[3R]C':
-#        fullname='RK5(4)8[3R+]C'
-#        descript='A 3R Method of Kennedy et. al.'
-#        a=np.array([141236061735./3636543850841,
-#                    7367658691349./25881828075080,
-#                    6185269491390./13597512850793,
-#                    2669739616339./18583622645114,
-#                    42158992267337./9664249073111,
-#                    970532350048./4459675494195
-#                    
-#        b=np.array([1153189308089./22510343858157,
-#                    1772645290293./4653164025191,
-#                    -1672844663538./4480602732383,
-#                    2114624349019./3568978502595,
-#                    5198255086312./14908931495163])
-#        bhat=np.array([1016888040809./7410784769900,
-#                       11231460423587./58533540763752,
-#                      -1563879915014./6823010717585,
-#                       606302364029./971179775848,
-#                       1097981568119./3980877426909])
-    return TwoRRungeKuttaMethod(a,b,bhat,fullname,description=descript)
+    elif name=='RK58[3R]C':
+        fullname='RK5(4)8[3R+]C'
+        descript='A 3R Method of Kennedy et. al.'
+        regs=3
+        a=np.array([[141236061735./3636543850841,
+                    7367658691349./25881828075080,
+                    6185269491390./13597512850793,
+                    2669739616339./18583622645114,
+                    42158992267337./9664249073111,
+                    970532350048./4459675494195,
+                    1415616989537./7108576874996], #1st subdiagonal
+                  [-343061178215./2523150225462,
+                     -4057757969325./18246604264081,
+                      1415180642415./13311741862438,
+                     -93461894168145./25333855312294,
+                      7285104933991./14106269434317,
+                     -4825949463597./16828400578907,0.]]) #2nd subdiagonal
+        b=np.array([514862045033./4637360145389,
+                    0.,
+                    0.,
+                    0.,
+                    2561084526938./7959061818733,
+                    4857652849./7350455163355,
+                    1059943012790./2822036905401,
+                    2987336121747./15645656703944])
+        bhat=np.array([1269299456316./16631323494719,
+                       0.,
+                       2153976949307./22364028786708,
+                       2303038467735./18680122447354,
+                       7354111305649./15643939971922,
+                       768474111281./10081205039574,
+                       3439095334143./10786306938509,
+                       -3808726110015./23644487528593])
+    return TwoRRungeKuttaMethod(a,b,bhat,regs,fullname,description=descript)
