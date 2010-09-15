@@ -472,6 +472,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             pl.contour(X,Y,R,[0,1],colors=color)
         pl.title('Absolute Stability Region for '+self.name)
         pl.hold(True)
+        pl.plot(np.real(p.r),np.imag(p.r),'ok')
+        if len(q)>1: pl.plot(np.real(q.r),np.imag(p.r),'xk')
         pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         pl.axis('Image')
@@ -737,6 +739,56 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         the solution, while the lower order method is
         used to obtain an error estimate.
     """
+    def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,
+            name='Runge-Kutta Pair',description=''):
+        r"""
+            A Runge-Kutta Method is initialized by providing either:
+                #. Butcher arrays $A$ and $b$ with valid and consistent 
+                   dimensions; or
+                #. Shu-Osher arrays `\alpha` and `\beta` with valid and
+                   consistent dimensions 
+
+            but not both.
+
+            The Butcher arrays are used as the primary representation of
+            the method.  If Shu-Osher arrays are provided instead, the
+            Butcher arrays are computed by :ref:`shu_osher_to_butcher`.
+        """
+        # Here there is a danger that one could change A
+        # and c would never be updated
+        # Maybe A,b, and c should be accessible through a setter function?
+        a1,a2=A is not None, b is not None
+        a3,a4=alpha is not None, beta is not None
+        if not ( ( (a1 and a2) and not (a3 or a4) ) or
+                    ( (a3 and a4) and not (a1 or a2) ) ):
+            raise RungeKuttaError("""To initialize a Runge-Kutta method,
+                you must provide either Butcher arrays or Shu-Osher arrays,
+                but not both.""")
+        if A is not None: #Initialize with Butcher arrays
+            # Check that number of stages is consistent
+            m=np.size(A,0) # Number of stages
+            if m>1:
+                if not np.all([np.size(A,1),np.size(b)]==[m,m]):
+                   raise RungeKuttaError(
+                    'Inconsistent dimensions of Butcher arrays')
+            else:
+                if not np.size(b)==1:
+                    raise RungeKuttaError(
+                     'Inconsistent dimensions of Butcher arrays')
+        if alpha is not None: #Initialize with Shu-Osher arrays
+            self.alpha=alpha
+            self.beta=beta
+            A,b=shu_osher_to_butcher(alpha,beta)
+        # Set Butcher arrays
+        if len(np.shape(A))==2: self.A=A
+        else: self.A=np.array([A]) #Fix for 1-stage methods
+        self.b=b
+        self.bhat=bhat
+        self.c=np.sum(self.A,1)
+        self.name=name
+        self.info=description
+        self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
+
 
     def embedded_order(self,tol=1.e-14):
         """ 
@@ -772,7 +824,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             TODO: Decide on something and fill in this docstring.
         """
         A,b,c=self.A,self.bhat,self.c
-        D=np.diag(c)
+        C=np.diag(c)
         code=runge_kutta_order_conditions(p)
         z=np.zeros(len(code)+1)
         tau=np.zeros([p,len(self)])
@@ -1167,7 +1219,8 @@ def loadRKM(which='All'):
         [439./216,-8.,3680./513,-845./4104,0,0],
         [-8./27,2.,-3544./2565,1859./4104,-11./40,0]])
     b=np.array([16./135,0,6656./12825,28561./56430,-9./50,2./55])
-    RK['Fehlberg45']=ExplicitRungeKuttaMethod(A,b,name='Fehlberg RK45')
+    bhat=np.array([25./216,0.,1408./2565,2197./4104,-1./5,0.])
+    RK['Fehlberg45']=ExplicitRungeKuttaPair(A,b,bhat,name='Fehlberg RK45')
     #================================================
     A=np.array([[0,0,0,0,0,0,0],[1./5,0,0,0,0,0,0],[3./40,9./40,0,0,0,0,0],
         [44./45,-56/15,32./9,0,0,0,0],
@@ -1175,7 +1228,8 @@ def loadRKM(which='All'):
         [9017./3168,-355./33,46732./5247,49./176,-5103./18656,0,0],
         [35./384,0.,500./1113,125./192,-2187./6784,11./84,0]])
     b=np.array([35./384,0.,500./1113,125./192,-2187./6784,11./84,0])
-    RK['DP5']=ExplicitRungeKuttaMethod(A,b,name='Dormand-Prince RK75')
+    bhat=np.array([5179./57600,0.,7571./16695,393./640,-92097./339200,187./2100,1./40])
+    RK['DP5']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince RK75')
 
 
     if which=='All':
