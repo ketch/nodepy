@@ -14,8 +14,7 @@ class ODESolver:
         if not isinstance(T,list): T=[T]
         if len(T)==2: t0=T[0]
         else: t0=0
-        t=[t0]
-        t1=T[-1]
+        t=[t0]; t1=T[-1]
         if dt is None: dt=(t1-t0)/N
         while abs(t[-1]+dt-t1)>1.e-13: 
             if x is not None: u.append(self.__step__(f,t,u,dt,x=x))

@@ -33,22 +33,24 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
         m=len(b)
         self.A=np.zeros([m,m])
         for i in range(1,m):
-            for j in range(i-2):
-                self.A[i,j]=b[j]
             if regs==2:
                 self.A[i,i-1]=a[i-1]
+                for j in range(i-1):
+                    self.A[i,j]=b[j]
             elif regs==3:
                 self.A[i  ,i-1]=a[0,i-1]
+                for j in range(i-2):
+                    self.A[i,j]=b[j]
                 if i<m-1:
                     self.A[i+1,i-1]=a[1,i-1]
             elif regs==4:
                 #NEED TO FILL IN
                 pass
         self.c=np.sum(self.A,1)
-        self.embmeth=ExplicitRungeKuttaMethod(self.A,self.bhat)
+        self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
         self.name=name
         self.info=description
-        self.lstype='2R+_pair'
+        self.lstype=str(regs)+'R+_pair'
 
     def __step__(self,f,t,u,dt):
         """
@@ -67,16 +69,30 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
             The implementation here is special for 2R low-storage methods
             But it's not really ultra-low-storage yet.
         """
-        m=len(self)
+        m=len(self); b=self.b; a=self.a
         S2=u[-1]+0.
         S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
-        S1=f(t[-1],S1)
-        S2=S2+self.b[0]*dt*S1
-        for i in range(1,m):
-            S1 = S2 + (self.a[i-1]-self.b[i-1])*dt*S1
-            S1=f(t[-1]+self.c[i]*dt,S1)
-            S2=S2+self.b[i]*dt*S1
-        return S2
+        S1=dt*f(t[-1],S1)
+        if self.lstype.startswith('2'):
+            S2=S2+self.b[0]*S1
+            for i in range(1,m):
+                S1 = S2 + (self.a[i-1]-self.b[i-1])*S1
+                S1=dt*f(t[-1]+self.c[i]*dt,S1)
+                S2=S2+self.b[i]*S1
+            return S2
+        elif self.lstype.startswith('3'):
+            S3=S2+self.b[0]*S1
+            S1=S3+(self.a[0,0]-self.b[0])*S1
+            S2=(S1-S3)/(self.a[0,0]-self.b[0])
+            for i in range(1,m-1):
+                S1=dt*f(t[-1]+self.c[i]*dt,S1)
+                S3=S3+self.b[i]*S1
+                S1=S3 + (self.a[0,i]-b[i])*S1 + (self.a[1,i-1]-b[i-1])*S2
+                S2=(S1-S3+(self.b[i-1]-self.a[1,i-1])*S2)/(self.a[0,i]-self.b[i])
+            S1=dt*f(t[-1]+self.c[m-1]*dt,S1)
+            S3=S3+self.b[m-1]*S1
+            return S3
+        else: print 'Error: only 2R and 3R methods implemented so far!'
 
 #=====================================================
 # End of class TwoRRungeKuttaMethod
@@ -173,7 +189,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
     """
         Class for low-storage embedded Runge-Kutta pairs.
     """
-    def __init__(self,betavec,gamma,delta,type,
+    def __init__(self,betavec,gamma,delta,type,bhat=None,
             name='Low-storage Runge-Kutta Pair',description=''):
         """
             Initializes the low-storage pair by storing the
@@ -217,7 +233,23 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
             self.A=np.tril(self.A,-1)
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta[:m+1],np.vstack([self.A,self.b]))/sum(delta)
-        self.embmeth=ExplicitRungeKuttaMethod(self.A,self.bhat)
+
+        elif type=='3S*':
+            m=len(betavec)-1
+            alpha=np.zeros([m+1,m])
+            beta =np.vstack([np.zeros(m),np.diag(betavec[1:])])
+            for i in range(1,m):
+                beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
+                alpha[i+1,  0] =  gamma[2][i+1]-gamma[2][i]* \
+                                    gamma[1][i+1]/gamma[1][i]
+                alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
+                alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
+            self.A,self.b=shu_osher_to_butcher(alpha,beta)
+            self.A=np.tril(self.A,-1)
+            self.c=np.sum(self.A,1)
+            self.bhat=bhat
+ 
+        self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
 
     def __step__(self,f,t,u,dt):
         """
@@ -241,12 +273,27 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
         m=len(self)
         S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
         S2=np.zeros(np.size(S1))
+        if self.lstype.startswith('3S*'): S3=S1+0.; S4=u[-1]+0.
+
         for i in range(1,m+1):
             S2 = S2 + self.delta[i-1]*S1
-            S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
-                 + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
-        S2=1./sum(delta[1:m+1])*(S2+delta[m+1]*S1)
-        return S1,abs(S1-S2)
+            if self.lstype=='2S_pair':
+                S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
+                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+            elif self.lstype=='3S*':
+                #Horribly inefficient hack:
+                S4 = S4+self.bhat[i-1]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+                #End hack
+                S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
+                     + self.gamma[2][i]*S3 \
+                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+
+        if self.lstype=='2S_pair':
+            S2=1./sum(self.delta[1:m+1])*(S2+self.delta[m+1]*S1)
+        elif self.lstype=='3S*':
+            S2=S4
+
+        return S1#,abs(S1-S2)
 
 
 
@@ -254,23 +301,39 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
 #End of LowStorageRungeKuttaPair class
 #=====================================================
 
-def load_LSRK(file,lstype='2S'):
+def load_LSRK(file,lstype='2S',has_emb=False):
+    """
+        Load low storage methods of the various types from Ketcheson's
+        paper.  If has_emb=True, the method has an embedded method that
+        requires an extra register.
+    """
+    #Read in coefficients
     f=open(file,'r')
     coeff=[]
     for line in f:
         coeff.append(float(line))
-    if lstype=='2S' or lstype=='2S*': m=int(len(coeff)/3+1) # Number of stages
+    f.close()
+    if has_emb:
+        f=open(file+'.bhat','r')
+        bhat=[]
+        for line in f:
+            bhat.append(float(line))
+
+    # Determine number of stages
+    if lstype=='2S' or lstype=='2S*': m=int(len(coeff)/3+1) 
     elif lstype=='2S_pair': m=int((len(coeff)+1)/3)
     elif lstype=='3S*': m=int((len(coeff)+6.)/4.)
     elif lstype=='3S*_pair': m=int((len(coeff)+3.)/4.)
+
+    # Fill in low-storage coefficient arrays
     beta=[0.]
     for i in range(m): beta.append(coeff[2*m-3+i])
     gamma=[[0.],[0.,1.]+coeff[0:m-1]]
     if lstype.startswith('3S*'): gamma.append([0,0,0,0]+coeff[3*m-3:4*m-6])
     if lstype=='2S' or lstype=='3S*':  delta=[1.]+coeff[m-1:2*m-3]+[0.]
     elif lstype=='2S*': delta=[1.]+[0.]*len(range(m-1,2*m-3))+[0.]
-    elif lstype=='2S_pair': delta=[1.]+     coeff[m-1:2*m-3] +[coeff[-2],coeff[-1]]
-    elif lstype=='3S*_pair': delta=[1.]+     coeff[m-1:2*m-3] +[coeff[-3],coeff[-2],coeff[-1]]
+    elif lstype=='2S_pair': delta=[1.]+coeff[m-1:2*m-3] +[coeff[-2],coeff[-1]]
+    elif lstype=='3S*_pair': delta=[1.]+coeff[m-1:2*m-3] +[coeff[-3],coeff[-2],coeff[-1]]
     if lstype=='2S' or lstype=='2S*': 
         for i in range(1,m+1): gamma[0].append(1.-gamma[1][i]*sum(delta[0:i]))
         meth = LowStorageRungeKuttaMethod(beta,gamma,delta,lstype)
@@ -281,7 +344,11 @@ def load_LSRK(file,lstype='2S'):
         for i in range(1,m+1): gamma[0].append(1.-gamma[2][i]
                                         -gamma[1][i]*sum(delta[0:i]))
         if lstype=='3S*':
-            meth = LowStorageRungeKuttaMethod(beta,gamma,delta,lstype)
+            if has_emb:
+                meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype,bhat=bhat)
+            else:
+                meth = LowStorageRungeKuttaMethod(beta,gamma,delta,lstype)
+
         elif lstype=='3S*_pair':
             meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype)
     ord=meth.order()

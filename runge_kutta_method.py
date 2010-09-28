@@ -219,7 +219,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         A_qp1_max=max([abs(tau) for tau in tau_1])
         A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
         A_qp2_max=max([abs(tau) for tau in tau_2])
-        return A_qp1, A_qp1_max, A_qp2, A_qp2_max
+        D=max(np.max(self.A),np.max(self.b),np.max(self.c))
+        return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
     def principal_error_norm(self,tol=1.e-13):
         p=self.order(tol)
@@ -441,7 +442,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return p,q
 
     def plot_stability_region(self,N=200,bounds=[-10,1,-5,5],
-                    color='r',filled=True,scaled=False):
+                    color='r',filled=True,scaled=False,plotroots=True,
+                    alpha=1.,scalefac=None):
         r""" 
             Plot the region of absolute stability
             of a Runge-Kutta method, i.e. the set
@@ -463,16 +465,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
         X=np.tile(x,(N,1))
         Y=np.tile(y[:,np.newaxis],(1,N))
         Z=X+Y*1j
-        if scaled: R=np.abs(p(Z*m)/q(Z*m))
-        else: R=np.abs(p(Z)/q(Z))
+        if scaled: 
+            if scalefac==None: scalefac=m
+        else: scalefac=1.
+        R=np.abs(p(Z*scalefac)/q(Z*scalefac))
         #pl.clf()
         if filled:
-            pl.contourf(X,Y,R,[0,1],colors=color)
+            pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
         else:
-            pl.contour(X,Y,R,[0,1],colors=color)
+            pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
         pl.title('Absolute Stability Region for '+self.name)
         pl.hold(True)
-        pl.plot(np.real(p.r),np.imag(p.r),'ok')
+        if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
         if len(q)>1: pl.plot(np.real(q.r),np.imag(p.r),'xk')
         pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
@@ -585,7 +589,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         M=np.dot(np.linalg.inv(I+alphatilde),I-alphatilde)
         alphanew=np.dot(M,alpha)
         dnew=np.dot(M,d)
-        print np.dot(M-I,alphatilde)
+        #print np.dot(M-I,alphatilde)
         alphatildenew=np.dot(M,x-alphatilde)
         return dnew, alphanew, alphatildenew
 
@@ -659,7 +663,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             **Input**:
                 - f  -- function being integrated
                 - t  -- array of previous solution times
-                - u  -- array of previous solution steps (u[i,:] is the solution at time t[i])
+                - u  -- array of previous solution steps (u[i] is the solution at time t[i])
                 - dt -- length of time step to take
 
             **Output**:
@@ -674,7 +678,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         for i in range(1,m):
             y.append(u[-1]+0)
             for j in range(i):
-               y[i]+=self.A[i,j]*dt*fy[j]
+                y[i]+=self.A[i,j]*dt*fy[j]
             if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
             else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
         if m==1: i=0 #fix just for one-stage methods
@@ -857,7 +861,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         r"""Return full set of error metrics
             See Kennedy et. al. 2000 p. 181"""
         q=self.order(1.e-13)
-        p=self.embmeth.order(1.e-13)
+        p=self.embedded_method.order(1.e-13)
 
         tau_qp1=self.error_coeffs(q+1)
         tau_qp2=self.error_coeffs(q+2)
@@ -1210,7 +1214,7 @@ def loadRKM(which='All'):
         [-8./27,2.,-3544./2565,1859./4104,-11./40,0]])
     b=np.array([16./135,0,6656./12825,28561./56430,-9./50,2./55])
     bhat=np.array([25./216,0.,1408./2565,2197./4104,-1./5,0.])
-    RK['Fehlberg45']=ExplicitRungeKuttaPair(A,b,bhat,name='Fehlberg RK45')
+    RK['Fehlberg45']=ExplicitRungeKuttaPair(A,b,bhat,name='Fehlberg RK5(4)6')
     #================================================
     A=np.array([[0,0,0,0,0,0,0],[1./5,0,0,0,0,0,0],[3./40,9./40,0,0,0,0,0],
         [44./45,-56/15,32./9,0,0,0,0],
@@ -1219,7 +1223,18 @@ def loadRKM(which='All'):
         [35./384,0.,500./1113,125./192,-2187./6784,11./84,0]])
     b=np.array([35./384,0.,500./1113,125./192,-2187./6784,11./84,0])
     bhat=np.array([5179./57600,0.,7571./16695,393./640,-92097./339200,187./2100,1./40])
-    RK['DP5']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince RK75')
+    RK['DP5']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince RK5(4)7')
+    #================================================
+    A=np.array([[0,0,0,0,0,0,0,0],[1./6,0,0,0,0,0,0,0],[2./27,4./27,0,0,0,0,0,0],
+        [183./1372,-162/343,1053./1372,0,0,0,0,0],
+        [68./297,-4./11,42./143,1960./3861,0,0,0,0],
+        [597./22528,81./352,63099./585728,58653./366080,4617./20480,0,0,0],
+        [174197./959244,-30942./79937,8152137./19744439,666106./1039181,-29421./29068,482048./414219,0,0],
+        [587./8064,0,4440339./15491840,24353./124800,387./44800,2152./5985,7267./94080,0]])
+    b=A[-1,:]
+    bhat=np.array([2479./34992,0.,123./416,612941./3411720,43./1440,2272./6561,79937./1113912,3293./556956])
+    RK['BS5']=ExplicitRungeKuttaPair(A,b,bhat,name='Bogacki-Shampine RK5(4)8')
+
 
 
     if which=='All':
@@ -1707,8 +1722,8 @@ def extrap(s,seq='harmonic'):
             alpha[nsd+ind,nsd-(s-k)+ind-1] = -1./(N[j]/N[j-k]-1.)
         nsd += s-k
 
-    print alpha
-    print beta
+    #print alpha
+    #print beta
 
     name='extrap'+str(s)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
