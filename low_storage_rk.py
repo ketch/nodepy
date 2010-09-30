@@ -52,7 +52,7 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
         self.info=description
         self.lstype=str(regs)+'R+_pair'
 
-    def __step__(self,f,t,u,dt):
+    def __step__(self,f,t,u,dt,errest=False,x=None):
         """
             Take a time step on the ODE u'=f(t,u).
 
@@ -73,25 +73,33 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
         S2=u[-1]+0.
         S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
         S1=dt*f(t[-1],S1)
+        uhat = u[-1]+0.
         if self.lstype.startswith('2'):
             S2=S2+self.b[0]*S1
+            uhat = uhat + self.bhat[0]*S1
             for i in range(1,m):
                 S1 = S2 + (self.a[i-1]-self.b[i-1])*S1
                 S1=dt*f(t[-1]+self.c[i]*dt,S1)
                 S2=S2+self.b[i]*S1
-            return S2
+                uhat = uhat + self.bhat[i]*S1
+            if errest: return S2, np.max(np.abs(S2-uhat))
+            else: return S2
         elif self.lstype.startswith('3'):
             S3=S2+self.b[0]*S1
+            uhat = uhat + self.bhat[0]*S1
             S1=S3+(self.a[0,0]-self.b[0])*S1
             S2=(S1-S3)/(self.a[0,0]-self.b[0])
             for i in range(1,m-1):
                 S1=dt*f(t[-1]+self.c[i]*dt,S1)
                 S3=S3+self.b[i]*S1
+                uhat = uhat + self.bhat[i]*S1
                 S1=S3 + (self.a[0,i]-b[i])*S1 + (self.a[1,i-1]-b[i-1])*S2
                 S2=(S1-S3+(self.b[i-1]-self.a[1,i-1])*S2)/(self.a[0,i]-self.b[i])
             S1=dt*f(t[-1]+self.c[m-1]*dt,S1)
             S3=S3+self.b[m-1]*S1
-            return S3
+            uhat=uhat+self.bhat[m-1]*S1
+            if errest: return S3, np.max(np.abs(S3-uhat))
+            else: return S3
         else: print 'Error: only 2R and 3R methods implemented so far!'
 
 #=====================================================
@@ -251,7 +259,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
  
         self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
 
-    def __step__(self,f,t,u,dt):
+    def __step__(self,f,t,u,dt,errest=False,x=None):
         """
             Take a time step on the ODE u'=f(t,u).
 
@@ -293,7 +301,8 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
         elif self.lstype=='3S*':
             S2=S4
 
-        return S1#,abs(S1-S2)
+        if errest: return S1, np.max(np.abs(S1-S2))
+        else: return S1
 
 
 

@@ -794,68 +794,43 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
 
 
-    def embedded_order(self,tol=1.e-14):
-        """ 
-            Returns the order of the embedded method of a Runge-Kutta pair.
+    def __step__(self,f,t,u,dt,x=None,errest=False):
         """
-        p=0
-        while True:
-            z=self.embedded_order_conditions(p+1)
-            if np.any(abs(z)>tol): return p
-            p=p+1
+            Take a time step on the ODE u'=f(t,u).
+            Just like the corresponding method for RKMs, but
+            for RK pairs also computes an error estimate using
+            the embedded method.
 
-    def embedded_order_conditions(self,p):
+            **Input**:
+                - f  -- function being integrated
+                - t  -- array of previous solution times
+                - u  -- array of previous solution steps (u[i] is the solution at time t[i])
+                - dt -- length of time step to take
+
+            **Output**:
+                - unew -- approximate solution at time t[-1]+dt
+
+            The implementation here is wasteful in terms of storage.
         """
-            Generates and evaluates code to test whether a method
-            satisfies the order conditions of order p (only).
+        m=len(self)
+        y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
+        if x is not None: fy=[f(t[-1],y[0],x)]
+        else: fy=[f(t[-1],y[0])]
+        for i in range(1,m):
+            y.append(u[-1]+0)
+            for j in range(i):
+                y[i]+=self.A[i,j]*dt*fy[j]
+            if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
+            else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
+        if m==1: i=0 #fix just for one-stage methods
+        if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
+        else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
+        unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
+        if errest:
+            uhat=u[-1]+sum([self.bhat[j]*dt*fy[j] for j in range(m)])
+            return unew, np.max(np.abs(unew-uhat))
+        else: return unew
 
-            Currently uses Albrecht's recursion to generate the
-            order conditions.  This is fast and requires less code
-            than if they were hard-coded up to some high order,
-            although it still only works up to some fixed order
-            (need more recursion loops to go higher).
-
-            Other possibilities, already in place, are:
-                #. Use hard code, generated once and for all
-                   by Albrecht's recursion or another method.
-                   Advantages: fastest
-                   Disadvantages: Less satisfying
-
-                #. Use Butcher's recursive product on trees.
-                   Advantages: Most satisfying, no maximum order
-                   Disadvantages: way too slow for high order
-
-            TODO: Decide on something and fill in this docstring.
-        """
-        A,b,c=self.A,self.bhat,self.c
-        C=np.diag(c)
-        code=runge_kutta_order_conditions(p)
-        z=np.zeros(len(code)+1)
-        tau=np.zeros([p,len(self)])
-        for j in range(1,p):
-            tau[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
-        for i in range(len(code)):
-            exec('z[i]='+code[i])
-        z[-1]=np.dot(b,c**(p-1))-1./p
-        return z
-
-    def error_coefficient(self,tree,method='principal'):
-        from numpy import dot
-        code=elementary_weight_str(tree)
-        b=self.b
-        if method=='embedded':
-            b=self.bhat
-        A=self.A
-        c=self.c
-        exec('coeff=('+code+'-1./'+str(tree.density())+')')
-        return coeff/tree.symmetry()
-
-    def error_coeffs(self,p,method='principal'):
-        forest=rt.recursive_trees(p)
-        err_coeffs=[]
-        for tree in forest:
-            err_coeffs.append(self.error_coefficient(tree,method=method))
-        return err_coeffs
 
     def error_metrics(self):
         r"""Return full set of error metrics
