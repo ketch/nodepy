@@ -5,7 +5,7 @@ class ODESolver:
     def __init__(self):
         pass
 
-    def __call__(self,f,u0,T,t0=0,N=100,dt=None,errtol=None,x=None):
+    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,x=None):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -27,11 +27,12 @@ class ODESolver:
             for the RHS function f.
 
             TODO: 
-                Implement an option to not keep all output
-                    (for efficiency).
-                Option to keep timestep history
-                Option to keep error estimate history
+
+                * Implement an option to not keep all output (for efficiency).
+                * Option to keep timestep history
+                * Option to keep error estimate history
         """
+        f=ivp.f; u0=ivp.u0; T=ivp.T
         u=[u0]; t=[t0]
 
         if errtol is None:      # Fixed-timestep mode

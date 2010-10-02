@@ -4,7 +4,8 @@ User Guide
 
 .. toctree::
 
-   create
+   quickstart
+   methods
+   solving
    stability
-   solve
    rooted_trees

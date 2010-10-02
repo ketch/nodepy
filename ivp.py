@@ -26,6 +26,15 @@ class IVP:
         self.u0=u0
         self.rhs=f
 
+    def __repr__(self):
+        try:
+            return 'Problem Name:  '+self.name+'\n'+'Description:   '+self.description
+        except:
+            try:
+                return 'Problem Name: '+self.name
+            except:
+                return 'No name specified for this problem.'
+
 def load_ivp(ivpname):
     ivp=IVP()
     if ivpname=='test':
@@ -33,12 +42,14 @@ def load_ivp(ivpname):
         ivp.rhs = lambda t,u: u
         ivp.exact = lambda t : ivp.u0*exp(t)
         ivp.T = 5.
+        ivp.description = 'The linear scalar test problem'
     elif ivpname=='nlsin':
         ivp.u0=1.
         ivp.rhs = lambda t,u: 4.*u*float(sin(t))**3*cos(t)
         ivp.exact = lambda t: ivp.u0*exp((sin(t))**4)
         ivp.T = 5.
         ivp.dt0=1.e-2
+        ivp.description = 'A simple nonlinear scalar problem'
     elif ivpname=='ode1':
         ivp.u0=1.
         ivp.rhs = lambda t,u: 4.*t*sqrt(u)
@@ -61,11 +72,16 @@ def load_ivp(ivpname):
         ivp.rhs = lambda t,u: array([u[1], 1./ivp.eps*(-u[0]+(1.-u[0]**2)*u[1])])
         ivp.T = 5.
         ivp.dt0=1.e-2
+        ivp.description = 'The van der Pol oscillator'
     else: print 'Unknown IVP name; returning empty IVP'
+    ivp.name=ivpname
     return ivp
 
 def detest(testkey):
-    """Non-stiff DETEST problem set"""
+    """
+        Non-stiff DETEST problem set
+        See Enright \& Price, 1987.
+    """
     ivp=IVP()
     if testkey=='A1':
         ivp.u0=1.
@@ -154,6 +170,8 @@ def detest(testkey):
         ivp.dt0 = 1.e-2
 
     else: print 'Unknown Detest problem; returning empty IVP'
+    ivp.name=testkey
+    ivp.description='Problem '+testkey+' of the non-stiff DETEST suite.'
     return ivp
 
 def B4rhs(t,u):

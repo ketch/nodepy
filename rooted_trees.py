@@ -9,8 +9,8 @@ AUTHOR: David Ketcheson (08-29-2008)
 
 **Examples**::
 
-    >>> from rooted_trees import *
-    >>> tree=RootedTree('{T^2{T{T}}{T}}')
+    >>> from NodePy import rooted_trees as rt
+    >>> tree=rt.RootedTree('{T^2{T{T}}{T}}')
     >>> tree.plot()
     >>> tree.order()
     9
@@ -28,7 +28,7 @@ Topologically equivalent trees are considered equal::
 """
 import numpy as np
 import pylab as pl
-from sympy import Symbol, factorial, sympify, Rational
+from sympy import symbols, factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
 from utils import permutations
 from strmanip import *
@@ -452,7 +452,7 @@ class RootedTree(str):
              rooted tree 
              
              This function is DEPRECATED.
-             Use RK_elementary_weight() instead.
+             Use rk.elementary_weight() instead.
         """
 
         if level==0: 
@@ -688,9 +688,9 @@ def Emap_str(tree,a=1):
 #Runge-Kutta functions
 #=====================================================
 def RKeta(tree):
-    if tree=='':  return Symbol('e',False)
-    if tree=='T': return Symbol('c',False)
-    return Symbol('A',False)*Dprod(tree,RKeta)
+    if tree=='':  return symbols('e',commutative=False)
+    if tree=='T': return symbols('c',commutative=False)
+    return symbols('A',commutative=False)*Dprod(tree,RKeta)
 
 def RKeta_str(tree):
     """
@@ -705,8 +705,8 @@ def RKeta_str(tree):
 #=====================================================
 def TSRKeta(tree):
     if tree=='':  return 1
-    if tree=='T': return Symbol('c',False)
-    return Symbol('d',False)*tree.Emap(-1)+Symbol('Ahat',False)*tree.Gprod(Emap,Dprod,betaargs='TSRKeta',alphaargs='-1')+Symbol('A',False)*Dprod(tree,TSRKeta)
+    if tree=='T': return symbols('c',commutative=False)
+    return symbols('d',commutative=False)*tree.Emap(-1)+symbols('Ahat',commutative=False)*tree.Gprod(Emap,Dprod,betaargs='TSRKeta',alphaargs='-1')+symbols('A',commutative=False)*Dprod(tree,TSRKeta)
 
 def TSRKeta_str(tree):
     """
@@ -721,8 +721,8 @@ def TSRKeta_str(tree):
 #=====================================================
 def ThSRKeta(tree):
     if tree=='':  return 1
-    if tree=='T': return Symbol('c',False)
-    return Symbol('d2',False)*tree.Emap(-1)+Symbol('d3',False)*tree.Emap(-2)+Symbol('A',False)*Dprod(tree,ThSRKeta)
+    if tree=='T': return symbols('c',commutative=False)
+    return symbols('d2',commutative=False)*tree.Emap(-1)+symbols('d3',commutative=False)*tree.Emap(-2)+symbols('A',commutative=False)*Dprod(tree,ThSRKeta)
 
 def ThSRKeta_str(tree):
     """
@@ -754,8 +754,9 @@ def recursiveVectors(p,ind='all'):
     Generate recursive vectors using Albrecht's 'recursion 1' 
 
     Follows [albrecht1996]_ p. 1718
-    Need to extend it for p>10?
+    Would need to extend it for p>10
   """
+  if p>10: print 'recursiveVectors is not complete for orders p>10.'
   W=[[],[]]
   R=[[],[]]
   R.append(["tau[2]"])

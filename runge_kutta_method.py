@@ -39,20 +39,13 @@ Class for Runge-Kutta methods, and various functions related to them.
 
 
 **TODO**:
-    - Add functions to generate optimal implicit SSP families
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import numpy as np
 import pylab as pl
 import rooted_trees as rt
-from sympy import Symbol, factorial
-
-#=====================================================
-# TODO:
-#     - Implement GLMs (Butcher's form? Spijker's form?)
-#     - Unit testing for everything
-#=====================================================
+from sympy import symbols, factorial
 
 
 #=====================================================
@@ -168,9 +161,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
                 but with everything divided by two.
                 The b_2 matrix block consists of m_1 (row) copies of b_2.
-
-
-            TODO: Think about whether this is the right thing to return.
         """
         f1=h1/(h1+h2)
         f2=h2/(h1+h2)
@@ -182,11 +172,70 @@ class RungeKuttaMethod(GeneralLinearMethod):
         b=np.hstack([RK2.b*f2,self.b*f1]).squeeze()
         return RungeKuttaMethod(A,b)
 
+    def dj_reducible(self,tol=1.e-13):
+        """ Determine whether the method is DJ-reducible.
+            A method is DJ-reducible if it contains any stage that
+            does not influence the output.
+
+            Returns a list of irrelevant stages.  If the method is
+            DJ-irreducible, returns an empty list.
+
+        """
+        b=self.b; A=self.A
+        Nset = [j for j in range(len(b)) if abs(b[j])<tol]
+        while len(Nset)>0:      #Try successively smaller sets N
+            for j in Nset:      #Test whether stage j matters
+                remove_j=False
+                for i in range(len(self)):
+                    if i not in Nset and abs(A[i,j])>tol: #Stage j matters
+                        remove_j=True
+                        break       
+                    if remove_j: break
+                if remove_j: 
+                    Nset.remove(j)
+                    break
+            return Nset
+        return Nset
+
+    def dj_reduce(self,tol=1.e-13):
+        """Remove all DJ-reducible stages."""
+        reducible=True
+        while(reducible):
+            djs = self.dj_reducible(tol=tol)
+            if len(djs)>0: 
+                reducible = True
+                self.remove_stage(djs[0])
+            else: reducible = False
+        return self
+
+
+    def hs_reducible(self,tol=1.e-13):
+        """ 
+            Determine whether the method is HS-reducible.
+            A Runge-Kutta method is HS-reducible if two
+            rows of A are equal.
+
+            If the method is HS-reducible, returns True and a
+            pair of equal stages.  If not, returns False and
+            the minimum difference between rows of A.
+        
+        """
+        m=len(self)
+        mindiff=10.
+        for i in range(m):
+            for j in range(i+1,m):
+                dif = np.max(np.abs(self.A[i,:]-self.A[j,:]))
+                if dif<tol: return True,[i,j]
+                mindiff=min(mindiff,dif)
+        return False, mindiff
+
     def remove_stage(self,stage):
         """ Eliminate a stage of a Runge-Kutta method.
             Typically used to reduce reducible methods.
+
+            Note that stages in the NumPy arrays are indexed from zero,
+            so to remove stage s use remove_stage(s-1).
         """
-        stage=stage-1 #account for different indexing
         A=np.delete(np.delete(self.A,stage,1),stage,0)
         b=np.delete(self.b,stage)
         c=np.delete(self.c,stage)
@@ -898,13 +947,16 @@ def elementary_weight(tree):
         Constructs Butcher's elementary weights 
         for a Runge-Kutta method
 
-        Currently doesn't work because of SAGE bug.
+        Currently doesn't work right; note that two of the 5th-order
+        weights appear identical.  The _str version below works
+        correctly and produces NumPy code.  But it would be nice to 
+        have this version working so that we could symbolically 
+        simplify the expressions.
 
         **References**:
             [butcher2003]_
     """
-    print 'Non-commutativity not working!'
-    b=Symbol('b',False)
+    b=symbols('b',commutative=False)
     ew=b*tree.Gprod(rt.RKeta,rt.Dmap)
     return ew
 
@@ -1586,6 +1638,9 @@ def DC(s,theta=0.,grid='eq'):
 
         **Output**: A ExplicitRungeKuttaMethod
 
+        Note that the number of stages is NOT equal to s.  The order
+        is equal to s+1.
+
         **Examples**::
             
         **References**: 
@@ -1646,6 +1701,9 @@ def extrap(s,seq='harmonic'):
 
         **Output**: A ExplicitRungeKuttaMethod
 
+        Note that the number of stages is NOT equal to s.  The order
+        is equal to s+1.
+
         **Examples**::
             
         **References**: 
@@ -1701,7 +1759,7 @@ def extrap(s,seq='harmonic'):
     #print beta
 
     name='extrap'+str(s)
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
 def SSPIRK1(m):
     """ Construct the m-stage, first order unconditionally SSP 

@@ -13,6 +13,7 @@ Contents:
    install
    features
    userguide
+   future
    bib
 
 Modules
