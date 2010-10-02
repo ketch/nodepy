@@ -10,7 +10,7 @@ Contents:
 
 .. toctree::
 
-   install
+   quickstart
    features
    userguide
    future
