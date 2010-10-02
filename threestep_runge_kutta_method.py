@@ -1,5 +1,6 @@
 """
 Class for three-step Runge-Kutta methods, and various functions related to them.
+This still contains errors, particularly in the order conditions!
 
 AUTHOR: David Ketcheson (06-21-2009)
 

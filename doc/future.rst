@@ -73,3 +73,9 @@ Unit Testing
 ---------------------------
 
 An extensive set of unit tests with broad code coverage will be implemented.
+
+
+Encyclopedia of IVP solvers
+---------------------------
+
+We would like to use NodePy to compile an online encyclopedia of solvers.

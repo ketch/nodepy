@@ -4,7 +4,6 @@ User Guide
 
 .. toctree::
 
-   quickstart
    methods
    solving
    stability

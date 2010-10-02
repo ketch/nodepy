@@ -1,13 +1,15 @@
+"""
+The principal objects in NodePy are ODE solvers. The object upon which a solver acts is an initial value problem. Mathematically, an initial value problem (IVP) consists of one or more ordinary differential equations and an initial condition:
+
+\\begin{align*} u(t) & = F(u) & u(0) & = u_0. \\end{align*}
+"""
 from numpy import exp, sin, cos, sqrt, log, array, zeros, ones
 import numpy as np
 
 class IVP:
     """
-        Class for ordinary differential equations initial value
-        problems.
-
-        This is a pure virtual class, used only for inheritance.
-        Any IVP should possess the following:
+        In NodePy, an initial value problem is an object with the following
+        properties:
 
             rhs: The right-hand-side function; i.e. F where u'=F(u).
             u0:  The initial condition.
@@ -15,10 +17,10 @@ class IVP:
 
         Optionally an IVP may possess the following:
             exact: a function that takes one argument (t) and returns
-                    the exact solution (Should we make this a function of
-                    u0 as well?)
+                   the exact solution (Should we make this a function of
+                   u0 as well?)
             dt0: The default initial timestep when a variable step size 
-                    integrator is used.
+                 integrator is used.
             Any other problem-specific parameters.
 
     """

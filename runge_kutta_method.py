@@ -1,7 +1,7 @@
 """
 Class for Runge-Kutta methods, and various functions related to them.
 
-**Author**: David Ketcheson (08-29-2008)
+**Author**: David Ketcheson (10-2010)
 
 **Examples**::
 

@@ -2,7 +2,7 @@
 Quick Start Guide
 ==============================
 
-.. contents::
+.. .. contents::
 
 Obtaining NodePy
 ================
@@ -11,12 +11,16 @@ The current development version of NodePy can be obtained via Mercurial::
     
     hg clone http://bitbucket.org/ketch/nodepy
 
-Alternatively, the last release version can be downloaded from (FILL IN)
+If you don't have mercurial, you can download it from 
+http://mercurial.selenic.com/downloads/.
+
+Alternatively, the last release version of NodePy can be downloaded 
+from http://www.kaust.edu.sa/davidketcheson/NodePy.
 
 Installing NodePy
 ====================
 
-The only installation that needs to be done is to add the directory
+Simply add the directory
 containing the nodepy directory to your Python path.  In csh, the command is::
 
     $ setenv PYTHONPATH '<path/goes/here>'

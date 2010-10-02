@@ -1,13 +1,13 @@
+.. contents::
+
 =================================================
 Testing Methods: Solving Initial Value Problems
 =================================================
 
-In addition to theoretical
-
 Initial Value Problems
 ==============================
 
-The principal objects in NodePy are ODE solvers.  The principal object
+The principal objects in NodePy are ODE solvers.  The object
 upon which a solver acts is an initial value problem.  Mathematically,
 an initial value problem (IVP) consists of one or more ordinary 
 differential equations and an initial condition:
