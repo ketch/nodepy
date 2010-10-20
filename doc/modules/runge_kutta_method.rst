@@ -1,8 +1,8 @@
 :mod:`runge_kutta_method`
 ===========================
 
-.. inheritance-diagram:: NodePy.runge_kutta_method.RungeKuttaMethod
+.. inheritance-diagram:: nodepy.runge_kutta_method.RungeKuttaMethod
 
-.. automodule:: NodePy.runge_kutta_method
+.. automodule:: nodepy.runge_kutta_method
    :members:
    :undoc-members:

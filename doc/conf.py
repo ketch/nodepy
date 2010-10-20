@@ -76,6 +76,8 @@ release = '0.3'
 # directories to ignore when looking for source files.
 exclude_patterns = ['_build']
 
+autodoc_member_order = 'bysource'
+autoclass_content='both'
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
 
@@ -106,7 +108,13 @@ pygments_style = 'sphinx'
 #html_theme = 'sphinxdoc'
 #html_theme = 'basic'
 #html_theme = 'nature'
-html_theme = 'haiku'
+html_theme = 'myhaiku'
+#html_theme = 'traditional'
+#html_theme = 'scrolls'
+
+html_theme_options = {
+    "full_logo": "true",
+    }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -118,14 +126,14 @@ html_theme = 'haiku'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+html_title = 'NodePy Documentation'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+html_short_title = 'NodePy: Numerical ODEs in Python'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'small_logo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -230,6 +238,7 @@ man_pages = [
      [u'David Ketcheson'], 1)
 ]
 
-jsmath_path = 'http://web.kaust.edu.sa/faculty/davidketcheson/jsMath/easy/load.js'
+#jsmath_path = 'http://web.kaust.edu.sa/faculty/davidketcheson/jsMath/easy/load.js'
+jsmath_path = '/Users/ketch/jsMath/easy/load.js'
 default_role = 'math'
 keep_warnings = 'True'

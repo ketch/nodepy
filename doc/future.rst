@@ -58,12 +58,16 @@ General Linear Methods
 Additional classes of multi-stage, multistep methods will be supported
 in the future.
 
+Symplectic and Hamiltonian Methods
+------------------------------------------------------
+Support for analysis of geometric integrators.
+
 Rooted Trees
 ---------------------------
 Partitioned rooted trees and other similar abstract objects will be implemented.
 
 Exact specification of coefficients
----------------------------
+------------------------------------------------------
 
 All classes will eventually be overloaded so that exact coefficients
 can be given and, wherever possible, properties of the methods will 

@@ -842,6 +842,30 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         self.info=description
         self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
 
+    def __repr__(self): 
+        """
+        Pretty-prints the Butcher array in the form:
+          |
+        c | A
+        ________
+          | b
+          | bhat
+        """
+        s=self.name+'\n'+self.info+'\n'
+        for i in range(len(self)):
+            s+='%6.3f |' % self.c[i]
+            for j in range(i):
+                s+=' %6.3f' % self.A[i,j]
+            s+='\n'
+        s+='_______|'+('_______'*len(self))+'\n'
+        s+= '       |'
+        for j in range(len(self)):
+            s+=' %6.3f' % self.b[j]
+        s+='\n'; s+= '       |'
+        for j in range(len(self)):
+            s+=' %6.3f' % self.bhat[j]
+        return s
+
 
     def __step__(self,f,t,u,dt,x=None,errest=False):
         """
@@ -1306,6 +1330,53 @@ def SSPRK2(m):
     name='SSPRK'+str(m)+'2'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
+def SSPRKm(m):
+    """ Construct the optimal m-stage, linearly mth order SSP 
+        Explicit Runge-Kutta method (m>=2).
+
+        **Input**: m -- number of stages
+        **Output**: A ExplicitRungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> SSP44=SSPRKm(4)
+            >>> SSP44
+
+            SSPRK44
+
+             0.000 |
+             1.000 |  1.000
+             2.000 |  1.000  1.000
+             3.000 |  1.000  1.000  1.000
+            _______|________________________________
+                   |  0.625  0.292  0.042  0.042
+
+            >>> SSP44.absolute_monotonicity_radius()
+            2.9999999999745341
+
+        **References**: 
+            #. [gottlieb2001]_
+    """
+    assert m>=2, "SSPRKm methods must have m>=2"
+    r=1.
+
+    alph=np.zeros([m+1,m+1])
+    alph[1,0]=1.
+    for mm in range(2,m+1):
+      for k in range(1,m):
+        alph[mm,k]=1./k * alph[mm-1,k-1]
+        alph[mm,mm-1]=1./factorial(mm)
+        alph[mm,0] = 1.-sum(alph[mm,1:])
+
+    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    alpha[m,m-1]=1./factorial(m)
+    beta=alpha.copy()
+    alpha[m,1:m-1]=alph[m,1:m-1]
+    alpha[m,0] = 1.-sum(alpha[m,1:])
+    name='SSPRK'+str(m)*2
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
 def SSPIRK1(m):
     """ Construct the m-stage, first order unconditionally SSP 
         Implicit Runge-Kutta method with smallest 
@@ -1644,6 +1715,7 @@ def DC(s,theta=0.,grid='eq'):
         **Examples**::
             
         **References**: 
+
             #. [dutt2000]_
             #. [gottlieb2009]_
     """
@@ -1692,10 +1764,6 @@ def DC(s,theta=0.,grid='eq'):
 def extrap(s,seq='harmonic'):
     """ Construct extrapolation methods.
         For now, based on explicit Euler, but allowing arbitrary sequences.
-        TODO: 
-            - generalize base method
-            - Eliminate the unnecessary stages, and make the construction
-                more numerically stable
 
         **Input**: s -- number of grid points & number of correction iterations
 
@@ -1704,10 +1772,17 @@ def extrap(s,seq='harmonic'):
         Note that the number of stages is NOT equal to s.  The order
         is equal to s+1.
 
-        **Examples**::
-            
         **References**: 
+
             #. [Hairer]_ chapter II.9
+
+        **TODO**: 
+
+            - generalize base method
+            - Eliminate the unnecessary stages, and make the construction
+                more numerically stable
+
+
     """
 
     if seq=='harmonic': N=np.arange(s)+1; 

@@ -1,6 +1,6 @@
-import NodePy.runge_kutta_method as rk
-import NodePy.convergence as cv
-from NodePy import ivp
+import nodepy.runge_kutta_method as rk
+import nodepy.convergence as cv
+from nodepy import ivp
 
 #Load some methods:
 rk4=rk.loadRKM('RK44')

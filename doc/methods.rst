@@ -46,8 +46,11 @@ Additionally, several classes of methods are available through the
 following functions:
 
   * Optimal strong stability preserving methods: SSPRK2(s), SSPRK3(s), SSPIRK2(), etc.
-  * Integral deferred correction methods: DC(s)
-  * Extrapolation methods: extrap(s)
+  * Integral deferred correction methods: 
+    :mod:`DC(s) <nodepy.runge_kutta_method.DC>`
+
+  * Extrapolation methods: 
+    :mod:`extrap(s) <nodepy.runge_kutta_method.extrap>`
   * Runge-Kutta Chebyshev methods: RKC1(s), RKC2(s)
 
 See the documentation of these functions for more details.
@@ -96,7 +99,7 @@ Low-Storage Runge-Kutta methods
   * 2R/3R methods, pairs
   * 2S/2Semb/2S*/3S* methods, pairs
 
-.. automethod:: NodePy.low_storage_rk.LowStorageRungeKuttaMethod.__init__
+.. automethod:: nodepy.low_storage_rk.LowStorageRungeKuttaMethod.__init__
 
 Embedded Runge-Kutta Pairs
 -----------------------------------------
@@ -156,7 +159,7 @@ Two-step Runge-Kutta methods
 Two-step Runge-Kutta methods are a class of multi-stage multistep methods
 that use two steps and (potentially) several stages.
 
-.. automethod:: NodePy.twostep_runge_kutta_method.TwoStepRungeKuttaMethod.__init__
+.. automethod:: nodepy.twostep_runge_kutta_method.TwoStepRungeKuttaMethod.__init__
 
 .. _create_lsrkm:
 

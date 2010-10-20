@@ -9,7 +9,7 @@ AUTHOR: David Ketcheson (08-29-2008)
 
 **Examples**::
 
-    >>> from NodePy import rooted_trees as rt
+    >>> from nodepy import rooted_trees as rt
     >>> tree=rt.RootedTree('{T^2{T{T}}{T}}')
     >>> tree.plot()
     >>> tree.order()

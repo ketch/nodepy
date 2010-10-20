@@ -3,6 +3,6 @@
 
 .. inheritance-diagram:: rooted_trees
 
-.. automodule:: NodePy.rooted_trees
+.. automodule:: nodepy.rooted_trees
    :members:
    :undoc-members:

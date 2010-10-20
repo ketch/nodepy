@@ -90,6 +90,7 @@ NodePy Manual
 Contents:
 
 .. toctree::
+   :maxdepth: 2
 
    quickstart
    userguide
@@ -113,4 +114,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

@@ -1,4 +1,4 @@
-import NodePy.rooted_trees as rt
+import nodepy.rooted_trees as rt
 import pylab as pl
 
 rt.plot_all_trees(6)

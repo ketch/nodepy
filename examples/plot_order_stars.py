@@ -1,5 +1,5 @@
-from NodePy.stability_function import pade_exp
-from NodePy.stability_function import plot_order_star
+from nodepy.stability_function import pade_exp
+from nodepy.stability_function import plot_order_star
 import pylab as pl
 
 P=range(5)

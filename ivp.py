@@ -24,7 +24,7 @@ class IVP:
             Any other problem-specific parameters.
 
     """
-    def __init__(self,u0=1,f=None):
+    def __init__(self,f=None,u0=1.,T=1.):
         self.u0=u0
         self.rhs=f
 

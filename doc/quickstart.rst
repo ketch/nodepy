@@ -15,7 +15,7 @@ If you don't have mercurial, you can download it from
 http://mercurial.selenic.com/downloads/.
 
 Alternatively, the last release version of NodePy can be downloaded 
-from http://www.kaust.edu.sa/davidketcheson/NodePy.
+from http://web.kaust.edu.sa/faculty/davidketcheson/Software.html.
 
 Installing NodePy
 ====================
