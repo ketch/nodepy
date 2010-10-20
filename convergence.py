@@ -96,15 +96,18 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
             exsol = u[-1].copy()
         for imeth,method in enumerate(methods):
             print 'Solving with method '+method.name
+            workperstep = len(method)-method.is_FSAL()
             for jtol,tol in enumerate(tols):
-                t,u=method(ivp,errtol=tol,dt=ivp.dt0)
+                t,u,rej,dt=method(ivp,errtol=tol,dt=ivp.dt0,diagnostics=True,controllertype='P')
+                print str(rej)+' rejected steps'
                 err[imeth,jtol]*= np.max(np.abs(u[-1]-exsol))
-                work[imeth,jtol]+= len(t)*len(method)
+                #FSAL methods save on accepted steps, but not on rejected:
+                work[imeth,jtol]+= len(t)*workperstep+rej*len(method)
     for imeth,method in enumerate(methods):
         for jtol,tol in enumerate(tols):
             err[imeth,jtol]=err[imeth,jtol]**(1./len(ivps))
     for imeth,method in enumerate(methods):
-        pl.loglog(work[imeth,:],err[imeth,:],label=method.name,linewidth=3)
+        pl.semilogy(work[imeth,:],err[imeth,:],label=method.name,linewidth=3)
     pl.xlabel('Function evaluations')
     pl.ylabel('Error at $t_{final}$')
     pl.legend(loc='best')

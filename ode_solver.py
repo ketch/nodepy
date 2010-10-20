@@ -5,7 +5,7 @@ class ODESolver:
     def __init__(self):
         pass
 
-    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,controllertype='P',x=None,debug=False):
+    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,controllertype='P',x=None,debug=False,diagnostics=False):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -33,7 +33,8 @@ class ODESolver:
                 * Option to keep error estimate history
         """
         f=ivp.rhs; u0=ivp.u0; T=ivp.T
-        u=[u0]; t=[t0]
+        u=[u0]; t=[t0]; dthist=[]
+        rejected_steps=0
 
         if errtol is None:      # Fixed-timestep mode
             if dt is None: dt=(T-t0)/N
@@ -58,7 +59,8 @@ class ODESolver:
                     u.append(unew)
                     t.append(t[-1]+dt)
                     errestold = errest  #Should this happen if step is rejected?
-                else: print 'step rejected'
+                    dthist.append(dt)
+                else: rejected_steps+=1
 
                 if controllertype=='P':
                   #Compute new dt using P-controller
@@ -72,4 +74,5 @@ class ODESolver:
 
                 dt = dt * min(facmax,max(facmin,kappa*facopt))
 
-        return t,u
+        if diagnostics==False: return t,u
+        else: return t,u,rejected_steps,dthist

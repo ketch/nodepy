@@ -663,6 +663,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def is_explicit(self):
         return False
 
+    def is_FSAL(self):
+      return all(self.A[-1,:]==self.b)
+
 #=====================================================
 class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 #=====================================================
@@ -775,6 +778,10 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
     def is_explicit(self):
         return True
+
+    def work_per_step(self):
+        if self.is_FSAL(): return len(self)-1
+        else: return len(self)
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
@@ -946,6 +953,11 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, A_pp1_hat, A_pp1_hat_max, B_pp2, B_pp2_max, C_pp2, C_pp2_max, D, E_pp2, E_pp2_max
 
+
+    def is_FSAL(self):
+      if all(self.A[-1,:]==self.b): return True
+      elif all(self.A[-1,:]==self.bhat): return True
+      else: return False
 
 #=====================================================
 #End of ExplicitRungeKuttaPair class
