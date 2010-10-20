@@ -385,10 +385,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 #. [higueras2005]_
 
         """
+        m=len(self)
         if r is None: r=self.absolute_monotonicity_radius()
         K=np.vstack([self.A,self.b])
-        K=np.hstack([K,np.zeros([s+1,1])])
-        X=np.eye(s+1)+r*K
+        K=np.hstack([K,np.zeros([m+1,1])])
+        X=np.eye(m+1)+r*K
         beta=np.linalg.solve(X,K)
         beta=beta[:,:-1]
         alpha=r*beta

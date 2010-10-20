@@ -5,7 +5,7 @@ class ODESolver:
     def __init__(self):
         pass
 
-    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,x=None):
+    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,controllertype='P',x=None,debug=False):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -32,7 +32,7 @@ class ODESolver:
                 * Option to keep timestep history
                 * Option to keep error estimate history
         """
-        f=ivp.f; u0=ivp.u0; T=ivp.T
+        f=ivp.rhs; u0=ivp.u0; T=ivp.T
         u=[u0]; t=[t0]
 
         if errtol is None:      # Fixed-timestep mode
@@ -46,6 +46,7 @@ class ODESolver:
         else:                   # Error-control mode
             p=self.embedded_method.order()
             alpha = 0.7/p; beta = 0.4/p; kappa = 0.9
+            facmin = 0.2; facmax = 5.
             errestold = errtol
             errest=1.
 
@@ -59,7 +60,16 @@ class ODESolver:
                     errestold = errest  #Should this happen if step is rejected?
                 else: print 'step rejected'
 
-                #Compute new dt using PI-controller
-                dt = kappa*dt*(errtol/errest)**alpha * (errestold/errtol)**beta
+                if controllertype=='P':
+                  #Compute new dt using P-controller
+                  facopt = (errtol/errest)**alpha 
+
+                elif controllertype=='PI':
+                  #Compute new dt using PI-controller
+                  facopt = ((errtol/errest)**alpha
+                            *(errestold/errtol)**beta)
+                else: print 'Unrecognized time step controller type'
+
+                dt = dt * min(facmax,max(facmin,kappa*facopt))
 
         return t,u
