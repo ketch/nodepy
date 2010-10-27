@@ -170,11 +170,119 @@ def detest(testkey):
         ivp.T=20.
         ivp.rhs = lambda t,u: array([u[2],u[3],-u[0]/(u[0]**2+u[1]**2)**1.5,-u[1]/(u[0]**2+u[1]**2)**1.5])
         ivp.dt0 = 1.e-2
+    elif testkey=='D2':
+        eps=0.3
+        ivp.u0=array([1.-eps,0.,0.,sqrt((1.+eps)/(1.-eps))])
+        ivp.T=20.
+        ivp.rhs = lambda t,u: array([u[2],u[3],-u[0]/(u[0]**2+u[1]**2)**1.5,-u[1]/(u[0]**2+u[1]**2)**1.5])
+        ivp.dt0 = 1.e-2
+    elif testkey=='D3':
+        eps=0.5
+        ivp.u0=array([1.-eps,0.,0.,sqrt((1.+eps)/(1.-eps))])
+        ivp.T=20.
+        ivp.rhs = lambda t,u: array([u[2],u[3],-u[0]/(u[0]**2+u[1]**2)**1.5,-u[1]/(u[0]**2+u[1]**2)**1.5])
+        ivp.dt0 = 1.e-2
+    elif testkey=='D4':
+        eps=0.7
+        ivp.u0=array([1.-eps,0.,0.,sqrt((1.+eps)/(1.-eps))])
+        ivp.T=20.
+        ivp.rhs = lambda t,u: array([u[2],u[3],-u[0]/(u[0]**2+u[1]**2)**1.5,-u[1]/(u[0]**2+u[1]**2)**1.5])
+        ivp.dt0 = 1.e-2
+    elif testkey=='D5':
+        eps=0.9
+        ivp.u0=array([1.-eps,0.,0.,sqrt((1.+eps)/(1.-eps))])
+        ivp.T=20.
+        ivp.rhs = lambda t,u: array([u[2],u[3],-u[0]/(u[0]**2+u[1]**2)**1.5,-u[1]/(u[0]**2+u[1]**2)**1.5])
+        ivp.dt0 = 1.e-2
+    elif testkey=='E1':
+        ivp.u0=array([0.6713967071418030,0.09540051444747446])
+        ivp.T=20.
+        ivp.rhs = lambda t,u: array([u[1],-(u[1]/(t+1.) + (1.-0.25/(t+1.)**2)*u[0])])
+        ivp.dt0 = 1.e-2
+    elif testkey=='E2':
+        ivp.u0=array([2.,0.])
+        ivp.rhs = lambda t,u: array([u[1],(1.-u[0]**2)*u[1]-u[0]])
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='E3':
+        ivp.u0=array([0.,0.])
+        ivp.rhs = lambda t,u: array([u[1],u[0]**3 /6. - u[0] + 2.*np.sin(2.78535*t)])
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='E4':
+        ivp.u0=array([30.,0.])
+        ivp.rhs = lambda t,u: array([u[1],0.032-0.4*u[1]**2])
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='E5':
+        ivp.u0=array([0.,0.])
+        ivp.rhs = lambda t,u: array([u[1],np.sqrt(1.+u[1]**2)/(25.-t)])
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='F1':
+        ivp.u0=array([0.,0.])
+        ivp.rhs = F1rhs
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='F2':
+        ivp.u0=array([110.])
+        ivp.rhs = F2rhs
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='F3':
+        ivp.u0=array([0.,0.])
+        ivp.rhs = lambda t,u: array([u[1],0.01*u[1]*(1.-u[0]**2)-u[0]-np.abs(np.sin(np.pi*t))])
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='F4':
+        ivp.u0=array([1.])
+        ivp.rhs = F4rhs
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+    elif testkey=='F5':
+        ivp.u0=array([1.])
+        ivp.rhs = F5rhs
+        ivp.T=20.
+        ivp.dt0 = 1.e-2
+
+
 
     else: print 'Unknown Detest problem; returning empty IVP'
     ivp.name=testkey
     ivp.description='Problem '+testkey+' of the non-stiff DETEST suite.'
     return ivp
+
+def F1rhs(t,u):
+    a=0.1
+    du=zeros(2)
+    du[0]=u[1]
+    if np.mod(np.floor(t),2):     #Odd
+      du[1] = 2.*a*u[1] - (np.pi**2+a**2)*u[0] - 1
+    else:
+      du[1] = 2.*a*u[1] - (np.pi**2+a**2)*u[0] + 1
+    return du
+
+def F2rhs(t,u):
+    du=zeros(1)
+    if np.mod(np.floor(t),2):     #Odd
+      du[0] = 55.-u[0]/2.
+    else:
+      du[0] = 55.-3.*u[0]/2.
+    return du
+
+def F4rhs(t,u):
+    du=zeros(1)
+    if t<=10.:
+      du[0] = -2./21 - 120.*(t-5.)/(1.+4.*(t-5.)**2)
+    else:
+      du[0] = -2.*u[0]
+    return du
+
+def F5rhs(t,u):
+    du=zeros(1)
+    c=np.sum([i**(4./3) for i in range(1,20)])
+    du[0] = 4./3/c * np.sum([(t-i+0j)**(4./3) for i in range(1,20)])*u[0]
+    return du
 
 def B4rhs(t,u):
     du=zeros(3)
@@ -184,7 +292,7 @@ def B4rhs(t,u):
     return du
 
 def detest_suite():
-    detestkeys=['A1','A2','A3','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','D1']#,'A5']
+    detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5','F1','F2','F3','F4','F5']
     return [detest(dtkey) for dtkey in detestkeys]
 
 

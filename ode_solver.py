@@ -5,7 +5,7 @@ class ODESolver:
     def __init__(self):
         pass
 
-    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,x=None):
+    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,controllertype='P',x=None,debug=False,diagnostics=False):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -32,8 +32,9 @@ class ODESolver:
                 * Option to keep timestep history
                 * Option to keep error estimate history
         """
-        f=ivp.f; u0=ivp.u0; T=ivp.T
-        u=[u0]; t=[t0]
+        f=ivp.rhs; u0=ivp.u0; T=ivp.T
+        u=[u0]; t=[t0]; dthist=[]
+        rejected_steps=0
 
         if errtol is None:      # Fixed-timestep mode
             if dt is None: dt=(T-t0)/N
@@ -46,6 +47,7 @@ class ODESolver:
         else:                   # Error-control mode
             p=self.embedded_method.order()
             alpha = 0.7/p; beta = 0.4/p; kappa = 0.9
+            facmin = 0.2; facmax = 5.
             errestold = errtol
             errest=1.
 
@@ -57,9 +59,20 @@ class ODESolver:
                     u.append(unew)
                     t.append(t[-1]+dt)
                     errestold = errest  #Should this happen if step is rejected?
-                else: print 'step rejected'
+                    dthist.append(dt)
+                else: rejected_steps+=1
 
-                #Compute new dt using PI-controller
-                dt = kappa*dt*(errtol/errest)**alpha * (errestold/errtol)**beta
+                if controllertype=='P':
+                  #Compute new dt using P-controller
+                  facopt = (errtol/errest)**alpha 
 
-        return t,u
+                elif controllertype=='PI':
+                  #Compute new dt using PI-controller
+                  facopt = ((errtol/errest)**alpha
+                            *(errestold/errtol)**beta)
+                else: print 'Unrecognized time step controller type'
+
+                dt = dt * min(facmax,max(facmin,kappa*facopt))
+
+        if diagnostics==False: return t,u
+        else: return t,u,rejected_steps,dthist
