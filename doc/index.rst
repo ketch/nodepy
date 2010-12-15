@@ -28,6 +28,13 @@ Some distinctive design goals are:
     (hence powerful) representaton of an object is used whenever
     possible.  Thus, order conditions are generated using products
     on rooted trees (or other recursions) rather than being hard-coded.
+  * **Floating-point representation**: Most quantities, such as coefficients
+    of integration methods, are represented with double-precision numbers.
+    This means also that, for the most part, properties of methods that
+    are in truth exact (discretely-valued) are determined by numerical
+    calculations, using appropriate tolerances.  Thus the "order" of
+    a method is determined by checking whether the order conditions are
+    satisfied to within a small value (near machine-epsilon).
 
 In general, user-friendliness of the interface and readability of
 the code are prioritized over performance.

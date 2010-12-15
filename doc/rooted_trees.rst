@@ -11,19 +11,19 @@ Plotting trees
 .. plot::
    :include-source:
 
-   from NodePy.rooted_trees import *
+   from nodepy.rooted_trees import *
    tree=RootedTree('{T^2{T{T}}{T}}')
    tree.plot()
 
 .. plot::
    :include-source:
 
-   from NodePy.rooted_trees import *
+   from nodepy.rooted_trees import *
    plot_all_trees(5)
 
 
 
-.. automethod:: NodePy.rooted_trees.RootedTree.plot
+.. automethod:: nodepy.rooted_trees.RootedTree.plot
 
 Computing products on trees
 ===========================

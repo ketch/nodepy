@@ -64,6 +64,32 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         self.info=description
         self.underlying_method=rk.RungeKuttaMethod(self.A-self.At,self.b-self.bt)
 
+    def __repr__(self): 
+        """
+        Pretty-prints the Butcher array in the form:
+          |   |
+        c | A | At
+        ___________
+          | b | bt
+        """
+        s=self.name+'\n'+self.info+'\n'
+        for i in range(len(self)):
+            s+='%6.3f |' % self.c[i]
+            for j in range(len(self)):
+                s+=' %6.3f' % self.A[i,j]
+            s+=' | '    
+            for jj in range(len(self)):
+                s+=' %6.3f' % self.At[i,jj]    
+            s+='\n'
+        s+='_______|'+('_______'*2*len(self))+('_____')+'\n'
+        s+= '       |'
+        for j in range(len(self)):
+            s+=' %6.3f' % self.b[j]
+        s+=' | '
+        for jj in range(len(self)):
+            s+=' %6.3f' % self.bt[jj]
+        return s
+ 
     def __len__(self):
         """
             The length of the method is the number of stages.
@@ -82,7 +108,9 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
             Returns the radius of absolute monotonicity
             of a Runge-Kutta method.
         """
-        r=rk.bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
+        from utils import bisect
+        
+        r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
 
     def is_absolutely_monotonic(self,r,tol):
@@ -101,8 +129,6 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
 
             The inequalities are interpreted componentwise.
 
-            **References**:
-                #. [kraaijevanger1991]
         """
         m=len(self)
         K  =np.hstack([np.vstack([self.A  ,self.b ]),np.zeros([m+1,1])])

@@ -440,7 +440,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
 
-    def linear_monotonicity_radius(self,acc=1.e-10,tol=1.e-15):
+
+    def linear_monotonicity_radius(self,acc=1.e-10,tol=1.e-15,tol2=1e-8):
       r"""
           Computes Horvath's monotonicity radius of the stability
           function.  Not sure yet if this is M_lin of the method.
@@ -448,28 +449,39 @@ class RungeKuttaMethod(GeneralLinearMethod):
       from utils import bisect
 
       p,q=self.stability_function()
+      for i in range(len(p)+1):
+          if abs(p[i])<=tol2: p[i]=0.0
+      for i in range(len(q)+1):
+          if abs(q[i])<=tol2: q[i]=0.0
       #First check extreme cases
       if p.order>q.order: return 0
       phi = lambda z: p(z)/q(z)
       #Get the negative real zeroes of the derivative of p/q:
       phip=p.deriv()*q-q.deriv()*p
-      zeroes=[z for z in phip.r if np.isreal(z) and z<0]
+      zeroes=[z for z in phip.r if np.isreal(z) and z<0]      
       #Find the extremum of phi on (-inf,0):
+      xmax=-10000
+      if phip(0)<0: return 0
       if len(zeroes)>0:
+          for i in range(len(zeroes)):
+              if p(zeroes[i])/q(zeroes[i])<p(xmax)/q(xmax) and zeroes[i]>xmax:  xmax=zeroes[i]
           zmax=max(abs(phi(zeroes)))
           rlo=max(zeroes)
           if p.order==q.order: 
-              zmax=max(zmax, abs(p[0]/q[0]))
+              zmax=max(zmax, abs(p[len(p)]/q[len(q)]))
       else:
           if p.order<q.order: return -np.inf
           if p.order==q.order: 
-              zmax=abs(p[0]/q[0])
+              zmax=abs(p[len(p)]/q[len(q)])
+              if p[len(p)]/q[len(q)]>=-tol: return -np.inf
               rlo=-10000
-
-      phim=lambda z,tol: p(z)/q(z)<zmax
-
-      r=bisect(rlo,0,acc,tol,phim)
+      s=p-zmax*q 
+      zeroes2=[z for z in s.r if np.isreal(z) and z<0 and z>=xmax]
+      if len(zeroes2)>0:
+          r=max(zeroes2)
+      else: r=0
       return float(np.real(r))
+
 
     def stability_function(self):
         r""" 
@@ -490,6 +502,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
         p=np.poly1d(p1[::-1])    # Numerator
         q=np.poly1d(q1[::-1])    # Denominator
         return p,q
+
+    def plot_stability_function(self,bounds=[-20,1]):
+        p,q=self.stability_function()
+        xx=np.arange(bounds[0], bounds[1], 0.01)
+        yy=p(xx)/q(xx)
+        pl.plot(xx,yy)
+        pl.show()  
+
 
     def plot_stability_region(self,N=200,bounds=[-10,1,-5,5],
                     color='r',filled=True,scaled=False,plotroots=True,
@@ -527,12 +547,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.title('Absolute Stability Region for '+self.name)
         pl.hold(True)
         if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
-        if len(q)>1: pl.plot(np.real(q.r),np.imag(p.r),'xk')
+        #if len(q)>1: pl.plot(np.real(q.r),np.imag(p.r),'xk')  
+        if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
         pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         pl.axis('Image')
         pl.hold(False)
-        #pl.show()
+        pl.show()
 
     def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
                     color='r',filled=True):
@@ -567,7 +588,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.plot([bounds[0],bounds[1]],[0,0],'--k')
         pl.axis('Image')
         pl.hold(False)
-
+        
     def is_circle_contractive(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method has radius of circle
             contractivity at least $r$.
@@ -616,7 +637,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         # Need an exception here if rhi==rmax
 
     def canonical_shu_osher_form(self,r):
-        r""" Return d,P where P isthe matrix P=r(I+rK)^{-1}K 
+        r""" Return d,P where P is the matrix P=r(I+rK)^{-1}K 
              and d is the vector d=(I+rK)^{-1}e=(I-P)e
         """
         s=len(self)
@@ -633,25 +654,22 @@ class RungeKuttaMethod(GeneralLinearMethod):
         d,P=self.canonical_shu_osher_form(r)
         alpha=P*(P>0)
         alphatilde=-P*(P<0)
-        x=np.dot(np.linalg.inv(I-alphatilde),2*alphatilde)
-        M=np.linalg.inv(I+x)
-        #Equivalently:
-        M=np.dot(np.linalg.inv(I+alphatilde),I-alphatilde)
+        M=np.linalg.inv(I+2*alphatilde)
         alphanew=np.dot(M,alpha)
         dnew=np.dot(M,d)
-        #print np.dot(M-I,alphatilde)
-        alphatildenew=np.dot(M,x-alphatilde)
+        alphatildenew=np.dot(M,alphatilde)
         return dnew, alphanew, alphatildenew
+
 
     def is_splittable(self,r,tol=1.e-15):
         d,alpha,alphatilde=self.split(r,tol=tol)
         if max(abs(self.A[0,:]))<tol: alpha[1:,0]+=d[1:]/2.
-        if alpha.min()>=-tol and d.min()>=-tol: return True
+        if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: return True
         else: return False
 
     def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13):
         r"""
-            Return the optimal downwind splitting of the method
+            Return the optimal (possibly?) downwind splitting of the method
             along with the optimal downwind SSP coefficient.
         """
         from utils import bisect
@@ -659,6 +677,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         r=bisect(0,rmax,acc,tol,self.is_splittable)
         d,alpha,alphatilde=self.split(r,tol=tol)
         return r,d,alpha,alphatilde
+
 
     def is_explicit(self):
         return False
@@ -1112,7 +1131,6 @@ def loadRKM(which='All'):
         'DP5':        Dormand-Prince 5th-order
         'Fehlberg45': 5th-order part of Fehlberg's pair
         'Lambert65':
-
         Implicit:
 
         'BE':         Backward Euler
@@ -1298,8 +1316,34 @@ def loadRKM(which='All'):
     b=A[-1,:]
     bhat=np.array([2479./34992,0.,123./416,612941./3411720,43./1440,2272./6561,79937./1113912,3293./556956])
     RK['BS5']=ExplicitRungeKuttaPair(A,b,bhat,name='Bogacki-Shampine RK5(4)8')
-
-
+    #================================================
+    A=np.array([[0,0,0,0,0,0,0], [0.392382208054010,0,0,0,0,0,0],
+                [0.310348765296963 ,0.523846724909595 ,0,0,0,0,0],[0.114817342432177 ,0.248293597111781 ,0,0,0,0,0],
+                [0.136041285050893 ,0.163250087363657 ,0,0.557898557725281 ,0,0,0],
+                [0.135252145083336 ,0.207274083097540 ,-0.180995372278096 ,0.326486467604174 ,0.348595427190109 ,0,0],
+                [0.082675687408986 ,0.146472328858960 ,-0.160507707995237 ,0.161924299217425 ,0.028864227879979 ,0.070259587451358 ,0]])
+    b=np.array([0.110184169931401 ,0.122082833871843 ,-0.117309105328437 ,0.169714358772186, 0.143346980044187, 0.348926696469455, 0.223054066239366])
+    RK['SSP75']=ExplicitRungeKuttaMethod(A,b,name='SSP75',description='From Ruuth-Spiteri paper')
+    #================================================
+    A=np.array([[0,0,0,0,0,0,0,0],[0.276409720937984 ,0,0,0,0,0,0,0],[0.149896412080489 ,0.289119929124728 ,0,0,0,0,0,0],
+                [0.057048148321026 ,0.110034365535150 ,0.202903911101136 ,0,0,0,0,0],
+                [0.169059298369086 ,0.326081269617717 ,0.450795162456598 ,0,0,0,0,0],
+                [0.061792381825461 ,0.119185034557281 ,0.199236908877949 ,0.521072746262762 ,-0.001094028365068 ,0,0,0],
+                [0.111048724765050 ,0.214190579933444 ,0.116299126401843 ,0.223170535417453 ,-0.037093067908355 ,0.228338214162494 ,0,0],
+                [0.071096701602448 ,0.137131189752988 ,0.154859800527808 ,0.043090968302309 ,-0.163751550364691 ,0.044088771531945 ,0.102941265156393 ,0]])
+    b=np.array([0.107263534301213 ,0.148908166410810 ,0.105268730914375 ,0.124847526215373 ,-0.068303238298102 ,0.127738462988848 ,0.298251879839231 ,0.156024937628252 ])
+    RK['SSP85']=ExplicitRungeKuttaMethod(A,b,name='SSP85',description='From Ruuth-Spiteri paper')
+    #================================================
+    A=np.array([[0,0,0,0,0,0,0,0,0],[0.234806766829933 ,0,0,0,0,0,0,0,0],
+                [0.110753442788106 ,0.174968893063956 ,0,0,0,0,0,0,0],
+                [0.050146926953296 ,0.079222388746543 ,0.167958236726863 ,0,0,0,0,0,0],
+                [0.143763164125647 ,0.227117830897242 ,0.240798769812556 ,0,0,0,0,0,0],
+                [0.045536733856107 ,0.071939180543530 ,0.143881583463234 ,0.298694357327376 ,-0.013308014505658,0,0,0,0],
+                [0.058996301344129 ,0.093202678681501 ,0.109350748582257 ,0.227009258480886 ,-0.010114159945349 ,0.281923169534861 ,0,0,0],
+                [0.114111232336224 ,0.180273547308430 ,0.132484700103381 ,0.107410821979346 ,-0.129172321959971 ,0.133393675559324 ,0.175516798122502 ,0,0],
+                [0.096188287148324 ,0.151958780732981 ,0.111675915818310 ,0.090540280530361 ,-0.108883798219725 ,0.112442122530629 ,0.147949153045843 ,0.312685695043563 ,0]])
+    b=np.array([0.088934582057735 ,0.102812792947845 ,0.111137942621198 ,0.158704526123705 ,-0.060510182639384 ,0.197095410661808 ,0.071489672566698 ,0.151091084299943 ,0.179244171360452 ])
+    RK['SSP95']=ExplicitRungeKuttaMethod(A,b,name='SSP95',description='From Ruuth-Spiteri paper')
 
     if which=='All':
         return RK
@@ -1495,7 +1539,7 @@ def RK22_family(gamma):
     """ 
         Construct a 2-stage second order Runge-Kutta method 
 
-        **Input**: w -- family parameter
+        **Input**: gamma -- family parameter
         **Output**: An ExplicitRungeKuttaMethod
 
     """
@@ -1894,7 +1938,7 @@ def rk_order_conditions_hardcoded(self,p,tol):
     b=self.b
     c=self.c
     if p==1:
-        z=sum(b)-1.
+        z=sum(b)-1. 
     if p==2:
         z=sum(np.dot(b,c))-1/2.
     if p==3:
@@ -1977,7 +2021,8 @@ def compose(RK1,RK2,h1=1,h2=1):
     RK1*RK2 gives the method obtained by applying
     RK2, followed by RK1, each with half the timestep.
 
-    **Output**:
+    **Output**::
+
         The method
              c_2 | A_2  0
            1+c_1 | b_2 A_1
@@ -1988,8 +2033,8 @@ def compose(RK1,RK2,h1=1,h2=1):
         The b_2 matrix block consists of m_1 (row) copies of b_2.
 
 
-    TODO: Think about whether this is the right thing to return.
     """
+    #TODO: Think about whether this is the right thing to return.
     f1=h1/(h1+h2)
     f2=h2/(h1+h2)
     A=np.vstack([
@@ -2033,7 +2078,7 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
     pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
     pl.axis('Image')
     pl.hold(False)
-    #pl.show()
+    pl.show()
 
 def python_to_matlab(code):
     r"""

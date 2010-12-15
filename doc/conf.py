@@ -40,6 +40,9 @@ extensions = ['sphinx.ext.autodoc',
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+sys.path.append(os.path.abspath('_themes'))
+html_theme_path = ['_themes']
+
 # The suffix of source filenames.
 source_suffix = '.rst'
 

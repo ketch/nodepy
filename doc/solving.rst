@@ -47,7 +47,7 @@ as argument::
     >> t,u = rk44(my_ivp)
 
 
-.. automethod:: NodePy.ode_solver.ODESolver.__call__
+.. automethod:: nodepy.ode_solver.ODESolver.__call__
 
 
 Convergence Testing
