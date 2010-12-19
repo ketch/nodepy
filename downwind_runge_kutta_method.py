@@ -11,6 +11,7 @@ REFERENCES:
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import runge_kutta_method as rk
+import utils
 import numpy as np
 
 #=====================================================

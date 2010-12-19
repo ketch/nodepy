@@ -658,6 +658,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         alphanew=np.dot(M,alpha)
         dnew=np.dot(M,d)
         alphatildenew=np.dot(M,alphatilde)
+        #Don't we need to check that -(I-M)alphatilde>=0 also?
+        #print np.dot(I-M,-alphatilde)
         return dnew, alphanew, alphatildenew
 
 
@@ -1925,7 +1927,7 @@ def SSPIRK1(m):
 
 
 
-def rk_order_conditions_hardcoded(self,p,tol):
+def rk_order_conditions_hardcoded(rkm,p,tol):
     """ 
         Returns a vector that is identically zero if the
         Runge-Kutta method satisfies the conditions of order p (only) 
@@ -1934,9 +1936,9 @@ def rk_order_conditions_hardcoded(self,p,tol):
         order six.  It is deprecated for now.
     """
     print 'rk_order_conditions_hardcoded: This function is deprecated!'
-    A=self.A
-    b=self.b
-    c=self.c
+    A=rkm.A
+    b=rkm.b
+    c=rkm.c
     if p==1:
         z=sum(b)-1. 
     if p==2:
@@ -1986,7 +1988,7 @@ def rk_order_conditions_hardcoded(self,p,tol):
         z[19]=np.dot(b,np.dot(A,np.dot(A,np.dot(A,np.dot(A,c)))))-1/720.
     #Need exception for p>6 or p<1
     if p>6:
-        z=1
+        raise Exception('Order conditions not implemented for p>6')
     return z
 
 

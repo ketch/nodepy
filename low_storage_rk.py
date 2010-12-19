@@ -226,6 +226,21 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta,np.vstack([self.A,self.b]))/sum(delta)
 
+        elif type=='2S' or type=='2S*':
+            m=len(betavec)-1
+            alpha=np.zeros([m+1,m])
+            beta =np.zeros([m+1,m])
+            for i in range(0,m): beta[i+1,i] = betavec[i+1]
+            for i in range(1,m):
+                beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
+                alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
+                alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
+            self.A,self.b=shu_osher_to_butcher(alpha,beta)
+            self.A=np.tril(self.A,-1)
+            print self.A
+            self.c=np.sum(self.A,1)
+            self.bhat=bhat
+
         elif type=='3S*_pair':
             m=len(betavec)-1
             alpha=np.zeros([m+1,m])
@@ -282,10 +297,17 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
         S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
         S2=np.zeros(np.size(S1))
         if self.lstype.startswith('3S*'): S3=S1+0.; S4=u[-1]+0.
+        elif self.lstype=='2S': S3=u[-1]+0.
 
         for i in range(1,m+1):
             S2 = S2 + self.delta[i-1]*S1
             if self.lstype=='2S_pair':
+                S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
+                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+            elif self.lstype=='2S':
+                #Horribly inefficient hack:
+                S3 = S3+self.bhat[i-1]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+                #End hack
                 S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
                      + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
             elif self.lstype=='3S*':
@@ -296,10 +318,11 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                      + self.gamma[2][i]*S3 \
                      + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
 
+        #Now put the embedded solution in S2
         if self.lstype=='2S_pair':
             S2=1./sum(self.delta[1:m+1])*(S2+self.delta[m+1]*S1)
-        elif self.lstype=='3S*':
-            S2=S4
+        elif self.lstype=='2S': S2=S3
+        elif self.lstype=='3S*': S2=S4
 
         if errest: return S1, np.max(np.abs(S1-S2))
         else: return S1
@@ -345,7 +368,10 @@ def load_LSRK(file,lstype='2S',has_emb=False):
     elif lstype=='3S*_pair': delta=[1.]+coeff[m-1:2*m-3] +[coeff[-3],coeff[-2],coeff[-1]]
     if lstype=='2S' or lstype=='2S*': 
         for i in range(1,m+1): gamma[0].append(1.-gamma[1][i]*sum(delta[0:i]))
-        meth = LowStorageRungeKuttaMethod(beta,gamma,delta,lstype)
+        if has_emb:
+            meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype,bhat=bhat)
+        else:
+            meth = LowStorageRungeKuttaMethod(beta,gamma,delta,lstype)
     elif lstype=='2S_pair':
         for i in range(1,m+1): gamma[0].append(1.-gamma[1][i]*sum(delta[0:i]))
         meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype)
