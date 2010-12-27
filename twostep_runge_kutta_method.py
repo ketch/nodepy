@@ -235,7 +235,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #================================================================
 
 def TSRKOrderConditions(p,ind='all'):
-    forest=tt.recursive_trees(p)
+    forest=tt.list_trees(p)
     code=[]
     for tree in forest:
         code.append(tsrk_elementary_weight_str(tree)+'-'+str(tree.Emap()))

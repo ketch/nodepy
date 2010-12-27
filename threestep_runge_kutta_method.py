@@ -65,7 +65,7 @@ class ThreeStepRungeKuttaMethod(GeneralLinearMethod):
 #================================================================
 
 def ThSRKOrderConditions(p,ind='all'):
-    forest=tt.recursive_trees(p)
+    forest=tt.list_trees(p)
     code=[]
     for tree in forest:
         code.append(thsrk_elementary_weight_str_matlab(tree)+'-'+str(tree.Emap()))

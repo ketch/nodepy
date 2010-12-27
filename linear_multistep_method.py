@@ -1,12 +1,5 @@
 """
-Class for linear multistep methods, and various functions related to them.
-
-**Author**: David Ketcheson (08-29-2008)
-
 **Examples**::
-
-    >>> import sys
-    >>> print sys.path
 
     >>> import linear_multistep_method as lmm
     >>> ab3=lmm.Adams_Bashforth(3)
@@ -55,12 +48,12 @@ class LinearMultistepMethod(GeneralLinearMethod):
         Returns the characteristic polynomials (also known as generating
         polynomials) of a linear multistep method.  They are:
 
-        '\rho(z) = \sum_{j=0}^k \alpha_k z^k'
+        `\rho(z) = \sum_{j=0}^k \alpha_k z^k`
 
-        '\sigma(z) = \sum_{j=0}^k \beta_k z^k'
+        `\sigma(z) = \sum_{j=0}^k \beta_k z^k`
 
         **References**:
-            #. [hairer2003]_ p. 370, eq. 2.4
+            #. [hairer1993]_ p. 370, eq. 2.4
         """
         rho=np.poly1d(self.alpha[::-1])
         sigma=np.poly1d(self.beta[::-1])
@@ -110,8 +103,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             of the method.
 
             References:
-                R.J. LeVeque, "Finite Difference Methods for Ordinary
-                and Partial Differential Equations", section 7.6.1
+                [leveque2007]_ section 7.6.1
 
             TODO: Implement something that works when the stability
                     region boundary crosses itself.
@@ -143,12 +135,13 @@ def Adams_Bashforth(k):
         `y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
 
         They are generated using equations (1.5) and (1.7) from 
-        [hairer2003]_ III.1, along with the binomial expansion.
+        [hairer1993]_ III.1, along with the binomial expansion.
 
         .. note::
-            Somehow we lose accuracy when evaluating the order conditions
-            for methods with many steps.  Maybe we should use SAGE datatypes
-            instead of NumPy arrays?
+            Accuracy is lost when evaluating the order conditions
+            for methods with many steps.  This could be avoided by using 
+            SAGE rationals instead of NumPy doubles for the coefficient
+            representation.
 
         References:
             #. [hairer1993]_
@@ -182,10 +175,11 @@ def Adams_Moulton(k):
         Exercise 3 from Hairer & Wanner III.1, along with the binomial 
         expansion.
 
-        NOTES:
-            Somehow we lose accuracy when evaluating the order conditions
-            for methods with many steps.  Maybe we should use SAGE datatypes
-            instead of NumPy arrays?
+        .. note::
+            Accuracy is lost when evaluating the order conditions
+            for methods with many steps.  This could be avoided by using 
+            SAGE rationals instead of NumPy doubles for the coefficient
+            representation.
 
         References:
             [hairer1993]_
@@ -213,15 +207,16 @@ def backward_difference_formula(k):
         The methods are implicit and have order k.
         They have the form:
 
-        `\sum_{j=0}^{k} \alpha_j y_{n+k-j+1} = h \beta_j f(y_n+1)`
+        `\sum_{j=0}^{k} \alpha_j y_{n+k-j+1} = h \beta_j f(y_{n+1})`
 
         They are generated using equation (1.22') from Hairer & Wanner III.1,
         along with the binomial expansion.
 
-        NOTES:
-            Somehow we lose accuracy when evaluating the order conditions
-            for methods with many steps.  Maybe we should use SAGE datatypes
-            instead of NumPy arrays?
+        .. note::
+            Accuracy is lost when evaluating the order conditions
+            for methods with many steps.  This could be avoided by using 
+            SAGE rationals instead of NumPy doubles for the coefficient
+            representation.
 
         **References**:
             #.[hairer1993]_ pp. 364-365

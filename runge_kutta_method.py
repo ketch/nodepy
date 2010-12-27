@@ -1,15 +1,7 @@
 """
-Class for Runge-Kutta methods, and various functions related to them.
-
-**Author**: David Ketcheson (10-2010)
-
 **Examples**::
 
-    >>> import sys
-    >>> mypath= '/Users/ketch/Panos'
-    >>> if mypath not in sys.path: sys.path.append(mypath)
-    >>> from general_linear_method import *
-    >>> from runge_kutta_method import *
+    >>> from nodepy.runge_kutta_method import *
 
 * Load a method::
 
@@ -37,8 +29,9 @@ Class for Runge-Kutta methods, and various functions related to them.
         ____|________
             | 0.0 1.0
 
-
-**TODO**:
+**References**:  
+    #. [butcher2003]_
+    #. [hairer1993]_
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
@@ -56,10 +49,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
         The method is defined by its Butcher array ($A,b,c$).
         It is assumed everywhere that  `c_i=\sum_j A_{ij}`.
 
-        **References**:  
-            #. [butcher2003]_
-            #. [hairer1993]_
     """
+
+    #============================================================
+    # Private functions
+    #============================================================
+
     def __init__(self,A=None,b=None,alpha=None,beta=None,
             name='Runge-Kutta Method',description=''):
         r"""
@@ -74,6 +69,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
             The Butcher arrays are used as the primary representation of
             the method.  If Shu-Osher arrays are provided instead, the
             Butcher arrays are computed by :ref:`shu_osher_to_butcher`.
+
+            TODO: add a check for if the method is explicit and if so
+            instantiate it as an ExplicitRungeKuttaMethod.
         """
         # Here there is a danger that one could change A
         # and c would never be updated
@@ -172,6 +170,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         b=np.hstack([RK2.b*f2,self.b*f1]).squeeze()
         return RungeKuttaMethod(A,b)
 
+    #============================================================
+    # Reducibility
+    #============================================================
+
     def dj_reducible(self,tol=1.e-13):
         """ Determine whether the method is DJ-reducible.
             A method is DJ-reducible if it contains any stage that
@@ -243,6 +245,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         self.b=b
         self.c=c
 
+    #============================================================
+    # Accuracy
+    #============================================================
+
     def error_coefficient(self,tree):
         from numpy import dot
         code=elementary_weight_str(tree)
@@ -253,7 +259,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return coeff/tree.symmetry()
 
     def error_coeffs(self,p):
-        forest=rt.recursive_trees(p)
+        forest=rt.list_trees(p)
         err_coeffs=[]
         for tree in forest:
             err_coeffs.append(self.error_coefficient(tree))
@@ -273,7 +279,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def principal_error_norm(self,tol=1.e-13):
         p=self.order(tol)
-        forest=rt.recursive_trees(p+1)
+        forest=rt.list_trees(p+1)
         errs=[]
         for tree in forest:
             errs.append(self.error_coefficient(tree))
@@ -311,7 +317,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                    Advantages: Most satisfying, no maximum order
                    Disadvantages: way too slow for high order
 
-            TODO: Decide on something and fill in this docstring.
+            TODO: Implement the different approaches through optional keyword
         """
         A,b,c=self.A,self.b,self.c
         C=np.diag(c)
@@ -325,83 +331,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
         z[-1]=np.dot(b,c**(p-1))-1./p
         return z
 
-
-    def propagation_matrix(self,L,dt):
-        """
-            Returns the solution propagation matrix for the linear 
-            autonomous system with RHS equal to the matrix L, i.e. 
-            it returns the matrix G such that when the Runge-Kutta
-            method is applied to the system 
-            $u'(t)=Lu$
-            with stepsize dt, the numerical solution is given by
-            $u^{n+1} = G u^n$.
-
-            **Input**:
-                - self -- a Runge-Kutta method
-                - L    -- the RHS of the ODE system
-                - dt   -- the timestep
-
-            The formula for $G$ is (if $L$ is a scalar):
-            $G = 1 + b^T L (I-A L)^{-1} e$
-
-            where $A$ and $b$ are the Butcher arrays and $e$ is the vector
-            of ones.  If $L$ is a matrix, all quantities above are 
-            replaced by their Kronecker product with the identity
-            matrix of size $m$, where $m$ is the number of stages of
-            the Runge-Kutta method.
-        """
-        neq=np.size(L,0)
-        nstage=len(self)
-        I =np.identity(nstage)
-        I2=np.identity(neq)
-        Z=np.kron(I,dt*L)
-        X=np.kron(I,I2)-np.dot(np.kron(self.A,I2),Z)
-        Xinv=np.linalg.inv(X)
-        e=np.kron(np.ones(nstage)[:,np.newaxis],I2)
-        G=I2 + np.dot(np.kron(self.b[:,np.newaxis],I2).T,np.dot(Z,np.dot(Xinv,e)))
-
-        return G,Xinv
-
-    def standard_shu_osher_form(self,r=None):
-        r"""
-            Gives a Shu-Osher form in which the SSP coefficient is
-            evident (i.e., in which $\\alpha_{ij},\\beta_{ij} \\ge 0$ and
-            $\\alpha_{ij}/\\beta_{ij}=c$ for every $\\beta_{ij}\\ne 0$).
-
-            **Input**: 
-                - A RungeKuttaMethod
-            **Output**: 
-                - alpha, beta -- Shu-Osher arrays
-
-            The 'optimal' Shu-Osher arrays are given by
-            
-            $$\\alpha= K(I+cA)^{-1}$$
-            $$\\beta = c \\alpha$$
-
-            where K=[ A
-                     b^T].
-
-            **References**: 
-                #. [higueras2005]_
-
-        """
-        m=len(self)
-        if r is None: r=self.absolute_monotonicity_radius()
-        K=np.vstack([self.A,self.b])
-        K=np.hstack([K,np.zeros([m+1,1])])
-        X=np.eye(m+1)+r*K
-        beta=np.linalg.solve(X,K)
-        beta=beta[:,:-1]
-        alpha=r*beta
-        for i in range(1,len(self)+1):
-            alpha[i,0]=1.-np.sum(alpha[i,1:])
-        return alpha, beta
-
     def stage_order(self,tol=1.e-14):
         r""" 
-            Returns the stage order of a Runge-Kutta method.
+            Returns the stage order 
 
-            The stage order is the minimum over all stages of the
+            The stage order of a Runge-Kutta method is the minimum, 
+            over all stages, of the
             order of accuracy of that stage.  It can be shown to be
             equal to the largest integer k such that the simplifying
             assumptions $B(\\xi)$ and $C(\\xi)$ are satisfied for
@@ -418,6 +353,121 @@ class RungeKuttaMethod(GeneralLinearMethod):
             C=np.dot(self.A,self.c**(k-1))-self.c**k/k
         return k-1
 
+
+    #============================================================
+    # Classical Stability
+    #============================================================
+    def stability_function(self):
+        r""" 
+            The stability function of a Runge-Kutta method is
+            $\\phi(z)=p(z)/q(z)$, where
+
+            $$p(z)=\\det(I - z A + z e b^T)$$
+
+            $$q(z)=\\det(I - z A)$$
+
+            This function constructs the numerator and denominator of the 
+            stability function of a Runge-Kutta method.
+
+            **Output**:
+                - p -- Numpy poly representing the numerator
+                - q -- Numpy poly representing the denominator
+
+        """
+        p1=np.poly(self.A-np.tile(self.b,(len(self),1)))
+        q1=np.poly(self.A)
+        p=np.poly1d(p1[::-1])    # Numerator
+        q=np.poly1d(q1[::-1])    # Denominator
+        return p,q
+
+    def plot_stability_function(self,bounds=[-20,1]):
+        p,q=self.stability_function()
+        xx=np.arange(bounds[0], bounds[1], 0.01)
+        yy=p(xx)/q(xx)
+        pl.plot(xx,yy)
+        pl.show()  
+
+
+    def plot_stability_region(self,N=200,bounds=[-10,1,-5,5],
+                    color='r',filled=True,scaled=False,plotroots=True,
+                    alpha=1.,scalefac=None):
+        r""" 
+            The region of absolute stability
+            of a Runge-Kutta method, is the set
+
+            `\{ z \in C : |R (z)|\le 1 \}`
+
+            where $R(z)$ is the stability function of the method.
+
+            **Input**: (all optional)
+                - N       -- Number of gridpoints to use in each direction
+                - bounds  -- limits of plotting region
+                - color   -- color to use for this plot
+                - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+        """
+        p,q=self.stability_function()
+        m=len(p)
+        x=np.linspace(bounds[0],bounds[1],N)
+        y=np.linspace(bounds[2],bounds[3],N)
+        X=np.tile(x,(N,1))
+        Y=np.tile(y[:,np.newaxis],(1,N))
+        Z=X+Y*1j
+        if scaled: 
+            if scalefac==None: scalefac=m
+        else: scalefac=1.
+        R=np.abs(p(Z*scalefac)/q(Z*scalefac))
+        #pl.clf()
+        if filled:
+            pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
+        else:
+            pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
+        pl.title('Absolute Stability Region for '+self.name)
+        pl.hold(True)
+        if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
+        #if len(q)>1: pl.plot(np.real(q.r),np.imag(p.r),'xk')  
+        if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
+        pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+        pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+        pl.axis('Image')
+        pl.hold(False)
+        pl.show()
+
+    def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
+                    color='r',filled=True):
+        r""" The order star of a Runge-Kutta method is the set
+            
+            $$ \{ z \in C : |R(z)/exp(z)|\le 1 \} $$
+
+            where $R(z)$ is the stability function of the method.
+
+            **Input**: (all optional)
+                - N       -- Number of gridpoints to use in each direction
+                - bounds  -- limits of plotting region
+                - color   -- color to use for this plot
+                - filled  -- if true, order star is filled in (solid); otherwise it is outlined
+        """
+        p,q=self.stability_function()
+        x=np.linspace(bounds[0],bounds[1],N)
+        y=np.linspace(bounds[2],bounds[3],N)
+        X=np.tile(x,(N,1))
+        Y=np.tile(y[:,np.newaxis],(1,N))
+        Z=X+Y*1j
+        R=np.abs(p(Z)/q(Z)/np.exp(Z))
+        pl.clf()
+        if filled:
+            pl.contourf(X,Y,R,[0,1],colors=color)
+        else:
+            pl.contour(X,Y,R,[0,1],colors=color)
+        pl.title('Order star for '+self.name)
+        pl.hold(True)
+        pl.plot([0,0],[bounds[2],bounds[3]],'--k')
+        pl.plot([bounds[0],bounds[1]],[0,0],'--k')
+        pl.axis('Image')
+        pl.hold(False)
+        
+    #============================================================
+    # Nonlinear Stability
+    #============================================================
     def circle_contractivity_radius(self,acc=1.e-13,rmax=1000):
         r""" 
             Returns the radius of circle contractivity
@@ -439,7 +489,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
-
 
     def linear_monotonicity_radius(self,acc=1.e-10,tol=1.e-15,tol2=1e-8):
       r"""
@@ -483,112 +532,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
       return float(np.real(r))
 
 
-    def stability_function(self):
-        r""" 
-            Constructs the numerator and denominator of the 
-            stability function of a Runge-Kutta method.
-
-            **Output**:
-                - p -- Numpy poly representing the numerator
-                - q -- Numpy poly representing the denominator
-
-            Uses the formula $\\phi(z)=p(z)/q(z)$, where
-
-            $$p(z)=\\det(I - z A + z e b^T)$$
-            $$q(z)=\\det(I - z A)$$
-        """
-        p1=np.poly(self.A-np.tile(self.b,(len(self),1)))
-        q1=np.poly(self.A)
-        p=np.poly1d(p1[::-1])    # Numerator
-        q=np.poly1d(q1[::-1])    # Denominator
-        return p,q
-
-    def plot_stability_function(self,bounds=[-20,1]):
-        p,q=self.stability_function()
-        xx=np.arange(bounds[0], bounds[1], 0.01)
-        yy=p(xx)/q(xx)
-        pl.plot(xx,yy)
-        pl.show()  
-
-
-    def plot_stability_region(self,N=200,bounds=[-10,1,-5,5],
-                    color='r',filled=True,scaled=False,plotroots=True,
-                    alpha=1.,scalefac=None):
-        r""" 
-            Plot the region of absolute stability
-            of a Runge-Kutta method, i.e. the set
-
-            `\{ z \in C : |R (z)|\le 1 \}`
-
-            where $R(z)$ is the stability function of the method.
-
-            **Input**: (all optional)
-                - N       -- Number of gridpoints to use in each direction
-                - bounds  -- limits of plotting region
-                - color   -- color to use for this plot
-                - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
-        """
-        p,q=self.stability_function()
-        m=len(p)
-        x=np.linspace(bounds[0],bounds[1],N)
-        y=np.linspace(bounds[2],bounds[3],N)
-        X=np.tile(x,(N,1))
-        Y=np.tile(y[:,np.newaxis],(1,N))
-        Z=X+Y*1j
-        if scaled: 
-            if scalefac==None: scalefac=m
-        else: scalefac=1.
-        R=np.abs(p(Z*scalefac)/q(Z*scalefac))
-        #pl.clf()
-        if filled:
-            pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
-        else:
-            pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
-        pl.title('Absolute Stability Region for '+self.name)
-        pl.hold(True)
-        if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
-        #if len(q)>1: pl.plot(np.real(q.r),np.imag(p.r),'xk')  
-        if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
-        pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-        pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
-        pl.axis('Image')
-        pl.hold(False)
-        pl.show()
-
-    def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
-                    color='r',filled=True):
-        r""" Plot the order star of a Runge-Kutta method,
-            i.e. the set
-            
-            $$ \{ z \in C : |R(z)/exp(z)|\le 1 \} $$
-
-            where $R(z)$ is the stability function of the method.
-
-            **Input**: (all optional)
-                - N       -- Number of gridpoints to use in each direction
-                - bounds  -- limits of plotting region
-                - color   -- color to use for this plot
-                - filled  -- if true, order star is filled in (solid); otherwise it is outlined
-        """
-        p,q=self.stability_function()
-        x=np.linspace(bounds[0],bounds[1],N)
-        y=np.linspace(bounds[2],bounds[3],N)
-        X=np.tile(x,(N,1))
-        Y=np.tile(y[:,np.newaxis],(1,N))
-        Z=X+Y*1j
-        R=np.abs(p(Z)/q(Z)/np.exp(Z))
-        pl.clf()
-        if filled:
-            pl.contourf(X,Y,R,[0,1],colors=color)
-        else:
-            pl.contour(X,Y,R,[0,1],colors=color)
-        pl.title('Order star for '+self.name)
-        pl.hold(True)
-        pl.plot([0,0],[bounds[2],bounds[3]],'--k')
-        pl.plot([bounds[0],bounds[1]],[0,0],'--k')
-        pl.axis('Image')
-        pl.hold(False)
-        
     def is_circle_contractive(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method has radius of circle
             contractivity at least $r$.
@@ -636,6 +579,44 @@ class RungeKuttaMethod(GeneralLinearMethod):
             return 1
         # Need an exception here if rhi==rmax
 
+    #============================================================
+    # Representations
+    #============================================================
+    def standard_shu_osher_form(self,r=None):
+        r"""
+            Gives a Shu-Osher form in which the SSP coefficient is
+            evident (i.e., in which $\\alpha_{ij},\\beta_{ij} \\ge 0$ and
+            $\\alpha_{ij}/\\beta_{ij}=c$ for every $\\beta_{ij}\\ne 0$).
+
+            **Input**: 
+                - A RungeKuttaMethod
+            **Output**: 
+                - alpha, beta -- Shu-Osher arrays
+
+            The 'optimal' Shu-Osher arrays are given by
+            
+            $$\\alpha= K(I+cA)^{-1}$$
+            $$\\beta = c \\alpha$$
+
+            where K=[ A
+                     b^T].
+
+            **References**: 
+                #. [higueras2005]_
+
+        """
+        m=len(self)
+        if r is None: r=self.absolute_monotonicity_radius()
+        K=np.vstack([self.A,self.b])
+        K=np.hstack([K,np.zeros([m+1,1])])
+        X=np.eye(m+1)+r*K
+        beta=np.linalg.solve(X,K)
+        beta=beta[:,:-1]
+        alpha=r*beta
+        for i in range(1,len(self)+1):
+            alpha[i,0]=1.-np.sum(alpha[i,1:])
+        return alpha, beta
+
     def canonical_shu_osher_form(self,r):
         r""" Return d,P where P is the matrix P=r(I+rK)^{-1}K 
              and d is the vector d=(I+rK)^{-1}e=(I-P)e
@@ -680,6 +661,45 @@ class RungeKuttaMethod(GeneralLinearMethod):
         d,alpha,alphatilde=self.split(r,tol=tol)
         return r,d,alpha,alphatilde
 
+    #============================================================
+    # Miscellaneous
+    #============================================================
+    def propagation_matrix(self,L,dt):
+        """
+            Returns the solution propagation matrix for the linear 
+            autonomous system with RHS equal to the matrix L, i.e. 
+            it returns the matrix G such that when the Runge-Kutta
+            method is applied to the system 
+            $u'(t)=Lu$
+            with stepsize dt, the numerical solution is given by
+            $u^{n+1} = G u^n$.
+
+            **Input**:
+                - self -- a Runge-Kutta method
+                - L    -- the RHS of the ODE system
+                - dt   -- the timestep
+
+            The formula for $G$ is (if $L$ is a scalar):
+            $G = 1 + b^T L (I-A L)^{-1} e$
+
+            where $A$ and $b$ are the Butcher arrays and $e$ is the vector
+            of ones.  If $L$ is a matrix, all quantities above are 
+            replaced by their Kronecker product with the identity
+            matrix of size $m$, where $m$ is the number of stages of
+            the Runge-Kutta method.
+        """
+        neq=np.size(L,0)
+        nstage=len(self)
+        I =np.identity(nstage)
+        I2=np.identity(neq)
+        Z=np.kron(I,dt*L)
+        X=np.kron(I,I2)-np.dot(np.kron(self.A,I2),Z)
+        Xinv=np.linalg.inv(X)
+        e=np.kron(np.ones(nstage)[:,np.newaxis],I2)
+        G=I2 + np.dot(np.kron(self.b[:,np.newaxis],I2).T,np.dot(Z,np.dot(Xinv,e)))
+
+        return G,Xinv
+
 
     def is_explicit(self):
         return False
@@ -719,6 +739,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         """ 
             Returns the radius of absolute monotonicity
             of the stability function of a Runge-Kutta method.
+
+            TODO: implement this functionality for implicit methods.
         """
         from utils import bisect
         p,q=self.stability_function()
@@ -2100,3 +2122,24 @@ def python_to_matlab(code):
     print outline
     print '******************'
     return outline
+
+def relative_accuracy_efficiency(rk1,rk2):
+    r"""
+    Compute the accuracy efficiency of method rk1 relative to that of rk2,
+    for two methods with the same order of accuracy.
+
+    The relative accuracy efficiency is
+
+    `\eta = \frac{s_2}{s_1} \left(\frac{A_2}{A_1}\right)^{1/p+1}`
+
+    where $s_1,s_2$ are the number of stages of the two methods and
+    $A_1,A_2$ are their principal error norms.
+    """
+
+    p=rk1.order()
+    if rk2.order()!=p: raise Exception('Methods have different orders')
+
+    A1=rk1.principal_error_norm()
+    A2=rk2.principal_error_norm()
+
+    return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))

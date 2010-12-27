@@ -5,7 +5,7 @@ class ODESolver:
     def __init__(self):
         pass
 
-    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,controllertype='P',x=None,debug=False,diagnostics=False):
+    def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,controllertype='P',x=None,diagnostics=False):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -26,10 +26,28 @@ class ODESolver:
             The argument x is used to pass any additional arguments required
             for the RHS function f.
 
+            **Input**:
+                - ivp -- An IVP instance (the initial value problem to be solved)
+                - t0 -- The initial time from which to integrate
+                - N -- The # of steps to take (using a fixed step size)
+                - dt -- The step size to use
+                - errtol -- The local error tolerance to be observed (using
+                  adaptive stepping).  This requires that the method have an
+                  error estimator, such as an embedded Runge-Kutta method.
+                - controllerType -- The type of adaptive step size control
+                  to be used; available options are 'P' and 'PI'.  See
+                  [hairer1993b]_ for details.
+                - diagnostics -- if True, return the number of rejected steps
+                  and a list of step sizes used, in addition to the solution
+                  values and times.
+
+            **Output**:
+                - t -- A list of solution times
+                - u -- A list of solution values
+
             TODO: 
 
                 * Implement an option to not keep all output (for efficiency).
-                * Option to keep timestep history
                 * Option to keep error estimate history
         """
         f=ivp.rhs; u0=ivp.u0; T=ivp.T

@@ -3,6 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. contents::
+
 ================
 Overview
 ================
@@ -35,6 +37,10 @@ Some distinctive design goals are:
     calculations, using appropriate tolerances.  Thus the "order" of
     a method is determined by checking whether the order conditions are
     satisfied to within a small value (near machine-epsilon).
+    Of course, for some purposes an exact representation of rational
+    coefficients and exact computation of method properties would
+    be preferable.  However, since such an approach would be less
+    generally applicable, this is planned as future work.
 
 In general, user-friendliness of the interface and readability of
 the code are prioritized over performance.
@@ -79,8 +85,8 @@ Testing Methods
 ======================
 
 NodePy includes implementation of the actual time-stepping algorithms
-for the various classes of methods.  A wide range of initial value
-ODEs can be loaded, including the DETEST suite of problems.
+for the various classes of methods.  A wide range of 
+:ref:`initial value ODEs <ivp>` can be loaded, including the DETEST suite of problems.
 Arbitrary initial value problems
 can be instantiated and solved simply by calling a method with the
 initial value problem as argument.  For methods with error estimates,
@@ -93,8 +99,6 @@ of initial boundary value PDEs.
 
 NodePy Manual
 ==================================
-
-Contents:
 
 .. toctree::
    :maxdepth: 2

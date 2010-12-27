@@ -1,8 +1,17 @@
-.. contents::
-
 =================================================
 Testing Methods: Solving Initial Value Problems
 =================================================
+In addition to directly analyzing solver properties, NodePy also facilitates
+the testing of solvers through application to problems of interest.
+Furthermore, NodePy includes routines for automatically running sets of 
+tests to compare the practical convergence or efficiency of various solvers
+for given problem(s).
+
+
+.. contents::
+
+
+.. _ivp:
 
 Initial Value Problems
 ==============================
@@ -37,8 +46,14 @@ can be loaded as follows::
     >> myivp = ivp.load_ivp('vdp')
     
 
+Instantiation
+-----------------
+
+.. automethod:: nodepy.ivp.detest
+
+
 Solving Initial Value Problems
-==============================
+====================================
 
 Any ODE solver object in NodePy can be used to solve an initial value
 problem simply by calling the solver with an initial value problem object
@@ -51,7 +66,12 @@ as argument::
 
 
 Convergence Testing
-==============================
+--------------------------------
+
+.. automethod:: nodepy.convergence.ctest
 
 Performance testing with automatic step-size control
-=====================================================
+----------------------------------------------------------------
+
+.. automethod:: nodepy.convergence.ptest
+

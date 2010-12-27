@@ -7,24 +7,26 @@ from nodepy import runge_kutta_method as rk
 
 def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
     """
-        Runs a convergence test and creates a plot of the results.
+        Runs a convergence test, integrating a single initial value problem
+        using a sequence of fixed step sizes and a set of methods.
+        Creates a plot of the resulting errors versus step size for each method.
 
-        INPUTS:
-            methods -- a list of ODEsolver instances
-            ivp     -- an IVP instance
-            grids   -- a list of grid sizes for integration.
-                       optional; defaults to [20,40,80,160,320,640]
+        **Inputs**:
+            - methods -- a list of ODEsolver instances
+            - ivp     -- an IVP instance
+            - grids   -- a list of grid sizes for integration.
+                      optional; defaults to [20,40,80,160,320,640]
 
-        EXAMPLES:
+        **Example**::
 
             import runge_kutta_method as rk
             from ivp import *
             rk44=rk.loadRKM('RK44')
-            myivp=nlsin_fun()
-            ctest(methods,myivp)
+            myivp=load_ivp('nlsin')
+            err=ctest(rk44,myivp)
 
-            TODO: 
-                - Option to plot versus f-evals or dt
+        TODO: 
+            - Option to plot versus f-evals or dt
 
     """
     pl.clf(); pl.draw(); pl.hold(True)
@@ -60,21 +62,24 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
 
 def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
     """
-        Runs a performance test and creates a plot of the results.
+        Runs a performance test, integrating a set of problems with a set
+        of methods using a sequence of error tolerances.  Creates a plot 
+        of the error achieved versus the amount of work done (number of
+        function evaluations) for each method.
 
-        INPUTS:
-            methods -- a list of ODEsolver instances
-                       Note that all methods must have error estimators.
-            ivps    -- a list of IVP instances
-            tols    -- a specified list of error tolerances (optional)
+        **Input**:
+            * methods -- a list of ODEsolver instances
+                      Note that all methods must have error estimators.
+            * ivps    -- a list of IVP instances
+            * tols    -- a specified list of error tolerances (optional)
 
-        EXAMPLES:
+        **Example**::
 
             import runge_kutta_method as rk
             from ivp import *
             bs5=rk.loadRKM('BS5')
             myivp=load_ivp('nlsin')
-            ptest(bs5,myivp)
+            work,err=ptest(bs5,myivp)
 
     """
     pl.clf(); pl.draw(); pl.hold(True)

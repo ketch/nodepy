@@ -1,31 +1,3 @@
-"""
-Class for rooted trees, and various functions on rooted trees.
-
-These are useful for analyzing the order conditions of multistage
-numerical ODE solvers, such as Runge-Kutta methods and general
-linear methods.
-
-AUTHOR: David Ketcheson (08-29-2008)
-
-**Examples**::
-
-    >>> from nodepy import rooted_trees as rt
-    >>> tree=rt.RootedTree('{T^2{T{T}}{T}}')
-    >>> tree.plot()
-    >>> tree.order()
-    9
-    >>> tree.density()
-    144
-    >>> tree.symmetry()
-    2
-
-Topologically equivalent trees are considered equal::
-
-    >>> tree2=RootedTree('{T^2{T}{T{T}}}')
-    >>> tree2==tree
-    True
-
-"""
 import numpy as np
 import pylab as pl
 from sympy import symbols, factorial, sympify, Rational
@@ -36,19 +8,41 @@ from strmanip import *
 #=====================================================
 class RootedTree(str):
 #=====================================================
-    """
+    r"""
+        A rooted tree is a directed acyclic graph with one node, which
+        has no incoming edges, designated as the root.
+        Rooted trees are useful for analyzing the order conditions of 
+        multistage numerical ODE solvers, such as Runge-Kutta methods 
+        and other general linear methods.
+
         The trees are represented as strings, using one of the notations
         introduced by Butcher (the third column of Table 300(I) of
-        Butcher's text).  We use 'T' for tau (to represent a vertex)
-        and '{}' for '[]' (to indicate that everything inside the braces
-        is joined to a single parent node).  Thus the first four trees are:
+        Butcher's text).  The character 'T' is used in place of $\\tau$ 
+        to represent a vertex, and braces '{ }' are used instead of brackets 
+        '[ ]' to indicate that everything inside the braces
+        is joined to a single parent node.  Thus the first four trees are:
 
         'T', '{T}', '{T^2}', {{T}}'
+
+        These can be generated using the function list_trees(), which
+        returns a list of all trees of a given order::
+
+            >>> from nodepy import *
+            >>> for p in range(4):
+                    print rt.list_trees(p)
+            ['']
+            ['T']
+            ['{T}']
+            ['{{T}}', '{T^2}']
+            
+        Note that the tree of order 0 is indicated by an empty string.
         
+        If the tree contains an edge from vertex A to vertex B, vertex
+        B is said to be a child of vertex A.
         A vertex with no children is referred to as a leaf.  
         The only convention assumed in the code is that at each level, 
         leaves are listed first (before more complex subtrees), 
-        and if there are n leaves, we write 'T^n'.
+        and if there are $n$ leaves, we write 'T^n'.
         Currently, powers cannot be used for subtrees; thus
 
         '{{T}{T}}'
@@ -58,6 +52,23 @@ class RootedTree(str):
         '{{T}^2}' 
 
         is not.  This may change in the future.
+
+        **Examples**::
+
+            >>> from nodepy import rooted_trees as rt
+            >>> tree=rt.RootedTree('{T^2{T{T}}{T}}')
+            >>> tree.order()
+            9
+            >>> tree.density()
+            144
+            >>> tree.symmetry()
+            2
+
+        Topologically equivalent trees are considered equal::
+
+            >>> tree2=RootedTree('{T^2{T}{T{T}}}')
+            >>> tree2==tree
+            True
 
         **References**:  
             #. [butcher2003]_
@@ -79,9 +90,8 @@ class RootedTree(str):
 
     def order(self):
         """
-        Returns the order r(t) of the rooted tree.
-
-        The order is the number of vertices in the tree.
+        The order of a rooted tree, denoted $r(t)$, is the number of 
+        vertices in the tree.
         """
         if self=='T': return 1
         if self=='':  return 0
@@ -95,10 +105,12 @@ class RootedTree(str):
         return r
 
     def density(self):
-        """
-        Returns the density gamma(t) of the rooted tree.
-        Density is the product of the orders of the subtrees.
+        r"""
+        The density of a rooted tree, denoted by $\\gamma(t)$,
+        is the product of the orders of the subtrees.
+
         **Reference**: 
+
             - [butcher2003]_ p. 127, eq. 301(c)
         """
         gamma=self.order()
@@ -108,9 +120,11 @@ class RootedTree(str):
         return gamma
 
     def symmetry(self):
-        """ 
-        Returns the symmetry sigma(t) of a rooted tree 
+        r""" 
+        The symmetry $\\sigma(t)$ of a rooted tree is...
+
         **Reference**: 
+
             - [butcher2003]_ p. 127, eq. 301(b)
         """
         if self=='T': return 1
@@ -129,7 +143,7 @@ class RootedTree(str):
     def Emap(self,a=1):
         """ 
         Butcher's function E^a(t).
-        Gives the B-series for the exact solution advanced 'a' steps
+        This is the B-series for the exact solution advanced 'a' steps
         in time.
         **Reference**: 
             [butcher1997]_
@@ -138,8 +152,8 @@ class RootedTree(str):
 
     def Dmap(self):
         """ 
-        Butcher's function D(t).  Represents differentiation.
-        Defined by D(t)=0 except for D('T')=1.
+        Butcher's function $D(t)$.  Represents differentiation.
+        Defined by $D(t)$=0 except for D('T')=1.
 
         **Reference**: 
             #. [butcher1997]_
@@ -152,17 +166,18 @@ class RootedTree(str):
             for the function alpha.  This is used to compute the
             product of two functions on trees.
 
-            INPUT:
-                alpha -- a function on rooted trees
-                extraargs -- a string containing any additional arguments 
-                                that must be passed to alpha
+            *INPUT*:
 
-            OUTPUT:
-                tprod -- a list of trees [t1, t2, ...]
-                fprod -- a list of numbers [a1, a2, ...]
+                * alpha -- a function on rooted trees
+                * extraargs -- a string containing any additional arguments 
+                  that must be passed to alpha
+
+            *OUTPUT*:
+                * tprod -- a list of trees [t1, t2, ...]
+                * fprod -- a list of numbers [a1, a2, ...]
 
             The meaning of the output is that 
-            \lambda(\alpha,t)(\beta)=a1*\beta(t1)+a2*\beta(t2)+... 
+            $\\lambda(\\alpha,t)(\\beta)=a1*\\beta(t1)+a2*\\beta(t2)+...$ 
 
             **Reference**: 
                 [butcher2003]_ pp. 275-276
@@ -275,8 +290,9 @@ class RootedTree(str):
 
             The product is given by
 
-            (\alpha*\beta)('')=\beta('')
-            (\alpha*\beta)(t) = \lambda(alpha,t)(\beta) + \alpha(t)\beta('')
+            $(\\alpha*\\beta)('')=\\beta('')$
+
+            $(\\alpha*\\beta)(t) = \\lambda(\\alpha,t)(\\beta) + \\alpha(t)\\beta('')$
 
             .. note::
                 Gprod can be used to compute products of more than two
@@ -316,16 +332,16 @@ class RootedTree(str):
         """
             Plots the rooted tree.
 
-            INPUT: (optional)
-                nrows, ncols -- number of rows and columns of subplots
-                                in the figure
-                iplot        -- index of the subplot in which to plot
-                                this tree
+            *INPUT*: (optional)
+                * nrows, ncols -- number of rows and columns of subplots
+                  in the figure
+                * iplot        -- index of the subplot in which to plot
+                  this tree
 
-                These are only necessary if plotting more than one tree
-                in a single figure using subplot.
+            These are only necessary if plotting more than one tree
+            in a single figure using subplot.
 
-            OUTPUT: returns nothing, but plots the tree.
+            *OUTPUT*: None.
 
             The plot is created recursively by
             plotting the root, parsing the subtrees, plotting the 
@@ -496,7 +512,7 @@ def plot_all_trees(p):
     """ Plots all rooted trees of order p """
     from twostep_runge_kutta_method import tsrk_elementary_weight_str
 
-    forest=recursive_trees(p)
+    forest=list_trees(p)
     nplots=len(forest)
     nrows=int(np.ceil(np.sqrt(float(nplots))))
     ncols=int(np.floor(np.sqrt(float(nplots))))
@@ -509,7 +525,7 @@ def plot_all_trees(p):
     pl.setp(fig,facecolor='white')
 
 #=====================================================
-def recursive_trees(p,ind='all'):
+def list_trees(p,ind='all'):
 #=====================================================
   """ 
     Returns rooted trees of order p.
@@ -528,7 +544,7 @@ def recursive_trees(p,ind='all'):
     Produce column of Butcher's Table 302(I)::
 
         >>> for i in range(1,11):
-        >>>     forest=recursive_trees(i)
+        >>>     forest=list_trees(i)
         >>>     print len(forest)
         1
         1

@@ -38,6 +38,8 @@ class IVP:
                 return 'No name specified for this problem.'
 
 def load_ivp(ivpname):
+    """Load some very simple initial value problems."""
+
     ivp=IVP()
     if ivpname=='test':
         ivp.u0=1.
@@ -81,8 +83,25 @@ def load_ivp(ivpname):
 
 def detest(testkey):
     """
-        Non-stiff DETEST problem set
-        See Enright \& Price, 1987.
+        Load problems from the non-stiff DETEST problem set.
+        The set consists of six groups of problems, as follows:
+
+            * A1-A5 -- Scalar problems
+            * B1-B5 -- Small systems (2-3 equations)
+            * C1-C5 -- Moderate size systems (10-50 equations)
+            * D1-D5 -- Orbit equations with varying eccentricities
+            * E1-E5 -- Second order equations
+            * F1-F5 -- Problems with discontinuities
+
+        .. note::
+            Although this set of problems was not intended to become a
+            standard, and although there are certain dangers in accepting
+            any particular set of problems as a universal standard, it
+            is nevertheless sometimes useful to try a new method on this
+            test set due to the availability of published results for 
+            many existing methods.
+        
+        Reference: [enright1987]_ 
     """
     ivp=IVP()
     if testkey=='A1':
@@ -244,8 +263,6 @@ def detest(testkey):
         ivp.rhs = F5rhs
         ivp.T=20.
         ivp.dt0 = 1.e-2
-
-
 
     else: print 'Unknown Detest problem; returning empty IVP'
     ivp.name=testkey
