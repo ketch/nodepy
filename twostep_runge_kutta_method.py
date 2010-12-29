@@ -17,19 +17,19 @@ from strmanip import *
 #=====================================================
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
-    """ General class for Two-step Runge-Kutta Methods """
+    """ General class for Two-step Runge-Kutta Methods 
+        The representation
+        uses the form and notation of [Jackiewicz1995]_.
+
+        \\begin{align*}
+        y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \\Delta t \\sum_{k=1}^{s}
+        (\\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1\\le j \\le s) \\\\
+        u^{n+1} = & \\theta u^{n-1} + (1-\\theta)u^n + \\Delta t \\sum_{j=1}^{s}(\\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
+        \\end{align*}
+    """
     def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='Type II',name='Two-step Runge-Kutta Method'):
         r"""
-            Initialize a 2-step Runge-Kutta method.  The representation
-            uses the form and notation of [Jackiewicz1995]_.
-
-            \\begin{align*}
-            y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \\Delta t \\sum_{k=1}^{s}
-            (\\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1\\le j \\le s) \\\\
-            u^{n+1} = & \\theta u^{n-1} + (1-\\theta)u^n + \\Delta t \\sum_{j=1}^{s}(\\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
-            \\end{align*}
-
-        """
+            Initialize a 2-step Runge-Kutta method."""
         self.s = max(np.shape(b))
         self.d,self.theta,self.A,self.b = d,theta,A,b
         self.Ahat,self.bhat=Ahat,bhat

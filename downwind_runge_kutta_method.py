@@ -6,7 +6,7 @@ AUTHOR: David Ketcheson (03-10-2010)
 EXAMPLES:
 
 REFERENCES:
-    [higueras2005]
+    [higueras2005]_
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod

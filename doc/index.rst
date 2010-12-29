@@ -104,13 +104,16 @@ NodePy Manual
    :maxdepth: 2
 
    quickstart
-   userguide
+   methods
+   solving
+   stability
+   rooted_trees
    future
    about
    bib
 
-Modules
-=======
+Modules Reference
+===================
 
 .. toctree::
 

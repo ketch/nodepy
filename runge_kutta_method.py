@@ -21,13 +21,15 @@
 
     >>> RK=loadRKM()
     >>> RK.keys()
-    ['GL3', 'FE11', 'BuRK65', 'SSP104', 'RK44', 'GL2', 'SSP22', 'SSP33', 'Mid22']
+    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'BuRK65', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
 
     >>> RK['Mid22']
-        0.0 |
-        0.5 | 0.5
-        ____|________
-            | 0.0 1.0
+    Midpoint Runge-Kutta
+    <BLANKLINE>
+     0.000 |
+     0.500 |  0.500
+    _______|________________
+           |  0.000  1.000
 
 **References**:  
     #. [butcher2003]_
@@ -38,7 +40,6 @@ from general_linear_method import GeneralLinearMethod
 import numpy as np
 import pylab as pl
 import rooted_trees as rt
-from sympy import symbols, factorial
 
 
 #=====================================================
@@ -48,7 +49,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
         General class for implicit and explicit Runge-Kutta Methods.
         The method is defined by its Butcher array ($A,b,c$).
         It is assumed everywhere that  `c_i=\sum_j A_{ij}`.
+        
+        A Runge-Kutta Method is initialized by providing either:
+            #. Butcher arrays $A$ and $b$ with valid and consistent 
+               dimensions; or
+            #. Shu-Osher arrays `\alpha` and `\beta` with valid and
+               consistent dimensions 
 
+        but not both.
+
+        The Butcher arrays are used as the primary representation of
+        the method.  If Shu-Osher arrays are provided instead, the
+        Butcher arrays are computed by :ref:`shu_osher_to_butcher`.
     """
 
     #============================================================
@@ -58,20 +70,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def __init__(self,A=None,b=None,alpha=None,beta=None,
             name='Runge-Kutta Method',description=''):
         r"""
-            A Runge-Kutta Method is initialized by providing either:
-                #. Butcher arrays $A$ and $b$ with valid and consistent 
-                   dimensions; or
-                #. Shu-Osher arrays `\alpha` and `\beta` with valid and
-                   consistent dimensions 
-
-            but not both.
-
-            The Butcher arrays are used as the primary representation of
-            the method.  If Shu-Osher arrays are provided instead, the
-            Butcher arrays are computed by :ref:`shu_osher_to_butcher`.
-
-            TODO: add a check for if the method is explicit and if so
-            instantiate it as an ExplicitRungeKuttaMethod.
+            Initialize a Runge-Kutta method.  For explicit methods,
+            the class ExplicitRungeKuttaMethod should be used instead.
         """
         # Here there is a danger that one could change A
         # and c would never be updated
@@ -101,6 +101,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
         # Set Butcher arrays
         if len(np.shape(A))==2: self.A=A
         else: self.A=np.array([A]) #Fix for 1-stage methods
+
+        if not triu(self.A).any():
+            print """Warning: this method appears to be explicit, but is
+                   being initialized as a RungeKuttaMethod rather than
+                   as an ExplicitRungeKuttaMethod."""
+
         self.b=b
         self.c=np.sum(self.A,1)
         self.name=name
@@ -181,7 +187,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             Returns a list of irrelevant stages.  If the method is
             DJ-irreducible, returns an empty list.
-
         """
         b=self.b; A=self.A
         Nset = [j for j in range(len(b)) if abs(b[j])<tol]
@@ -219,8 +224,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             If the method is HS-reducible, returns True and a
             pair of equal stages.  If not, returns False and
-            the minimum difference between rows of A.
-        
+            the minimum pairwise difference (in the maximum norm) 
+            between rows of A.
         """
         m=len(self)
         mindiff=10.
@@ -250,6 +255,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
 
     def error_coefficient(self,tree):
+        r"""
+        Returns the coefficient in the Runge-Kutta method's error expansion
+        multiplying a single elementary differential,
+        corresponding to a given tree.
+        """
         from numpy import dot
         code=elementary_weight_str(tree)
         b=self.b
@@ -259,6 +269,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return coeff/tree.symmetry()
 
     def error_coeffs(self,p):
+        r"""
+        Returns the coefficients in the Runge-Kutta method's error expansion
+        multiplying all elementary differentials of the given order.
+        """
         forest=rt.list_trees(p)
         err_coeffs=[]
         for tree in forest:
@@ -266,6 +280,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return err_coeffs
 
     def error_metrics(self):
+        r"""
+        Returns several measures of the accuracy of the Runge-Kutta method.
+        In order, they are:
+
+            * `A^{q+1}`: 2-norm of the vector of leading order error coefficients
+            * `A^{q+1}_{max}`: Max-norm of the vector of leading order error coefficients
+            * `A^{q+2}` : 2-norm of the vector of next order error coefficients
+            * `A^{q+2}_{max}`: Max-norm of the vector of next order error coefficients
+            * `D`: The largest (in magnitude) coefficient in the Butcher array
+
+            Reference: [kennedy2000]_
+        """
         q=self.order(1.e-13)
         tau_1=self.error_coeffs(q+1)
         tau_2=self.error_coeffs(q+2)
@@ -274,17 +300,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
         A_qp1_max=max([abs(tau) for tau in tau_1])
         A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
         A_qp2_max=max([abs(tau) for tau in tau_2])
-        D=max(np.max(self.A),np.max(self.b),np.max(self.c))
+        D=max(np.max(np.abs(self.A)),np.max(np.abs(self.b)),np.max(np.abs(self.c)))
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
     def principal_error_norm(self,tol=1.e-13):
+        r""" Returns the 2-norm of the vector of leading order error coefficients."""
         p=self.order(tol)
         forest=rt.list_trees(p+1)
         errs=[]
         for tree in forest:
             errs.append(self.error_coefficient(tree))
         return np.sqrt(float(np.sum(np.array(errs)**2)))
-#        return max([abs(err) for err in errs])
 
     def order(self,tol=1.e-14):
         """ 
@@ -319,6 +345,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             TODO: Implement the different approaches through optional keyword
         """
+        from sympy import factorial
         A,b,c=self.A,self.b,self.c
         C=np.diag(c)
         code=runge_kutta_order_conditions(p)
@@ -333,8 +360,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def stage_order(self,tol=1.e-14):
         r""" 
-            Returns the stage order 
-
             The stage order of a Runge-Kutta method is the minimum, 
             over all stages, of the
             order of accuracy of that stage.  It can be shown to be
@@ -395,9 +420,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
             The region of absolute stability
             of a Runge-Kutta method, is the set
 
-            `\{ z \in C : |R (z)|\le 1 \}`
+            `\{ z \in C : |\phi (z)|\le 1 \}`
 
-            where $R(z)$ is the stability function of the method.
+            where $\phi(z)$ is the stability function of the method.
 
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction
@@ -436,9 +461,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
                     color='r',filled=True):
         r""" The order star of a Runge-Kutta method is the set
             
-            $$ \{ z \in C : |R(z)/exp(z)|\le 1 \} $$
+            $$ \{ z \in C : |\phi(z)/exp(z)|\le 1 \} $$
 
-            where $R(z)$ is the stability function of the method.
+            where $\phi(z)$ is the stability function of the method.
 
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction
@@ -483,6 +508,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
                     tol=3.e-16):
         r""" 
             Returns the radius of absolute monotonicity
+            (also referred to as the radius of contractivity or
+            the strong stability preserving coefficient 
             of a Runge-Kutta method.
         """
         from utils import bisect
@@ -493,7 +520,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def linear_monotonicity_radius(self,acc=1.e-10,tol=1.e-15,tol2=1e-8):
       r"""
           Computes Horvath's monotonicity radius of the stability
-          function.  Not sure yet if this is M_lin of the method.
+          function.
       """
       from utils import bisect
 
@@ -629,6 +656,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         d=(I-P).sum(1)
         return d,P
 
+    #==========================================
+    #The next three functions are experimental!
+    #==========================================
+
     def split(self,r,tol=1.e-15):
         s=len(self)
         I=np.eye(s+1)
@@ -701,7 +732,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return G,Xinv
 
 
-    def is_explicit(self):
+    def is_explicit(self,tol=1.e-14):
         return False
 
     def is_FSAL(self):
@@ -712,7 +743,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 #=====================================================
     r"""
         Class for explicit Runge-Kutta methods.  Mostly identical
-        to RungeKuttaMethod.
+        to RungeKuttaMethod, but also includes time-stepping and
+        a few other functions.
     """
     def __repr__(self): 
         """
@@ -733,24 +765,6 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         for j in range(len(self)):
             s+=' %6.3f' % self.b[j]
         return s
-
-    def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
-                                            tol=3.e-16):
-        """ 
-            Returns the radius of absolute monotonicity
-            of the stability function of a Runge-Kutta method.
-
-            TODO: implement this functionality for implicit methods.
-        """
-        from utils import bisect
-        p,q=self.stability_function()
-        if q.order!=0 or q[0]!=1:
-            print q
-            print 'Not yet implemented for rational functions'
-            return 0
-        else:
-            r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
-        return r
 
     def __step__(self,f,t,u,dt,x=None):
         """
@@ -819,6 +833,25 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         if len(notok)==0: return z
         else: return zz[min(notok)]
 
+    def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
+                                            tol=3.e-16):
+        """ 
+            Returns the radius of absolute monotonicity
+            of the stability function of a Runge-Kutta method.
+
+            TODO: implement this functionality for implicit methods.
+        """
+        from utils import bisect
+        p,q=self.stability_function()
+        if q.order!=0 or q[0]!=1:
+            print q
+            print 'Not yet implemented for rational functions'
+            return 0
+        else:
+            r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
+        return r
+
+
     def is_explicit(self):
         return True
 
@@ -834,7 +867,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 #=====================================================
 class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 #=====================================================
-    """
+    r"""
+
         Class for embedded Runge-Kutta pairs.  These consist of
         two methods with identical coefficients $a_{ij}$
         but different coefficients $b_j$ such that the methods
@@ -842,21 +876,34 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         higher order accurate method is used to advance
         the solution, while the lower order method is
         used to obtain an error estimate.
+
+        An embedded Runge-Kutta Pair takes the form:
+
+        \\begin{align*}
+        y_i = & u^{n} + \\Delta t \\sum_{j=1}^{s} + a_{ij} f(y_j)) & (1\\le j \\le s) \\\\
+        u^{n+1} = & u^{n} + \\Delta t \\sum_{j=1}^{s} b_j f(y_j) \\\\
+        \\hat{u}^{n+1} = & u^{n} + \\Delta t \\sum_{j=1}^{s} \\hat{b}_j f(y_j).
+        \\end{align*}
+
+        That is, both methods use the same intermediate stages $y_i$, but different
+        weights.  Typically the weights $\\hat{b}_j$ are chosen so that $\\hat{u}^{n+1}$
+        is accurate of order one less than the order of $u^{n+1}$.  Then their
+        difference can be used as an error estimate.
+
+        In NodePy, if *rkp* is a Runge-Kutta pair, the principal (usually
+        higher-order) method is the one used if accuracy or stability properties
+        are queried.  Properties of the embedded (usually lower-order) method can
+        be accessed via *rkp.embedded_method*.
+
+        When solving an IVP with an embedded pair, one can specify a desired
+        error tolerance.  The step size will be adjusted automatically
+        to achieve approximately this tolerance.
     """
     def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,
             name='Runge-Kutta Pair',description=''):
         r"""
-            A Runge-Kutta Method is initialized by providing either:
-                #. Butcher arrays $A$ and $b$ with valid and consistent 
-                   dimensions; or
-                #. Shu-Osher arrays `\alpha` and `\beta` with valid and
-                   consistent dimensions 
-
-            but not both.
-
-            The Butcher arrays are used as the primary representation of
-            the method.  If Shu-Osher arrays are provided instead, the
-            Butcher arrays are computed by :ref:`shu_osher_to_butcher`.
+            In addition to the ordinary Runge-Kutta initialization,
+            here the embedded coefficients `\hat{b}_j` are set as well.
         """
         # Here there is a danger that one could change A
         # and c would never be updated
@@ -958,7 +1005,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
     def error_metrics(self):
         r"""Return full set of error metrics
-            See Kennedy et. al. 2000 p. 181"""
+            See [kennedy2000]_ p. 181"""
         q=self.order(1.e-13)
         p=self.embedded_method.order(1.e-13)
 
@@ -1036,6 +1083,7 @@ def elementary_weight(tree):
         **References**:
             [butcher2003]_
     """
+    from sympy import symbols
     b=symbols('b',commutative=False)
     ew=b*tree.Gprod(rt.RKeta,rt.Dmap)
     return ew
@@ -1374,190 +1422,9 @@ def loadRKM(which='All'):
     else:
         return RK[which]
 
-def SSPRK2(m):
-    """ Construct the optimal m-stage, second order SSP 
-        Explicit Runge-Kutta method (m>=2).
-
-        **Input**: m -- number of stages
-        **Output**: A ExplicitRungeKuttaMethod
-
-        **Examples**::
-            
-            Load the 4-stage method:
-            >>> SSP42=SSPRK2(4)
-            >>> SSP42
-
-            SSPRK42
-
-             0.000 |  0.000  0.000  0.000  0.000
-             0.333 |  0.333  0.000  0.000  0.000
-             0.667 |  0.333  0.333  0.000  0.000
-             1.000 |  0.333  0.333  0.333  0.000
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
-
-            >>> SSP42.absolute_monotonicity_radius()
-            2.9999999999745341
-
-        **References**: 
-            #. [ketcheson2008]_
-    """
-    assert m>=2, "SSPRKm2 methods must have m>=2"
-    r=m-1.
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
-    alpha[m,m-1]=(m-1.)/m
-    beta=alpha/r
-    alpha[m,0]=1./m
-    name='SSPRK'+str(m)+'2'
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
-
-def SSPRKm(m):
-    """ Construct the optimal m-stage, linearly mth order SSP 
-        Explicit Runge-Kutta method (m>=2).
-
-        **Input**: m -- number of stages
-        **Output**: A ExplicitRungeKuttaMethod
-
-        **Examples**::
-            
-            Load the 4-stage method:
-            >>> SSP44=SSPRKm(4)
-            >>> SSP44
-
-            SSPRK44
-
-             0.000 |
-             1.000 |  1.000
-             2.000 |  1.000  1.000
-             3.000 |  1.000  1.000  1.000
-            _______|________________________________
-                   |  0.625  0.292  0.042  0.042
-
-            >>> SSP44.absolute_monotonicity_radius()
-            2.9999999999745341
-
-        **References**: 
-            #. [gottlieb2001]_
-    """
-    assert m>=2, "SSPRKm methods must have m>=2"
-    r=1.
-
-    alph=np.zeros([m+1,m+1])
-    alph[1,0]=1.
-    for mm in range(2,m+1):
-      for k in range(1,m):
-        alph[mm,k]=1./k * alph[mm-1,k-1]
-        alph[mm,mm-1]=1./factorial(mm)
-        alph[mm,0] = 1.-sum(alph[mm,1:])
-
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
-    alpha[m,m-1]=1./factorial(m)
-    beta=alpha.copy()
-    alpha[m,1:m-1]=alph[m,1:m-1]
-    alpha[m,0] = 1.-sum(alpha[m,1:])
-    name='SSPRK'+str(m)*2
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
-
-def SSPIRK1(m):
-    """ Construct the m-stage, first order unconditionally SSP 
-        Implicit Runge-Kutta method with smallest 
-        coefficient of z^2 (in the stability polynomial)
-
-        **Input**: m -- number of stages
-        **Output**: A RungeKuttaMethod
-
-        **Examples**::
-            
-            Load the 4-stage method:
-            >>> ISSP41=SSPIRK1(4)
-            >>> ISSP41
-
-            SSPIRK41
-
-             0.250 |  0.250  0.000  0.000  0.000
-             0.500 |  0.250  0.250  0.000  0.000
-             0.750 |  0.250  0.250  0.250  0.000
-             1.000 |  0.250  0.250  0.250  0.250
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
-    """
-    A=np.tri(m)/m
-    b=np.ones(m)/m
-    name='SSPIRK'+str(m)+'1'
-    return RungeKuttaMethod(A,b,name=name)
-
-
-def SSPIRK2(m):
-    """ Construct the optimal m-stage, second order SSP 
-        Implicit Runge-Kutta method (m>=2).
-
-        **Input**: m -- number of stages
-        **Output**: A RungeKuttaMethod
-
-        **Examples**::
-            
-            Load the 4-stage method:
-            >>> ISSP42=SSPIRK2(4)
-            >>> ISSP42
-
-            SSPIRK42
-
-             0.000 |  0.000  0.000  0.000  0.000
-             0.333 |  0.333  0.000  0.000  0.000
-             0.667 |  0.333  0.333  0.000  0.000
-             1.000 |  0.333  0.333  0.333  0.000
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
-
-            >>> ISSP42.absolute_monotonicity_radius()
-            2.9999999999745341
-
-        **References**:
-            #. [ketcheson2009]_
-    """
-    r=2.*m
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
-    beta=alpha/r
-    for i in range(m): beta[i,i]=1./r
-    name='SSPIRK'+str(m)+'2'
-    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
-
-
-def SSPIRK3(m):
-    """ Construct the optimal m-stage, third order SSP 
-        Implicit Runge-Kutta method (m>=2).
-
-        **Input**: m -- number of stages
-        **Output**: A RungeKuttaMethod
-
-        **Examples**::
-            
-            Load the 4-stage method:
-            >>> ISSP43=SSPIRK3(4)
-            >>> ISSP43
-
-            SSPIRK43
-
-             0.113 |  0.113  0.000  0.000  0.000
-             0.371 |  0.258  0.113  0.000  0.000
-             0.629 |  0.258  0.258  0.113  0.000
-             0.887 |  0.258  0.258  0.258  0.113
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
-
-            >>> ISSP43.absolute_monotonicity_radius()
-            6.8729833461475209
-
-        **References**:
-            #. [ketcheson2009]_
-    """
-    r=m-1+np.sqrt(m**2-1)
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
-    alpha[-1,-1]=((m+1)*r)/(m*(r+2))
-    beta=alpha/r
-    for i in range(m): beta[i,i]=1./2*(1-np.sqrt((m-1.)/(m+1.)))
-    name='SSPIRK'+str(m)+'3'
-    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+#============================================================
+# Generic Families of Runge-Kutta methods
+#============================================================
 
 def RK22_family(gamma):
     """ 
@@ -1583,6 +1450,47 @@ def RK44_family(w):
                 [0,1.-3.*w,3.*w,0]])
     b=np.array([1./6,2./3-w,w,1./6])
     return ExplicitRungeKuttaMethod(A,b)
+
+
+#============================================================
+# Families of optimal SSP Runge-Kutta methods
+#============================================================
+
+def SSPRK2(m):
+    """ Construct the optimal m-stage, second order SSP 
+        Explicit Runge-Kutta method (m>=2).
+
+        **Input**: m -- number of stages
+        **Output**: A ExplicitRungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> SSP42=SSPRK2(4)
+            >>> SSP42
+            SSPRK42
+            <BLANKLINE>
+             0.000 |
+             0.333 |  0.333
+             0.667 |  0.333  0.333
+             1.000 |  0.333  0.333  0.333
+            _______|________________________________
+                   |  0.250  0.250  0.250  0.250
+
+            >>> SSP42.absolute_monotonicity_radius()
+            2.9999999999745341
+
+        **References**: 
+            #. [ketcheson2008]_
+    """
+    assert m>=2, "SSPRKm2 methods must have m>=2"
+    r=m-1.
+    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    alpha[m,m-1]=(m-1.)/m
+    beta=alpha/r
+    alpha[m,0]=1./m
+    name='SSPRK'+str(m)+'2'
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
 
 def SSPRK3(m):
@@ -1624,10 +1532,160 @@ def SSPRK3(m):
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
 
+
+def SSPRKm(m):
+    """ Construct the optimal m-stage, linearly mth order SSP 
+        Explicit Runge-Kutta method (m>=2).
+
+        **Input**: m -- number of stages
+        **Output**: A ExplicitRungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> SSP44=SSPRKm(4)
+            >>> SSP44
+            SSPRK44
+            <BLANKLINE>
+             0.000 |
+             1.000 |  1.000
+             2.000 |  1.000  1.000
+             3.000 |  1.000  1.000  1.000
+            _______|________________________________
+                   |  0.625  0.292  0.042  0.042
+
+            >>> SSP44.absolute_monotonicity_radius()
+            0.9999999999308784
+
+        **References**: 
+            #. [gottlieb2001]_
+    """
+    from sympy import factorial
+
+    assert m>=2, "SSPRKm methods must have m>=2"
+    r=1.
+
+    alph=np.zeros([m+1,m+1])
+    alph[1,0]=1.
+    for mm in range(2,m+1):
+      for k in range(1,m):
+        alph[mm,k]=1./k * alph[mm-1,k-1]
+        alph[mm,mm-1]=1./factorial(mm)
+        alph[mm,0] = 1.-sum(alph[mm,1:])
+
+    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    alpha[m,m-1]=1./factorial(m)
+    beta=alpha.copy()
+    alpha[m,1:m-1]=alph[m,1:m-1]
+    alpha[m,0] = 1.-sum(alpha[m,1:])
+    name='SSPRK'+str(m)*2
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+def SSPIRK1(m):
+    """ Construct the m-stage, first order unconditionally SSP 
+        Implicit Runge-Kutta method with smallest 
+        coefficient of z^2 (in the stability polynomial)
+
+        **Input**: m -- number of stages
+        **Output**: A RungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> ISSP41=SSPIRK1(4)
+            >>> ISSP41
+            SSPIRK41
+            <BLANKLINE>
+             0.250 |  0.250  0.000  0.000  0.000
+             0.500 |  0.250  0.250  0.000  0.000
+             0.750 |  0.250  0.250  0.250  0.000
+             1.000 |  0.250  0.250  0.250  0.250
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+    """
+    A=np.tri(m)/m
+    b=np.ones(m)/m
+    name='SSPIRK'+str(m)+'1'
+    return RungeKuttaMethod(A,b,name=name)
+
+
+def SSPIRK2(m):
+    """ Construct the optimal m-stage, second order SSP 
+        Implicit Runge-Kutta method (m>=2).
+
+        **Input**: m -- number of stages
+        **Output**: A RungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> ISSP42=SSPIRK2(4)
+            >>> ISSP42
+            SSPIRK42
+            <BLANKLINE>
+             0.125 |  0.125  0.000  0.000  0.000
+             0.375 |  0.250  0.125  0.000  0.000
+             0.625 |  0.250  0.250  0.125  0.000
+             0.875 |  0.250  0.250  0.250  0.125
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+
+            >>> ISSP42.absolute_monotonicity_radius()
+            7.999999999992724
+
+        **References**:
+            #. [ketcheson2009]_
+    """
+    r=2.*m
+    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    beta=alpha/r
+    for i in range(m): beta[i,i]=1./r
+    name='SSPIRK'+str(m)+'2'
+    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
+
+def SSPIRK3(m):
+    """ Construct the optimal m-stage, third order SSP 
+        Implicit Runge-Kutta method (m>=2).
+
+        **Input**: m -- number of stages
+        **Output**: A RungeKuttaMethod
+
+        **Examples**::
+            
+            Load the 4-stage method:
+            >>> ISSP43=SSPIRK3(4)
+            >>> ISSP43
+            SSPIRK43
+            <BLANKLINE>
+             0.113 |  0.113  0.000  0.000  0.000
+             0.371 |  0.258  0.113  0.000  0.000
+             0.629 |  0.258  0.258  0.113  0.000
+             0.887 |  0.258  0.258  0.258  0.113
+            _______|____________________________
+                   |  0.250  0.250  0.250  0.250
+
+            >>> ISSP43.absolute_monotonicity_radius()
+            6.8729833461475209
+
+        **References**:
+            #. [ketcheson2009]_
+    """
+    r=m-1+np.sqrt(m**2-1)
+    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    alpha[-1,-1]=((m+1)*r)/(m*(r+2))
+    beta=alpha/r
+    for i in range(m): beta[i,i]=1./2*(1-np.sqrt((m-1.)/(m+1.)))
+    name='SSPIRK'+str(m)+'3'
+    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+
 if __name__== "__main__":
     RK=loadRKM()
 
 
+#============================================================
+# Families of Runge-Kutta-Chebyshev methods
+#============================================================
 def RKC1(m,eps=0):
     """ Construct the m-stage, first order 
         Explicit Runge-Kutta-Chebyshev methods of Verwer (m>=1).
@@ -1640,15 +1698,14 @@ def RKC1(m,eps=0):
             Load the 4-stage method:
             >>> RKC41=RKC1(4)
             >>> RKC41
-
             RKC41
-
-             0.000 |  0.000  0.000  0.000  0.000
-             0.333 |  0.333  0.000  0.000  0.000
-             0.667 |  0.333  0.333  0.000  0.000
-             1.000 |  0.333  0.333  0.333  0.000
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
+            <BLANKLINE>
+             0.000 |
+             0.063 |  0.063
+             0.250 |  0.125  0.125
+             0.563 |  0.188  0.250  0.125
+            _______|________________________________
+                   |  0.250  0.375  0.250  0.125
 
         **References**: 
             #. [verwer2004]_
@@ -1706,15 +1763,14 @@ def RKC2(m,eps=0):
             Load the 4-stage method:
             >>> RKC42=RKC2(4)
             >>> RKC42
-
             RKC42
-
-             0.000 |  0.000  0.000  0.000  0.000
-             0.333 |  0.333  0.000  0.000  0.000
-             0.667 |  0.333  0.333  0.000  0.000
-             1.000 |  0.333  0.333  0.333  0.000
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
+            <BLANKLINE>
+            -0.000 |
+             0.200 |  0.200
+             0.200 |  0.100  0.100
+             0.533 | -0.178  0.237  0.474
+            _______|________________________________
+                   | -0.797  0.375  1.000  0.422
 
         **References**: 
             #. [verwer2004]_
@@ -1758,9 +1814,12 @@ def RKC2(m,eps=0):
       beta[j,j-1]=mut[j]
       beta[j,0]=gamt[j]
 
-    name='RKC'+str(m)+'1'
+    name='RKC'+str(m)+'2'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
+#============================================================
+# Spectral deferred correction methods
+#============================================================
 def dcweights(x):
     """
       Takes a set of abscissae x and an index i, and returns
@@ -1782,7 +1841,7 @@ def dcweights(x):
     return w
 
 def DC(s,theta=0.,grid='eq'):
-    """ Construct deferred correction methods.
+    """ Spectral deferred correction methods.
         For now, based on explicit Euler and equispaced points.
         TODO: generalize base method and grid.
 
@@ -1842,6 +1901,9 @@ def DC(s,theta=0.,grid='eq'):
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
 
+#============================================================
+# Extrapolation methods
+#============================================================
 def extrap(s,seq='harmonic'):
     """ Construct extrapolation methods.
         For now, based on explicit Euler, but allowing arbitrary sequences.
@@ -1917,38 +1979,10 @@ def extrap(s,seq='harmonic'):
     name='extrap'+str(s)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
-def SSPIRK1(m):
-    """ Construct the m-stage, first order unconditionally SSP 
-        Implicit Runge-Kutta method with smallest 
-        coefficient of z^2 (in the stability polynomial)
 
-        **Input**: m -- number of stages
-        **Output**: A RungeKuttaMethod
-
-        **Examples**::
-            
-            Load the 4-stage method:
-            >>> ISSP41=SSPIRK1(4)
-            >>> ISSP41
-
-            SSPIRK41
-
-             0.250 |  0.250  0.000  0.000  0.000
-             0.500 |  0.250  0.250  0.000  0.000
-             0.750 |  0.250  0.250  0.250  0.000
-             1.000 |  0.250  0.250  0.250  0.250
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
-    """
-    A=np.tri(m)/m
-    b=np.ones(m)/m
-    name='SSPIRK'+str(m)+'1'
-    return RungeKuttaMethod(A,b,name=name)
-
-
-
-
-
+#============================================================
+# Miscellaneous functions
+#============================================================
 def rk_order_conditions_hardcoded(rkm,p,tol):
     """ 
         Returns a vector that is identically zero if the
@@ -2073,9 +2107,9 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
         Plot the region of absolute stability
         of a rational function i.e. the set
 
-        `\{ z \in C : |R (z)|\le 1 \}`
+        `\{ z \in C : |\phi (z)|\le 1 \}`
 
-            where $R(z)=p(z)/q(z)$ is the rational function.
+            where $\phi(z)=p(z)/q(z)$ is the rational function.
 
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction

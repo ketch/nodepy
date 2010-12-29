@@ -1,31 +1,81 @@
-"""
-Class for low-storage Runge-Kutta methods, and various functions related to
-them.
+r"""
+Typically, implementation of a Runge-Kutta method requires `s \times N`
+memory locations, where `s` is the number of stages of the method and 
+`N` is the number of unknowns.  Certain classes of Runge-Kutta methods
+can be implemented using substantially less memory, by taking advantage
+of special relations among the coefficients.  Three main classes have 
+been developed in the literature:
 
-**Author**: David Ketcheson (10-07-2008)
+    * 2N (Williamson) methods
+    * 2R (van der Houwen/Wray) methods
+    * 2S methods
+
+Each of these classes requires only `2\times N` memory locations.
+Additional methods have been developed that use more than two 
+memory locations per unknown but still provide a substantial savings
+over traditional methods.  These are referred to as, e.g., 3S, 3R, 4R,
+and so forth.
+For a review of low-storage methods, see [ketcheson2010]_ .
+
+In NodePy, low-storage methods are a subclass of explicit Runge-Kutta
+methods (and/or explicit Runge-Kutta pairs).  In addition to the usual
+properties, they possess arrays of low-storage coefficients.  They 
+override the generic RK implementation of time-stepping and use 
+special memory-efficient implementations instead.  It should be noted
+that, although these low-storage algorithms are implemented, due to
+Python language restrictions an extra intermediate copy of the solution
+array will be created.  Thus the implementation is not really 
+minimum-storage.
+
+At the moment, the following classes are implemented:
+
+    * 2S
+    * 2S*
+    * 3S*
+    * 2S embedded pairs
+    * 3S* embedded pairs
+    * 2R embedded pairs
+    * 3R embedded pairs
 
 **Examples**::
 
     >>>
 
-**To Do**:
-    - Add 2N (Williamson) methods
 """
 from runge_kutta_method import *
 
 #=====================================================
-class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
+class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
 #=====================================================
     """
-        Class for 2R/3R/4R low-storage Runge-Kutta methods.
-        (van der Houwen, Wray, Kennedy)
+        Class for 2R/3R/4R low-storage Runge-Kutta pairs.
+        These were developed by van der Houwen, Wray, and Kennedy et. al.
+
+        Only 2R and 3R methods have been implemented so far.
+        Also, the implementation is only for embedded pairs
+        (not for single methods).
+
+        References:
+            * [kennedy2000]_
+            * [ketcheson2010]_
     """
     def __init__(self,a,b,bhat,regs=2,
             name='2R Runge-Kutta Method',description=''):
-        """
+        r"""
             Initializes the 2R method by storing the
             low-storage coefficients and computing the Butcher
             array.
+
+            The coefficients should be specified as follows:
+
+                * For all methods, the weights `b` are used to
+                  fill in the appropriate entries in `A`.
+                * For 2R methods, *a* is a vector of length `s-1`
+                  containing the first subdiagonal of `A`
+                * For 3R methods, *a* is a `2\times s-1` array
+                  whose first row contains the first subdiagonal of `A`
+                  and whose second row contains the second subdiagonal
+                  of `A`.
         """
         self.b=b
         self.a=a
@@ -55,6 +105,8 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
     def __step__(self,f,t,u,dt,errest=False,x=None):
         """
             Take a time step on the ODE u'=f(t,u).
+            The implementation here is special for 2R/3R low-storage methods
+            But it's not really ultra-low-storage yet.
 
             INPUT:
                 f  -- function being integrated
@@ -65,9 +117,6 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
 
             OUTPUT:
                 unew -- approximate solution at time t[-1]+dt
-
-            The implementation here is special for 2R low-storage methods
-            But it's not really ultra-low-storage yet.
         """
         m=len(self); b=self.b; a=self.a
         S2=u[-1]+0.
@@ -103,7 +152,7 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaPair):
         else: print 'Error: only 2R and 3R methods implemented so far!'
 
 #=====================================================
-# End of class TwoRRungeKuttaMethod
+# End of class TwoRRungeKuttaPair
 #=====================================================
 
 
@@ -113,19 +162,33 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
     """
         Class for low-storage Runge-Kutta methods
         that use Ketcheson's assumption (2S, 2S*, and 3S* methods).
+
+        This class cannot be used for embedded pairs.  Use
+        the class LowStorageRungeKuttaPair instead.
+
+        The low-storage coefficient arrays `\beta,\gamma,\delta`
+        follow the notation of [ketcheson2010]_ .
+
+        The argument *lstype* must be one of the following values:
+
+            * 2S
+            * 2S*
+            * 3S*
     """
-    def __init__(self,betavec,gamma,delta,type,
+    def __init__(self,betavec,gamma,delta,lstype,
             name='Low-storage Runge-Kutta Method',description=''):
-        """
+        r"""
             Initializes the low-storage method by storing the
             low-storage coefficients and computing the Butcher
             coefficients.
-        """
+       """
         self.betavec=betavec
         self.gamma=gamma
         self.delta=delta
-        self.lstype=type
-        if type=='2S' or type=='2S*':
+        self.lstype=lstype
+
+        # Two-register methods
+        if lstype=='2S' or lstype=='2S*':
             m=len(betavec)-1
             alpha=np.zeros([m+1,m])
             beta =np.zeros([m+1,m])
@@ -136,9 +199,10 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             self.A=np.tril(self.A,-1)
-            print self.A
             self.c=np.sum(self.A,1)
-        elif type.startswith('3S*'):
+
+        # Three-register methods
+        elif lstype.startswith('3S*'):
             m=len(betavec)-1
             alpha=np.zeros([m+1,m])
             beta =np.vstack([np.zeros(m),np.diag(betavec[1:])])
@@ -150,7 +214,6 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             self.A=np.tril(self.A,-1)
-            print self.A
             self.c=np.sum(self.A,1)
         self.name=name
         self.info=description
@@ -158,6 +221,8 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
     def __step__(self,f,t,u,dt):
         """
             Take a time step on the ODE u'=f(t,u).
+            The implementation here is special for 2S/2S*/3S* low-storage methods,
+            but it's not really ultra-low-storage yet.
 
             INPUT:
                 f  -- function being integrated
@@ -168,9 +233,6 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
 
             OUTPUT:
                 unew -- approximate solution at time t[-1]+dt
-
-            The implementation here is special for 2S low-storage methods
-            But it's not really ultra-low-storage yet.
         """
         m=len(self)
         S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
@@ -195,24 +257,41 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
 class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
 #=====================================================
     """
-        Class for low-storage embedded Runge-Kutta pairs.
+        Class for low-storage embedded Runge-Kutta pairs
+        that use Ketcheson's assumption (2S, 2S*, and 3S* methods).
+
+        This class is only for embedded pairs.  Use
+        the class LowStorageRungeKuttaMethod for single 2S/3S methods.
+
+        The low-storage coefficient arrays `\beta,\gamma,\delta`
+        follow the notation of [ketcheson2010]_ .
+
+        The argument *lstype* must be one of the following values:
+
+            * 2S
+            * 2S*
+            * 2S_pair
+            * 3S*
+            * 3S*_pair
+ 
+        The 2S/2S*/3S* classes do not need an extra register for the
+        error estimate, while the 2S_pair/3S_pair methods do.
     """
-    def __init__(self,betavec,gamma,delta,type,bhat=None,
+    def __init__(self,betavec,gamma,delta,lstype,bhat=None,
             name='Low-storage Runge-Kutta Pair',description=''):
         """
             Initializes the low-storage pair by storing the
             low-storage coefficients and computing the Butcher
             coefficients.
-            Need to add initialization for 3S*emb methods.
         """
         self.name=name
         self.info=description
-
         self.betavec=betavec
         self.gamma=gamma
         self.delta=delta
-        self.lstype=type
-        if type=='2S_pair':
+        self.lstype=lstype
+
+        if lstype=='2S_pair':
             m=len(betavec)-1
             alpha=np.zeros([m+1,m])
             beta =np.zeros([m+1,m])
@@ -226,7 +305,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta,np.vstack([self.A,self.b]))/sum(delta)
 
-        elif type=='2S' or type=='2S*':
+        elif lstype=='2S' or lstype=='2S*':
             m=len(betavec)-1
             alpha=np.zeros([m+1,m])
             beta =np.zeros([m+1,m])
@@ -241,7 +320,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
             self.c=np.sum(self.A,1)
             self.bhat=bhat
 
-        elif type=='3S*_pair':
+        elif lstype=='3S*_pair':
             m=len(betavec)-1
             alpha=np.zeros([m+1,m])
             beta =np.zeros([m+1,m])
@@ -257,7 +336,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta[:m+1],np.vstack([self.A,self.b]))/sum(delta)
 
-        elif type=='3S*':
+        elif lstype=='3S*':
             m=len(betavec)-1
             alpha=np.zeros([m+1,m])
             beta =np.vstack([np.zeros(m),np.diag(betavec[1:])])
@@ -335,9 +414,13 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
 
 def load_LSRK(file,lstype='2S',has_emb=False):
     """
-        Load low storage methods of the various types from Ketcheson's
-        paper.  If has_emb=True, the method has an embedded method that
+        Load low storage methods of the types 2S/2S*/3S*/2S_pair/3S_pair
+        from a file containing the low-storage coefficient arrays.
+        If has_emb=True, the method has an embedded method that
         requires an extra register.
+
+        The use of both _pair and has_emb seems redundant; this should
+        be corrected in the future.
     """
     #Read in coefficients
     f=open(file,'r')
@@ -399,9 +482,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
 
 def load_2R(name):
     """
-        Loads 2R low-storage methods.
-
-        TODO: fix broken methods below.
+        Loads 2R low-storage methods from the literature.
     """
     if name=='DDAS47':
         fullname='DDAS4()7[2R]'
@@ -516,4 +597,4 @@ def load_2R(name):
                          1454774750537./11112645198328,
                          772137014323./4386814405182,
                          277420604269./1857595682219])
-    return TwoRRungeKuttaMethod(a,b,bhat,regs,fullname,description=descript)
+    return TwoRRungeKuttaPair(a,b,bhat,regs,fullname,description=descript)
