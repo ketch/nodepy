@@ -28,8 +28,7 @@ class RootedTree(str):
         returns a list of all trees of a given order::
 
             >>> from nodepy import *
-            >>> for p in range(4):
-                    print rt.list_trees(p)
+            >>> for p in range(4): print rt.list_trees(p)
             ['']
             ['T']
             ['{T}']
@@ -40,18 +39,24 @@ class RootedTree(str):
         If the tree contains an edge from vertex A to vertex B, vertex
         B is said to be a child of vertex A.
         A vertex with no children is referred to as a leaf.  
-        The only convention assumed in the code is that at each level, 
-        leaves are listed first (before more complex subtrees), 
-        and if there are $n$ leaves, we write 'T^n'.
-        Currently, powers cannot be used for subtrees; thus
 
-        '{{T}{T}}'
+        .. warning::
 
-        is valid, while
+            One important convention is assumed in the code; namely, that at each 
+            level, leaves are listed first (before any other subtrees), 
+            and if there are $n$ leaves, we write 'T^n'.
+        
+        .. note::
 
-        '{{T}^2}' 
+            Currently, powers cannot be used for subtrees; thus
 
-        is not.  This may change in the future.
+            '{{T}{T}}'
+
+            is valid, while
+
+            '{{T}^2}' 
+
+            is not.  This restriction may be lifted in the future.
 
         **Examples**::
 
@@ -69,6 +74,12 @@ class RootedTree(str):
             >>> tree2=RootedTree('{T^2{T}{T{T}}}')
             >>> tree2==tree
             True
+
+        We can generate Python code to evaluate the elementary weight
+        corresponding to a given tree for a given class of methods::
+
+            >>> rk.elementary_weight_str(tree)
+            'dot(b,dot(A,c)*dot(A,c*dot(A,c))*c**2)'
 
         **References**:  
             #. [butcher2003]_
@@ -160,7 +171,7 @@ class RootedTree(str):
         """
         return self=='T'
 
-    def lamda(self,alpha,extraargs=None):
+    def lamda(self,alpha,extraargs=[]):
         r""" 
             Computes Butcher's functional lambda on a given tree
             for the function alpha.  This is used to compute the
@@ -169,7 +180,7 @@ class RootedTree(str):
             *INPUT*:
 
                 * alpha -- a function on rooted trees
-                * extraargs -- a string containing any additional arguments 
+                * extraargs -- a list containing any additional arguments 
                   that must be passed to alpha
 
             *OUTPUT*:
@@ -186,9 +197,9 @@ class RootedTree(str):
         if self=='T': return [RootedTree('T')],[1]
         t,u=self.factor()
         if extraargs:
-            exec('l1,f1=t.lamda(alpha,'+str(extraargs)+')')
-            exec('l2,f2=u.lamda(alpha,'+str(extraargs)+')')
-            exec('alphau=alpha(u,'+str(extraargs)+')')
+            l1,f1=t.lamda(alpha,*extraargs)
+            l2,f2=u.lamda(alpha,*extraargs)
+            alphau=alpha(u,*extraargs)
         else:
             l1,f1=t.lamda(alpha)
             l2,f2=u.lamda(alpha)
@@ -204,19 +215,20 @@ class RootedTree(str):
                         fprod.append(f1[i]*f2[j])
         return tprod,fprod
 
-    def lamda_str(self,alpha,extraargs=None):
+    def lamda_str(self,alpha,extraargs=[]):
         """
             Alternate version of lamda above, but returns a string.
             Hopefully we can get rid of this (and the other str functions)
             when SAGE can handle noncommutative symbolic algebra.
         """
+        if not isinstance(extraargs,list): extraargs=[extraargs]
         if self=='': return [RootedTree('')],[0]
         if self=='T': return [RootedTree('T')],[1]
         t,u=self.factor()
         if extraargs:
-            exec('l1,f1=t.lamda_str(alpha,'+str(extraargs)+')')
-            exec('l2,f2=u.lamda_str(alpha,'+str(extraargs)+')')
-            exec('alphau=alpha(u,'+str(extraargs)+')')
+            l1,f1=t.lamda_str(alpha,*extraargs)
+            l2,f2=u.lamda_str(alpha,*extraargs)
+            alphau=alpha(u,*extraargs)
         else:
             l1,f1=t.lamda_str(alpha)
             l2,f2=u.lamda_str(alpha)
@@ -270,7 +282,7 @@ class RootedTree(str):
         if t=='{}': t=RootedTree('T')
         return t,u
 
-    def Gprod(self,alpha,beta,alphaargs='',betaargs=''):
+    def Gprod(self,alpha,beta,alphaargs=[],betaargs=[]):
         r""" 
             Returns the product of two functions on a given tree.
 
@@ -301,30 +313,30 @@ class RootedTree(str):
 
             **Reference**: [butcher2003]_ p. 276, Thm. 386A 
         """
-        exec('trees,facs=self.lamda(alpha,'+alphaargs+')')
+        trees,facs=self.lamda(alpha,*alphaargs)
         s=0
         for i in range(len(trees)):
-            exec('s+=facs[i]*beta(trees[i],'+betaargs+')')
-        exec('s+=alpha(self,'+alphaargs+')*beta(RootedTree(""),'+betaargs+')')
+            s+=facs[i]*beta(trees[i],*betaargs)
+        s+=alpha(self,*alphaargs)*beta(RootedTree(""),*betaargs)
         return s
 
-    def Gprod_str(self,alpha,beta,alphaargs='',betaargs=''):
+    def Gprod_str(self,alpha,beta,alphaargs=[],betaargs=[]):
         """ 
             Alternate version of Gprod, but operates on strings.
             Hopefully can be eliminated later in favor of symbolic
             manipulation.
         """
-        exec('trees,facs=self.lamda_str(alpha,'+alphaargs+')')
+        trees,facs=self.lamda_str(alpha,*alphaargs)
         s=""
         for i in range(len(trees)):
             if facs[i]!=0:
-                exec('bet=beta(trees[i],'+betaargs+')')
+                bet=beta(trees[i],*betaargs)
                 if bet not in ['0','']:
                     if i>0: s+='+'
                     s+=str(facs[i])+"*"+bet
-        exec('bet=beta(RootedTree(""),'+betaargs+')')
+        bet=beta(RootedTree(""),*betaargs)
         if bet not in ['0','']:
-            exec('alph=alpha(self,'+alphaargs+')')
+            alph=alpha(self,*alphaargs)
             s+="+"+str(sympify(alph+'*'+bet))
         return s
 
@@ -543,9 +555,9 @@ def list_trees(p,ind='all'):
 
     Produce column of Butcher's Table 302(I)::
 
-        >>> for i in range(1,11):
-        >>>     forest=list_trees(i)
-        >>>     print len(forest)
+        >>> for i in range(1,11): 
+        ...     forest=list_trees(i)
+        ...     print len(forest)
         1
         1
         2
@@ -557,8 +569,10 @@ def list_trees(p,ind='all'):
         286
         719
 
-    .. note:: Generates all trees up to order at least 10.  Above some order
-            it will not get them all (need to code more subloops).
+    .. warning::
+
+        This code is complete only up to order 10.  We need to extend it 
+        by adding more subloops for p>10.
 
     TODO: Implement Butcher's formula (Theorem 302B) for the number
             of trees and determine to what order this is valid.
@@ -681,12 +695,12 @@ def Dmap(tree):
 def Dmap_str(tree):
     return str(int(tree=='T'))
 
-def Gprod(tree,alpha,beta,alphaargs='',betaargs=''):
+def Gprod(tree,alpha,beta,alphaargs='',betaargs=[]):
     """ Returns the product of two functions on a given tree.
          See Butcher p. 276, Thm. 386A """
     return tree.Gprod(alpha,beta,alphaargs,betaargs)
 
-def Gprod_str(tree,alpha,beta,alphaargs='',betaargs=''):
+def Gprod_str(tree,alpha,beta,alphaargs='',betaargs=[]):
     return tree.Gprod_str(alpha,beta,alphaargs,betaargs)
 
 def Emap(tree,a=1):
@@ -700,77 +714,28 @@ def Emap(tree,a=1):
 def Emap_str(tree,a=1):
     return str(Rational(a**tree.order(),(tree.density())))
 
-#=====================================================
-#Runge-Kutta functions
-#=====================================================
-def RKeta(tree):
-    if tree=='':  return symbols('e',commutative=False)
-    if tree=='T': return symbols('c',commutative=False)
-    return symbols('A',commutative=False)*Dprod(tree,RKeta)
-
-def RKeta_str(tree):
-    """
-    Computes eta(t) for Runge-Kutta methods
-    """
-    if tree=='':  return 'e'
-    if tree=='T': return 'c'
-    return 'dot(A,'+Dprod_str(tree,RKeta_str)+')'
-
-#=====================================================
-#Two-step Runge-Kutta functions
-#=====================================================
-def TSRKeta(tree):
-    if tree=='':  return 1
-    if tree=='T': return symbols('c',commutative=False)
-    return symbols('d',commutative=False)*tree.Emap(-1)+symbols('Ahat',commutative=False)*tree.Gprod(Emap,Dprod,betaargs='TSRKeta',alphaargs='-1')+symbols('A',commutative=False)*Dprod(tree,TSRKeta)
-
-def TSRKeta_str(tree):
-    """
-    Computes eta(t) for Two-step Runge-Kutta methods
-    """
-    if tree=='':  return 'e'
-    if tree=='T': return 'c'
-    return '(d*'+str(tree.Emap(-1))+'+dot(Ahat,'+tree.Gprod_str(Emap_str,Dprod_str,betaargs='TSRKeta_str',alphaargs='-1')+')'+'+dot(A,'+Dprod_str(tree,TSRKeta_str)+'))'
-
-#=====================================================
-#Three-step Runge-Kutta functions ???
-#=====================================================
-def ThSRKeta(tree):
-    if tree=='':  return 1
-    if tree=='T': return symbols('c',commutative=False)
-    return symbols('d2',commutative=False)*tree.Emap(-1)+symbols('d3',commutative=False)*tree.Emap(-2)+symbols('A',commutative=False)*Dprod(tree,ThSRKeta)
-
-def ThSRKeta_str(tree):
-    """
-    Computes eta(t) for Two-step Runge-Kutta methods -- Python string
-    """
-    if tree=='':  return 'e'
-    if tree=='T': return 'c'
-    return '(d2*'+str(tree.Emap(-1))+'+(d3*'+str(tree.Emap(-2))+'+dot(A,'+Dprod_str(tree,ThSRKeta_str)+'))'
-
-def ThSRKeta_str_matlab(tree):
-    """
-    Computes eta(t) for Two-step Runge-Kutta methods -- Matlab string
-    """
-    if tree=='':  return 'e'
-    if tree=='T': return 'c'
-    return "("+str(tree.Emap(-1))+")*d2+("+str(tree.Emap(-2))+")*d3+(A*"+Dprod_str(tree,ThSRKeta_str_matlab)+')'
-
-
-#=====================================================
-#=====================================================
-#DEPRECATED FUNCTIONS
-#=====================================================
-#=====================================================
 
 #=====================================================
 def recursiveVectors(p,ind='all'):
 #=====================================================
   """ 
-    Generate recursive vectors using Albrecht's 'recursion 1' 
+    Generate recursive vectors using Albrecht's 'recursion 1'.
+    These are essentially the order conditions for Runge-Kutta
+    methods, excluding those that correspond to bushy trees.
+    More specifically, these are the vectors that must be
+    orthogonal to the vector of weights b.
+
+    Note that the individual order conditions obtained from
+    this algorithm are different from those obtained using Butcher's
+    approach.  But as a set of conditions up to some order they
+    are, of course, equivalent.
 
     Follows [albrecht1996]_ p. 1718
-    Would need to extend it for p>10
+
+    .. warning::
+
+        This code is complete only up to order 10.  We need to extend it 
+        by adding more subloops for p>10.
   """
   if p>10: print 'recursiveVectors is not complete for orders p>10.'
   W=[[],[]]
@@ -828,6 +793,13 @@ def recursiveVectors(p,ind='all'):
 
   if ind=='all': return W[p-1]
   else: return W[p-1][ind]
+
+
+#=====================================================
+#=====================================================
+#DEPRECATED FUNCTIONS
+#=====================================================
+#=====================================================
 
 def py2tex(codestr):
     """Convert a python code string to LaTex"""

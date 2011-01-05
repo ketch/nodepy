@@ -251,7 +251,7 @@ def tsrk_elementary_weight(tree):
     """
     from sympy import Symbol
     bhat,b,theta=Symbol('bhat',False),Symbol('b',False),Symbol('theta',False)
-    ew=bhat*tree.Gprod(tt.Emap,tt.Gprod,betaargs='TSRKeta,Dmap',alphaargs='-1')+b*tree.Gprod(tt.TSRKeta,tt.Dmap)+theta*tree.Emap(-1)
+    ew=bhat*tree.Gprod(tt.Emap,tt.Gprod,betaargs=[TSRKeta,Dmap],alphaargs=[-1])+b*tree.Gprod(TSRKeta,tt.Dmap)+theta*tree.Emap(-1)
     return ew
 
 def tsrk_elementary_weight_str(tree):
@@ -260,9 +260,28 @@ def tsrk_elementary_weight_str(tree):
         for Two-step Runge-Kutta methods
         as numpy-executable strings
     """
-    ewstr='dot(bhat,'+tree.Gprod_str(tt.Emap_str,tt.Gprod_str,betaargs='TSRKeta_str,Dmap_str',alphaargs='-1')+')+dot(b,'+tree.Gprod_str(tt.TSRKeta_str,tt.Dmap_str)+')+theta*'+str(tree.Emap(-1))
+    from rooted_trees import Dmap_str
+    ewstr='dot(bhat,'+tree.Gprod_str(tt.Emap_str,tt.Gprod_str,betaargs=[TSRKeta_str,Dmap_str],alphaargs=[-1])+')+dot(b,'+tree.Gprod_str(TSRKeta_str,tt.Dmap_str)+')+theta*'+str(tree.Emap(-1))
     ewstr=mysimp(ewstr)
     return ewstr
+
+def TSRKeta(tree):
+    from rooted_trees import Dprod
+    from sympy import symbols
+    raise Exception('This function does not work correctly; use the _str version')
+    if tree=='':  return 1
+    if tree=='T': return symbols('c',commutative=False)
+    return symbols('d',commutative=False)*tree.Emap(-1)+symbols('Ahat',commutative=False)*tree.Gprod(Emap,Dprod,betaargs=[TSRKeta],alphaargs=[-1])+symbols('A',commutative=False)*Dprod(tree,TSRKeta)
+
+def TSRKeta_str(tree):
+    """
+    Computes eta(t) for Two-step Runge-Kutta methods
+    """
+    from rooted_trees import Dprod_str, Emap_str
+    if tree=='':  return 'e'
+    if tree=='T': return 'c'
+    return '(d*'+str(tree.Emap(-1))+'+dot(Ahat,'+tree.Gprod_str(Emap_str,Dprod_str,betaargs=[TSRKeta_str],alphaargs=[-1])+')'+'+dot(A,'+Dprod_str(tree,TSRKeta_str)+'))'
+
 
 #================================================================
 

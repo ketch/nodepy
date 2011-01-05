@@ -39,7 +39,6 @@ from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import numpy as np
 import pylab as pl
-import rooted_trees as rt
 
 
 #=====================================================
@@ -102,10 +101,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if len(np.shape(A))==2: self.A=A
         else: self.A=np.array([A]) #Fix for 1-stage methods
 
-        if not triu(self.A).any():
-            print """Warning: this method appears to be explicit, but is
-                   being initialized as a RungeKuttaMethod rather than
-                   as an ExplicitRungeKuttaMethod."""
+        #if not np.triu(self.A).any():
+        #    print """Warning: this method appears to be explicit, but is
+        #           being initialized as a RungeKuttaMethod rather than
+        #           as an ExplicitRungeKuttaMethod."""
 
         self.b=b
         self.c=np.sum(self.A,1)
@@ -273,6 +272,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         Returns the coefficients in the Runge-Kutta method's error expansion
         multiplying all elementary differentials of the given order.
         """
+        import rooted_trees as rt
         forest=rt.list_trees(p)
         err_coeffs=[]
         for tree in forest:
@@ -305,6 +305,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def principal_error_norm(self,tol=1.e-13):
         r""" Returns the 2-norm of the vector of leading order error coefficients."""
+        import rooted_trees as rt
         p=self.order(tol)
         forest=rt.list_trees(p+1)
         errs=[]
@@ -1080,12 +1081,22 @@ def elementary_weight(tree):
         have this version working so that we could symbolically 
         simplify the expressions.
 
+        In order to do things correctly, we need a symbolic
+        system that includes support for either
+            * Two different types of multiplication; or
+            * Full tensor expressions
+
+        The latter is an issue in the Sympy tracker, but it's not
+        clear when it will be available.
+
         **References**:
             [butcher2003]_
     """
+    raise Exception('This function does not work correctly; use the _str version')
+    import rooted_trees as rt
     from sympy import symbols
     b=symbols('b',commutative=False)
-    ew=b*tree.Gprod(rt.RKeta,rt.Dmap)
+    ew=b*tree.Gprod(RKeta,rt.Dmap)
     return ew
 
 def elementary_weight_str(tree,style='python'):
@@ -1094,12 +1105,31 @@ def elementary_weight_str(tree,style='python'):
         Constructs Butcher's elementary weights for a Runge-Kutta method
         as strings suitable for numpy execution.
     """
-    ewstr='dot(b,'+tree.Gprod_str(rt.RKeta_str,rt.Dmap_str)+')'
+    from rooted_trees import Dmap_str
+    ewstr='dot(b,'+tree.Gprod_str(RKeta_str,Dmap_str)+')'
     ewstr=ewstr.replace('1*','')
     ewstr=collect_powers(ewstr,'c')
     ewstr=mysimp(ewstr)
     if style=='matlab': ewstr=python_to_matlab(ewstr)
     return ewstr
+
+def RKeta(tree):
+    from rooted_trees import Dprod
+    from sympy import symbols
+    raise Exception('This function does not work correctly; use the _str version')
+    if tree=='':  return symbols('e',commutative=False)
+    if tree=='T': return symbols('c',commutative=False)
+    return symbols('A',commutative=False)*Dprod(tree,RKeta)
+
+def RKeta_str(tree):
+    """
+    Computes eta(t) for Runge-Kutta methods
+    """
+    from rooted_trees import Dprod_str
+    if tree=='':  return 'e'
+    if tree=='T': return 'c'
+    return 'dot(A,'+Dprod_str(tree,RKeta_str)+')'
+
 
 def discrete_adjoint(meth):
     """
@@ -2054,6 +2084,7 @@ def runge_kutta_order_conditions(p,ind='all'):
         to test order conditions for RK methods.  May be deprecated
         soon.
     """
+    import rooted_trees as rt
     strings=rt.recursiveVectors(p,'all')
     code=[]
     for oc in strings:

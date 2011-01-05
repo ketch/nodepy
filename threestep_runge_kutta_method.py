@@ -8,6 +8,11 @@ EXAMPLES:
 
 REFERENCES:
     [hairer1993]
+
+.. warning::
+
+    The order condition functions here have not been carefully tested
+    and may not generate correct order conditions!
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
@@ -103,5 +108,31 @@ def thsrk_elementary_weight_str_matlab(tree):
     ewstr=mysimp(ewstr)
     ewstr=ewstr.replace('**','.^')
     return ewstr
+
+def ThSRKeta(tree):
+    from rooted_trees import Dprod
+    from sympy import symbols
+    raise Exception('This function does not work correctly; use the _str version')
+    if tree=='':  return 1
+    if tree=='T': return symbols('c',commutative=False)
+    return symbols('d2',commutative=False)*tree.Emap(-1)+symbols('d3',commutative=False)*tree.Emap(-2)+symbols('A',commutative=False)*Dprod(tree,ThSRKeta)
+
+def ThSRKeta_str(tree):
+    """
+    Computes eta(t) for Two-step Runge-Kutta methods -- Python string
+    """
+    from rooted_trees import Dprod_str
+    if tree=='':  return 'e'
+    if tree=='T': return 'c'
+    return '(d2*'+str(tree.Emap(-1))+'+(d3*'+str(tree.Emap(-2))+'+dot(A,'+Dprod_str(tree,ThSRKeta_str)+'))'
+
+def ThSRKeta_str_matlab(tree):
+    """
+    Computes eta(t) for Two-step Runge-Kutta methods -- Matlab string
+    """
+    if tree=='':  return 'e'
+    if tree=='T': return 'c'
+    return "("+str(tree.Emap(-1))+")*d2+("+str(tree.Emap(-2))+")*d3+(A*"+Dprod_str(tree,ThSRKeta_str_matlab)+')'
+
 
 #================================================================
