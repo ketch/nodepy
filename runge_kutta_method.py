@@ -87,8 +87,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             m=np.size(A,0) # Number of stages
             if m>1:
                 if not np.all([np.size(A,1),np.size(b)]==[m,m]):
-                   raise RungeKuttaError(
-                    'Inconsistent dimensions of Butcher arrays')
+                    raise RungeKuttaError(
+                     'Inconsistent dimensions of Butcher arrays')
             else:
                 if not np.size(b)==1:
                     raise RungeKuttaError(
@@ -140,10 +140,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         K1=np.vstack([self.A,self.b])
         K2=np.vstack([rkm.A,rkm.b])
-        if shape(K1)!=shape(K2):
+        if K1.shape!=K2.shape:
             return False
         else:
-            return np.vstack([self.A,self.b])==np.vstack([rkm.A,rkm.b])
+            return (np.vstack([self.A,self.b])==np.vstack([rkm.A,rkm.b])).all()
 
     def __len__(self):
         """
@@ -520,45 +520,46 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return r
 
     def linear_monotonicity_radius(self,acc=1.e-10,tol=1.e-15,tol2=1e-8):
-      r"""
-          Computes Horvath's monotonicity radius of the stability
-          function.
-      """
-      from utils import bisect
+        r"""
+            Computes Horvath's monotonicity radius of the stability
+            function.
 
-      p,q=self.stability_function()
-      for i in range(len(p)+1):
-          if abs(p[i])<=tol2: p[i]=0.0
-      for i in range(len(q)+1):
-          if abs(q[i])<=tol2: q[i]=0.0
-      #First check extreme cases
-      if p.order>q.order: return 0
-      phi = lambda z: p(z)/q(z)
-      #Get the negative real zeroes of the derivative of p/q:
-      phip=p.deriv()*q-q.deriv()*p
-      zeroes=[z for z in phip.r if np.isreal(z) and z<0]      
-      #Find the extremum of phi on (-inf,0):
-      xmax=-10000
-      if phip(0)<0: return 0
-      if len(zeroes)>0:
-          for i in range(len(zeroes)):
-              if p(zeroes[i])/q(zeroes[i])<p(xmax)/q(xmax) and zeroes[i]>xmax:  xmax=zeroes[i]
-          zmax=max(abs(phi(zeroes)))
-          rlo=max(zeroes)
-          if p.order==q.order: 
-              zmax=max(zmax, abs(p[len(p)]/q[len(q)]))
-      else:
-          if p.order<q.order: return -np.inf
-          if p.order==q.order: 
-              zmax=abs(p[len(p)]/q[len(q)])
-              if p[len(p)]/q[len(q)]>=-tol: return -np.inf
-              rlo=-10000
-      s=p-zmax*q 
-      zeroes2=[z for z in s.r if np.isreal(z) and z<0 and z>=xmax]
-      if len(zeroes2)>0:
-          r=max(zeroes2)
-      else: r=0
-      return float(np.real(r))
+            TODO: clean this up.
+        """
+
+        p,q=self.stability_function()
+        for i in range(len(p)+1):
+            if abs(p[i])<=tol2: p[i]=0.0
+        for i in range(len(q)+1):
+            if abs(q[i])<=tol2: q[i]=0.0
+        #First check extreme cases
+        if p.order>q.order: return 0
+        phi = lambda z: p(z)/q(z)
+        #Get the negative real zeroes of the derivative of p/q:
+        phip=p.deriv()*q-q.deriv()*p
+        zeroes=[z for z in phip.r if np.isreal(z) and z<0]      
+        #Find the extremum of phi on (-inf,0):
+        xmax=-10000
+        if phip(0)<0: return 0
+        if len(zeroes)>0:
+            for i in range(len(zeroes)):
+                if p(zeroes[i])/q(zeroes[i])<p(xmax)/q(xmax) and zeroes[i]>xmax:  xmax=zeroes[i]
+            zmax=max(abs(phi(zeroes)))
+            rlo=max(zeroes)
+            if p.order==q.order: 
+                zmax=max(zmax, abs(p[len(p)]/q[len(q)]))
+        else:
+            if p.order<q.order: return -np.inf
+            if p.order==q.order: 
+                zmax=abs(p[len(p)]/q[len(q)])
+                if p[len(p)]/q[len(q)]>=-tol: return -np.inf
+                rlo=-10000
+        s=p-zmax*q 
+        zeroes2=[z for z in s.r if np.isreal(z) and z<0 and z>=xmax]
+        if len(zeroes2)>0:
+            r=max(zeroes2)
+        else: r=0
+        return float(np.real(r))
 
 
     def is_circle_contractive(self,r,tol):
@@ -734,11 +735,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return G,Xinv
 
 
-    def is_explicit(self,tol=1.e-14):
+    def is_explicit(self):
         return False
 
     def is_FSAL(self):
-      return all(self.A[-1,:]==self.b)
+        return all(self.A[-1,:]==self.b)
 
 #=====================================================
 class ExplicitRungeKuttaMethod(RungeKuttaMethod):
@@ -799,9 +800,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
         return unew
 
-    def imaginary_stability_interval(self,tol=1.e-7,max=100.,eps=1.e-6):
+    def imaginary_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
         p,q=self.stability_function()
-        zhi=max
+        zhi=zmax
         zlo=0.
         #Use bisection to get an upper bound:
         while (zhi-zlo)>tol:
@@ -817,9 +818,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         if len(notok)==0: return z
         else: return zz[min(notok)]
 
-    def real_stability_interval(self,tol=1.e-7,max=100.,eps=1.e-6):
+    def real_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
         p,q=self.stability_function()
-        zhi=max
+        zhi=zmax
         zlo=0.
         #Use bisection to get an upper bound:
         while (zhi-zlo)>tol:
@@ -829,8 +830,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             else: zlo=z
                 
         #Now check more carefully:
-        zz=np.linspace(0.,z,z/0.01)
-        vals=np.array(map(p,-zz))
+        vals = np.array([p(-zz) for zz in np.linspace(0.,z,z/0.01)])
         notok=np.where(vals>1.+eps)[0]
         if len(notok)==0: return z
         else: return zz[min(notok)]
@@ -922,8 +922,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             m=np.size(A,0) # Number of stages
             if m>1:
                 if not np.all([np.size(A,1),np.size(b)]==[m,m]):
-                   raise RungeKuttaError(
-                    'Inconsistent dimensions of Butcher arrays')
+                    raise RungeKuttaError(
+                     'Inconsistent dimensions of Butcher arrays')
             else:
                 if not np.size(b)==1:
                     raise RungeKuttaError(
@@ -1015,8 +1015,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         tau_qp2=self.error_coeffs(q+2)
         tau_pp2=self.error_coeffs(p+2)
 
-        tau_pp1_hat=self.error_coeffs(p+1,method='embedded')
-        tau_pp2_hat=self.error_coeffs(p+2,method='embedded')
+        tau_pp1_hat=self.embedded_method.error_coeffs(p+1)
+        tau_pp2_hat=self.embedded_method.error_coeffs(p+2)
 
         A_qp1=    np.sqrt(float(np.sum(np.array(tau_qp1)**2)))
         A_qp1_max=    max([abs(tau) for tau in tau_qp1])
@@ -1047,9 +1047,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
 
     def is_FSAL(self):
-      if all(self.A[-1,:]==self.b): return True
-      elif all(self.A[-1,:]==self.bhat): return True
-      else: return False
+        if all(self.A[-1,:]==self.b): return True
+        elif all(self.A[-1,:]==self.bhat): return True
+        else: return False
 
 #=====================================================
 #End of ExplicitRungeKuttaPair class
@@ -1101,11 +1101,11 @@ def elementary_weight(tree):
     return ew
 
 def elementary_weight_str(tree,style='python'):
-    from strmanip import collect_powers, mysimp
     """
         Constructs Butcher's elementary weights for a Runge-Kutta method
         as strings suitable for numpy execution.
     """
+    from strmanip import collect_powers, mysimp
     from rooted_trees import Dmap_str
     ewstr='dot(b,'+tree.Gprod_str(RKeta_str,Dmap_str)+')'
     ewstr=ewstr.replace('1*','')
@@ -1219,7 +1219,6 @@ def shu_osher_to_butcher(alpha,beta):
     return A,b
 
 def loadRKM(which='All'):
-    from numpy import sqrt
     """ 
         Load a set of standard Runge-Kutta methods for testing.
         The following methods are included:
@@ -1234,6 +1233,7 @@ def loadRKM(which='All'):
         'DP5':        Dormand-Prince 5th-order
         'Fehlberg45': 5th-order part of Fehlberg's pair
         'Lambert65':
+
         Implicit:
 
         'BE':         Backward Euler
@@ -1242,6 +1242,7 @@ def loadRKM(which='All'):
 
         Also various Lobatto and Radau methods.
     """
+    from numpy import sqrt
     RK={}
     #================================================
     A=np.array([1])
@@ -1293,8 +1294,8 @@ def loadRKM(which='All'):
     #================================================
     A=np.array([[(88-7*np.sqrt(6))/360,(296-169*np.sqrt(6))/1800,(-2+3*np.sqrt(6))/225],
                 [(296+169*np.sqrt(6))/1800,(88+7*np.sqrt(6))/360,(-2-3*np.sqrt(6))/225],
-                [(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9]]);
-    b=np.array([(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9]);
+                [(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9]])
+    b=np.array([(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9])
     RK['RadauIIA3']=RungeKuttaMethod(A,b,name='RadauIIA3',
                 description="The RadauIIA method with 3 stages")
 
@@ -1594,15 +1595,14 @@ def SSPRKm(m):
     from sympy import factorial
 
     assert m>=2, "SSPRKm methods must have m>=2"
-    r=1.
 
     alph=np.zeros([m+1,m+1])
     alph[1,0]=1.
     for mm in range(2,m+1):
-      for k in range(1,m):
-        alph[mm,k]=1./k * alph[mm-1,k-1]
-        alph[mm,mm-1]=1./factorial(mm)
-        alph[mm,0] = 1.-sum(alph[mm,1:])
+        for k in range(1,m):
+            alph[mm,k]=1./k * alph[mm-1,k-1]
+            alph[mm,mm-1]=1./factorial(mm)
+            alph[mm,0] = 1.-sum(alph[mm,1:])
 
     alpha=np.vstack([np.zeros(m),np.eye(m)])
     alpha[m,m-1]=1./factorial(m)
@@ -1710,9 +1710,6 @@ def SSPIRK3(m):
     name='SSPIRK'+str(m)+'3'
     return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
-if __name__== "__main__":
-    RK=loadRKM()
-
 
 #============================================================
 # Families of Runge-Kutta-Chebyshev methods
@@ -1765,18 +1762,18 @@ def RKC1(m,eps=0):
     beta[1,0]=mut[1]
 
     for j in range(2,m+1):
-      b[j] = 1./orth.eval_chebyt(j,w0)
-      a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
-      mu[j]= 2.*b[j]*w0/b[j-1]
-      nu[j]= -b[j]/b[j-2]
-      mut[j] = mu[j]*w1/w0
-      gamt[j] = -a[j-1]*mut[j]
+        b[j] = 1./orth.eval_chebyt(j,w0)
+        a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
+        mu[j]= 2.*b[j]*w0/b[j-1]
+        nu[j]= -b[j]/b[j-2]
+        mut[j] = mu[j]*w1/w0
+        gamt[j] = -a[j-1]*mut[j]
 
-      alpha[j,0]=1.-mu[j]-nu[j]
-      alpha[j,j-1]=mu[j]
-      alpha[j,j-2]=nu[j]
-      beta[j,j-1]=mut[j]
-      beta[j,0]=gamt[j]
+        alpha[j,0]=1.-mu[j]-nu[j]
+        alpha[j,j-1]=mu[j]
+        alpha[j,j-2]=nu[j]
+        beta[j,j-1]=mut[j]
+        beta[j,0]=gamt[j]
 
     name='RKC'+str(m)+'1'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
@@ -1831,19 +1828,19 @@ def RKC2(m,eps=0):
     beta[1,0]=mut[1]
 
     for j in range(2,m+1):
-      Tj=orth.chebyt(j)
-      b[j] = Tj.deriv(2)(w0)/(Tj.deriv()(w0))**2
-      a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
-      mu[j]= 2.*b[j]*w0/b[j-1]
-      nu[j]= -b[j]/b[j-2]
-      mut[j] = mu[j]*w1/w0
-      gamt[j] = -a[j-1]*mut[j]
+        Tj=orth.chebyt(j)
+        b[j] = Tj.deriv(2)(w0)/(Tj.deriv()(w0))**2
+        a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
+        mu[j]= 2.*b[j]*w0/b[j-1]
+        nu[j]= -b[j]/b[j-2]
+        mut[j] = mu[j]*w1/w0
+        gamt[j] = -a[j-1]*mut[j]
 
-      alpha[j,0]=1.-mu[j]-nu[j]
-      alpha[j,j-1]=mu[j]
-      alpha[j,j-2]=nu[j]
-      beta[j,j-1]=mut[j]
-      beta[j,0]=gamt[j]
+        alpha[j,0]=1.-mu[j]-nu[j]
+        alpha[j,j-1]=mu[j]
+        alpha[j,j-2]=nu[j]
+        beta[j,j-1]=mut[j]
+        beta[j,0]=gamt[j]
 
     name='RKC'+str(m)+'2'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
@@ -1864,7 +1861,7 @@ def dcweights(x):
     F=0*A
     n=np.arange(len(x))+1
     for i in range(len(x)-1):
-        a=x[i]; b=x[i+1];
+        a=x[i]; b=x[i+1]
         f=(b**n-a**n)/n
         F[:,i]=f
     w=np.linalg.solve(A,F)
@@ -1959,7 +1956,7 @@ def extrap(s,seq='harmonic'):
 
     """
 
-    if seq=='harmonic': N=np.arange(s)+1; 
+    if seq=='harmonic': N=np.arange(s)+1;
     elif seq=='Romberg': N=np.arange(s)+1;  N=2**(N-1)
 
     J=np.cumsum(N)+1
@@ -2086,10 +2083,10 @@ def runge_kutta_order_conditions(p,ind='all'):
         soon.
     """
     import rooted_trees as rt
-    strings=rt.recursiveVectors(p,'all')
+    strings=rt.recursiveVectors(p,ind)
     code=[]
     for oc in strings:
-         code.append(RKOCstr2code(oc))
+        code.append(RKOCstr2code(oc))
     return code
 
 def RKOCstr2code(ocstr):
@@ -2100,7 +2097,7 @@ def RKOCstr2code(ocstr):
     factors=ocstr.split(',')
     occode='np.dot(b,'
     for factor in factors[0:len(factors)-1]:
-         occode=occode+'np.dot('+factor+','
+        occode=occode+'np.dot('+factor+','
     occode=occode+factors[len(factors)-1]
     occode=occode.replace(']',',:]')
     occode=occode+')'*len(factors)

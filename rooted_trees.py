@@ -1,9 +1,8 @@
 import numpy as np
 import pylab as pl
-from sympy import symbols, factorial, sympify, Rational
+from sympy import factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
 from utils import permutations
-from strmanip import *
 
 #=====================================================
 class RootedTree(str):
@@ -109,10 +108,10 @@ class RootedTree(str):
         r=self.count('{')
         pos=0
         while pos!=-1:
-             pos=self.find('T',pos+1)
-             if pos!=-1:
-                  try: r+=int(self[pos+2])
-                  except: r+=1
+            pos=self.find('T',pos+1)
+            if pos!=-1:
+                try: r+=int(self[pos+2])
+                except: r+=1
         return r
 
     def density(self):
@@ -127,7 +126,7 @@ class RootedTree(str):
         gamma=self.order()
         nleaves,subtrees=self.parse_subtrees()
         for tree in subtrees:
-             gamma*=tree.density()
+            gamma*=tree.density()
         return gamma
 
     def symmetry(self):
@@ -141,14 +140,14 @@ class RootedTree(str):
         if self=='T': return 1
         sigma=1
         if self[1]=='T':
-             try: sigma=factorial(int(self[3]))
-             except: pass
+            try: sigma=factorial(int(self[3]))
+            except: pass
         nleaves,subtrees=self.parse_subtrees()
         while len(subtrees)>0:
-             st=subtrees[0]
-             nst=subtrees.count(st)
-             sigma*=factorial(nst)*st.symmetry()**nst
-             while st in subtrees: subtrees.remove(st)
+            st=subtrees[0]
+            nst=subtrees.count(st)
+            sigma*=factorial(nst)*st.symmetry()**nst
+            while st in subtrees: subtrees.remove(st)
         return sigma
 
     def Emap(self,a=1):
@@ -271,14 +270,14 @@ class RootedTree(str):
             t=RootedTree('{'+''.join(subtrees[1:])+'}')
             u=RootedTree(subtrees[0])
         if nleaves==1:
-             t=RootedTree(self[0]+self[2:])
-             u=RootedTree('T')
+            t=RootedTree(self[0]+self[2:])
+            u=RootedTree('T')
         if nleaves==2:
-             t=RootedTree(self[0:2]+self[4:])
-             u=RootedTree('T')
+            t=RootedTree(self[0:2]+self[4:])
+            u=RootedTree('T')
         if nleaves>2:
-             t=RootedTree(self[0:3]+str(int(self[3])-1)+self[4:])
-             u=RootedTree('T')
+            t=RootedTree(self[0:3]+str(int(self[3])-1)+self[4:])
+            u=RootedTree('T')
         if t=='{}': t=RootedTree('T')
         return t,u
 
@@ -395,7 +394,7 @@ class RootedTree(str):
         for i in range(nchildren):
             pl.plot([xroot,xchild[i]],[yroot,ychild],'-k')
             if i>nleaves-1:
-                    subtrees[i-nleaves].plot_subtree(xchild[i],ychild,xwidth/3.)
+                subtrees[i-nleaves].plot_subtree(xchild[i],ychild,xwidth/3.)
 
 
     def parse_subtrees(self):
@@ -412,6 +411,7 @@ class RootedTree(str):
             returning possibly many copies of 'T', the leaves are just
             returned as a number.
         """
+        from strmanip import get_substring, open_to_close
         if str(self)=='T' or str(self)=='': return 0,[]
         pos=0
         #Count leaves at current level
@@ -522,15 +522,12 @@ class TreeError(Exception):
 def plot_all_trees(p):
 #=====================================================
     """ Plots all rooted trees of order p """
-    from twostep_runge_kutta_method import tsrk_elementary_weight_str
-
     forest=list_trees(p)
     nplots=len(forest)
     nrows=int(np.ceil(np.sqrt(float(nplots))))
     ncols=int(np.floor(np.sqrt(float(nplots))))
     if nrows*ncols<nplots: ncols=ncols+1
     for tree in forest:
-        #ttitle=tsrk_elementary_weight_str(tree)+'-1/'+str(tree.density())
         ttitle=tree
         tree.plot(nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
     fig=pl.figure(1)
@@ -539,7 +536,7 @@ def plot_all_trees(p):
 #=====================================================
 def list_trees(p,ind='all'):
 #=====================================================
-  """ 
+    """ 
     Returns rooted trees of order p.
 
     INPUT: 
@@ -578,83 +575,83 @@ def list_trees(p,ind='all'):
             of trees and determine to what order this is valid.
 
     **Reference**: [albrecht1996]_
-  """
+    """
 
-  if p==0: return [RootedTree('')]
-  W=[[],[]] #This way indices agree with Albrecht
-  R=[[],[]]
-  R.append([RootedTree("{T}")])
-  W.append([RootedTree("{{T}}")])
-  for i in range(3,p):
-     #Construct R[i]
-     ps=powerString("T",i-1,powchar="^")
-     R.append([RootedTree("{"+ps+"}")])
-     for w in W[i-1]:
-        R[i].append(w)
-     #Construct W[i]
-     #l=0:
-     W.append([RootedTree("{"+R[i][0]+"}")])
-     for r in R[i][1:]:
-        W[i].append(RootedTree("{"+r+"}"))
-     for l in range(1,i-1): #level 1
-        for r in R[i-l]:
-          ps=powerString("T",l,powchar="^")
-          W[i].append(RootedTree("{"+ps+r+"}"))
-     for l in range(0,i-3): #level 2
-        for n in range(2,i-l-1):
-          m=i-n-l
-          if m<=n: #Avoid duplicate conditions
-             for Rm in R[m]:
-                lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
-                for Rn in R[n][lowlim:]:
-                  ps=powerString("T",l,powchar="^")
-                  W[i].append(RootedTree("{"+ps+Rm+Rn+"}"))
-     for l in range(0,i-5): #level 3
-        for n in range(2,i-l-3):
-          for m in range(2,i-l-n-1):
-             s=i-m-n-l
-             if m<=n and n<=s: #Avoid duplicate conditions
-                for Rm in R[m]:
-                  lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
-                  for Rn in R[n][lowlim:]:
-                     lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
-                     for Rs in R[s][lowlim2:]:
-                        ps=powerString("T",l,powchar="^")
-                        W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+"}"))
-     for l in range(0,i-7): #level 4
-        for n in range(2,i-l-5):
-          for m in range(2,i-l-n-3):
-             for s in range(2,i-l-n-m-1):
-                t=i-s-m-n-l
-                if s<=t and n<=s and m<=n: #Avoid duplicate conditions
-                  for Rm in R[m]:
-                     lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
-                     for Rn in R[n][lowlim:]:
-                        lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
-                        for Rs in R[s][lowlim2:]:
-                          lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
-                          for Rt in R[t]:
-                             ps=powerString("T",l,powchar="^")
-                             W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+Rt+"}"))
-  # The recursion above generates all trees except the 'blooms'
-  # Now add the blooms:
-  W[0].append(RootedTree("T"))
-  for i in range(1,p):
-     ps=powerString("T",i,powchar="^")
-     W[i].append(RootedTree("{"+ps+"}"))
+    if p==0: return [RootedTree('')]
+    W=[[],[]] #This way indices agree with Albrecht
+    R=[[],[]]
+    R.append([RootedTree("{T}")])
+    W.append([RootedTree("{{T}}")])
+    for i in range(3,p):
+        #Construct R[i]
+        ps=powerString("T",i-1,powchar="^")
+        R.append([RootedTree("{"+ps+"}")])
+        for w in W[i-1]:
+            R[i].append(w)
+        #Construct W[i]
+        #l=0:
+        W.append([RootedTree("{"+R[i][0]+"}")])
+        for r in R[i][1:]:
+            W[i].append(RootedTree("{"+r+"}"))
+        for l in range(1,i-1): #level 1
+            for r in R[i-l]:
+                ps=powerString("T",l,powchar="^")
+                W[i].append(RootedTree("{"+ps+r+"}"))
+        for l in range(0,i-3): #level 2
+            for n in range(2,i-l-1):
+                m=i-n-l
+                if m<=n: #Avoid duplicate conditions
+                    for Rm in R[m]:
+                        lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+                        for Rn in R[n][lowlim:]:
+                            ps=powerString("T",l,powchar="^")
+                            W[i].append(RootedTree("{"+ps+Rm+Rn+"}"))
+        for l in range(0,i-5): #level 3
+            for n in range(2,i-l-3):
+                for m in range(2,i-l-n-1):
+                    s=i-m-n-l
+                    if m<=n and n<=s: #Avoid duplicate conditions
+                        for Rm in R[m]:
+                            lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+                            for Rn in R[n][lowlim:]:
+                                lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+                                for Rs in R[s][lowlim2:]:
+                                    ps=powerString("T",l,powchar="^")
+                                    W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+"}"))
+        for l in range(0,i-7): #level 4
+            for n in range(2,i-l-5):
+                for m in range(2,i-l-n-3):
+                    for s in range(2,i-l-n-m-1):
+                        t=i-s-m-n-l
+                        if s<=t and n<=s and m<=n: #Avoid duplicate conditions
+                            for Rm in R[m]:
+                                lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+                                for Rn in R[n][lowlim:]:
+                                    lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+                                    for Rs in R[s][lowlim2:]:
+                                        lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
+                                        for Rt in R[t]:
+                                            ps=powerString("T",l,powchar="^")
+                                            W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+Rt+"}"))
+    # The recursion above generates all trees except the 'blooms'
+    # Now add the blooms:
+    W[0].append(RootedTree("T"))
+    for i in range(1,p):
+        ps=powerString("T",i,powchar="^")
+        W[i].append(RootedTree("{"+ps+"}"))
+  
+    if ind=='all': return W[p-1]
+    else: return W[p-1][ind]
+    
 
-  if ind=='all': return W[p-1]
-  else: return W[p-1][ind]
-
-
-def powerString(s,pow,powchar="**",trailchar=''):
-  if pow==0:
-     return ""
-  else:
-     if pow==1:
-        return s+trailchar
-     else:
-        return s+powchar+str(pow)+trailchar
+def powerString(s,npow,powchar="**",trailchar=''):
+    if npow==0:
+        return ""
+    else:
+        if npow==1:
+            return s+trailchar
+        else:
+            return s+powchar+str(npow)+trailchar
 
 
 #=====================================================
