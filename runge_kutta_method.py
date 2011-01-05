@@ -101,10 +101,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if len(np.shape(A))==2: self.A=A
         else: self.A=np.array([A]) #Fix for 1-stage methods
 
-        #if not np.triu(self.A).any():
-        #    print """Warning: this method appears to be explicit, but is
-        #           being initialized as a RungeKuttaMethod rather than
-        #           as an ExplicitRungeKuttaMethod."""
+        if not isinstance(self,ExplicitRungeKuttaMethod):
+            if not np.triu(self.A).any():
+                print """Warning: this method appears to be explicit, but is
+                       being initialized as a RungeKuttaMethod rather than
+                       as an ExplicitRungeKuttaMethod."""
 
         self.b=b
         self.c=np.sum(self.A,1)
