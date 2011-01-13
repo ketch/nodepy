@@ -5,6 +5,9 @@ class ODESolver:
     def __init__(self):
         pass
 
+    def __step__(self):
+        raise NotImplementedError
+
     def __call__(self,ivp,t0=0,N=100,dt=None,errtol=None,controllertype='P',x=None,diagnostics=False):
         """
             Calling an ODESolver numerically integrates the ODE

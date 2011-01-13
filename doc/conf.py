@@ -242,6 +242,6 @@ man_pages = [
 ]
 
 #jsmath_path = 'http://web.kaust.edu.sa/faculty/davidketcheson/jsMath/easy/load.js'
-jsmath_path = '/Users/ketch/jsMath/easy/load.js'
+jsmath_path = '/Users/ketch/Software/jsMath/easy/load.js'
 default_role = 'math'
 keep_warnings = 'True'

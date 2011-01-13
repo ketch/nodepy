@@ -168,38 +168,38 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         """
         s=self.s
         if self.type=='General':
-           z0=np.zeros([s,1])
-           z00=np.zeros([1,1])
-           T3 = np.hstack([self.Ahat,z0,self.A,z0])
-           T4 = np.hstack([self.bhat.T,z00,self.b.T,z00])
-           T = np.vstack([np.zeros([s+1,2*s+2]),T3,T4])
-           S1 = np.hstack([np.zeros([s+1,1]),np.eye(s+1)])
-           S2 = np.hstack([self.d,np.zeros([s,s]),1-self.d])
-           S3 = np.hstack([[[self.theta]],np.zeros([1,s]),[[1-self.theta]]])
-           S = np.vstack([S1,S2,S3])
+            z0=np.zeros([s,1])
+            z00=np.zeros([1,1])
+            T3 = np.hstack([self.Ahat,z0,self.A,z0])
+            T4 = np.hstack([self.bhat.T,z00,self.b.T,z00])
+            T = np.vstack([np.zeros([s+1,2*s+2]),T3,T4])
+            S1 = np.hstack([np.zeros([s+1,1]),np.eye(s+1)])
+            S2 = np.hstack([self.d,np.zeros([s,s]),1-self.d])
+            S3 = np.hstack([[[self.theta]],np.zeros([1,s]),[[1-self.theta]]])
+            S = np.vstack([S1,S2,S3])
 
         elif self.type=='Type I':
-           K = np.vstack([self.A,self.b.T])
-           T2 = np.hstack([np.zeros([s+1,1]),K,np.zeros([s+1,1])])
-           T =  np.vstack([np.zeros([1,s+1]),T2])
-           S1 = np.vstack([np.zeros([1,1]),self.d,np.array([[self.theta]])])
-           S2 = np.vstack([np.zeros([1,1]),1-self.d,np.array([[1-self.theta]])])
-           S = np.hstack([S1,S2])
+            K = np.vstack([self.A,self.b.T])
+            T2 = np.hstack([np.zeros([s+1,1]),K,np.zeros([s+1,1])])
+            T =  np.vstack([np.zeros([1,s+1]),T2])
+            S1 = np.vstack([np.zeros([1,1]),self.d,np.array([[self.theta]])])
+            S2 = np.vstack([np.zeros([1,1]),1-self.d,np.array([[1-self.theta]])])
+            S = np.hstack([S1,S2])
 
         elif self.type=='Type II':
-           S0 = np.array([1,0])
-           S1 = np.hstack([self.d,1-self.d])
-           S2 = np.array([self.theta,1-self.theta])
-           S =  np.vstack([S0,S1,S2])
-           ahat = np.zeros([s,1])
-           ahat[:,0] = self.Ahat[:,0]
-           bh = np.zeros([1,1])
-           bh[0,0]=self.bhat[0]
-           T0 = np.zeros([1,s+2])
-           T1 =  np.hstack([ahat,self.A,np.zeros([s,1])])
-           T2 =  np.hstack([bh,self.b.T,np.zeros([1,1])])
-           T = np.vstack([T0,T1,T2])
-           
+            S0 = np.array([1,0])
+            S1 = np.hstack([self.d,1-self.d])
+            S2 = np.array([self.theta,1-self.theta])
+            S =  np.vstack([S0,S1,S2])
+            ahat = np.zeros([s,1])
+            ahat[:,0] = self.Ahat[:,0]
+            bh = np.zeros([1,1])
+            bh[0,0]=self.bhat[0]
+            T0 = np.zeros([1,s+2])
+            T1 =  np.hstack([ahat,self.A,np.zeros([s,1])])
+            T2 =  np.hstack([bh,self.b.T,np.zeros([1,1])])
+            T = np.vstack([T0,T1,T2])
+            
         return S,T
 
     def is_absolutely_monotonic(self,r,tol):

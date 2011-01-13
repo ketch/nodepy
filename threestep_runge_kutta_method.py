@@ -30,7 +30,7 @@ class ThreeStepRungeKuttaMethod(GeneralLinearMethod):
             Initialize a 3-step Runge-Kutta method.  The representation
             uses the form and notation of [Ketcheson2009]_.
         """
-        self.D,self.theta,self.A,self.b=d,theta,A,b
+        self.D,self.theta,self.A,self.b=D,theta,A,b
 
     def order(self,tol=1.e-13):
         r""" 
@@ -54,7 +54,7 @@ class ThreeStepRungeKuttaMethod(GeneralLinearMethod):
                   order condition is violated)
         """
         from numpy import dot
-        d,theta,A,b=self.d,self.theta,self.A,self.b
+        D,theta,A,b=self.D,self.theta,self.A,self.b
         l=np.array(range(0,3))
         e=np.ones(A.shape[1])
         c=dot(A,e)-dot(D,l)
@@ -94,7 +94,7 @@ def thsrk_elementary_weight_str(tree):
         for Two-step Runge-Kutta methods
         as numpy-executable strings
     """
-    ewstr='dot(b,'+tree.Gprod_str(tt.ThSRKeta_str,tt.Dmap_str)+')+('+str(tree.Emap(-1))+')*theta2+('+str(tree.Emap(-2))+')*theta3'
+    ewstr='dot(b,'+tree.Gprod_str(ThSRKeta_str,tt.Dmap_str)+')+('+str(tree.Emap(-1))+')*theta2+('+str(tree.Emap(-2))+')*theta3'
     ewstr=mysimp(ewstr)
     return ewstr
 
@@ -130,6 +130,7 @@ def ThSRKeta_str_matlab(tree):
     """
     Computes eta(t) for Two-step Runge-Kutta methods -- Matlab string
     """
+    from rooted_trees import Dprod_str
     if tree=='':  return 'e'
     if tree=='T': return 'c'
     return "("+str(tree.Emap(-1))+")*d2+("+str(tree.Emap(-2))+")*d3+(A*"+Dprod_str(tree,ThSRKeta_str_matlab)+')'
