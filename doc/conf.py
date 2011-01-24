@@ -146,7 +146,7 @@ html_logo = 'small_logo.png'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -241,7 +241,7 @@ man_pages = [
      [u'David Ketcheson'], 1)
 ]
 
-#jsmath_path = 'http://web.kaust.edu.sa/faculty/davidketcheson/jsMath/easy/load.js'
-jsmath_path = '/Users/ketch/Software/jsMath/easy/load.js'
+jsmath_path = 'http://web.kaust.edu.sa/faculty/davidketcheson/jsMath/easy/load.js'
+#jsmath_path = '/Users/ketch/jsMath/easy/load.js'
 default_role = 'math'
 keep_warnings = 'True'
