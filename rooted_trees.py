@@ -1,5 +1,5 @@
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 from sympy import factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
 from utils import permutations
@@ -519,7 +519,7 @@ class TreeError(Exception):
 #=====================================================
 
 #=====================================================
-def plot_all_trees(p):
+def plot_all_trees(p,title='str'):
 #=====================================================
     """ Plots all rooted trees of order p """
     forest=list_trees(p)
@@ -528,7 +528,8 @@ def plot_all_trees(p):
     ncols=int(np.floor(np.sqrt(float(nplots))))
     if nrows*ncols<nplots: ncols=ncols+1
     for tree in forest:
-        ttitle=tree
+        if title=='str': ttitle=tree
+        else: ttitle=''
         tree.plot(nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
     fig=pl.figure(1)
     pl.setp(fig,facecolor='white')

@@ -108,7 +108,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             TODO: Implement something that works when the stability
                     region boundary crosses itself.
         """
-        import pylab as pl
+        import matplotlib.pyplot as pl
         theta=np.linspace(0.,2*np.pi,N)
         z=np.exp(theta*1j)
         rho,sigma=self.characteristic_polynomials()

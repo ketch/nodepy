@@ -38,7 +38,7 @@
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 
 
 #=====================================================
@@ -188,20 +188,22 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Returns a list of irrelevant stages.  If the method is
             DJ-irreducible, returns an empty list.
         """
+        from copy import copy
         b=self.b; A=self.A
         Nset = [j for j in range(len(b)) if abs(b[j])<tol]
         while len(Nset)>0:      #Try successively smaller sets N
+            Nsetold=copy(Nset)
             for j in Nset:      #Test whether stage j matters
                 remove_j=False
                 for i in range(len(self)):
                     if i not in Nset and abs(A[i,j])>tol: #Stage j matters
                         remove_j=True
-                        break       
-                    if remove_j: break
+                        continue       
+                    if remove_j: continue
                 if remove_j: 
                     Nset.remove(j)
-                    break
-            return Nset
+                    continue
+            if Nset==Nsetold: return Nset
         return Nset
 
     def dj_reduce(self,tol=1.e-13):
@@ -405,6 +407,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         q1=np.poly(self.A)
         p=np.poly1d(p1[::-1])    # Numerator
         q=np.poly1d(q1[::-1])    # Denominator
+        # Fix for some explicit methods
+        while p.c[0]<1.e-15: p=np.poly1d(p.c[1:])
         return p,q
 
     def plot_stability_function(self,bounds=[-20,1]):
@@ -412,7 +416,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         xx=np.arange(bounds[0], bounds[1], 0.01)
         yy=p(xx)/q(xx)
         pl.plot(xx,yy)
-        pl.show()  
+        pl.draw()  
 
 
     def plot_stability_region(self,N=200,bounds=[-10,1,-5,5],
@@ -457,10 +461,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         pl.axis('Image')
         pl.hold(False)
-        pl.show()
+        pl.draw()
 
     def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
-                    color='r',filled=True):
+                    color='r',filled=True,plotaxes=True):
         r""" The order star of a Runge-Kutta method is the set
             
             $$ \{ z \in C : |\phi(z)/exp(z)|\le 1 \} $$
@@ -486,9 +490,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         else:
             pl.contour(X,Y,R,[0,1],colors=color)
         pl.title('Order star for '+self.name)
-        pl.hold(True)
-        pl.plot([0,0],[bounds[2],bounds[3]],'--k')
-        pl.plot([bounds[0],bounds[1]],[0,0],'--k')
+        if plotaxes:
+            pl.hold(True)
+            pl.plot([0,0],[bounds[2],bounds[3]],'--k')
+            pl.plot([bounds[0],bounds[1]],[0,0],'--k')
         pl.axis('Image')
         pl.hold(False)
         

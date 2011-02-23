@@ -1,7 +1,7 @@
 """
 Functions for running convergence and performance tests.
 """
-import pylab as pl
+import matplotlib.pyplot as pl
 import numpy as np
 from nodepy import runge_kutta_method as rk
 

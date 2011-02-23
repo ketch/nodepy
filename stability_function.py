@@ -1,5 +1,5 @@
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 
 def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
                 color=('w','b'),filled=True,subplot=None):
