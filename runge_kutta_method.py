@@ -71,6 +71,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         r"""
             Initialize a Runge-Kutta method.  For explicit methods,
             the class ExplicitRungeKuttaMethod should be used instead.
+
+            TODO: make A a property and update c when it is changed
         """
         # Here there is a danger that one could change A
         # and c would never be updated
@@ -408,7 +410,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         p=np.poly1d(p1[::-1])    # Numerator
         q=np.poly1d(q1[::-1])    # Denominator
         # Fix for some explicit methods
-        while p.c[0]<1.e-15: p=np.poly1d(p.c[1:])
+        while abs(p.c[0])<1.e-15: p=np.poly1d(p.c[1:])
         return p,q
 
     def plot_stability_function(self,bounds=[-20,1]):

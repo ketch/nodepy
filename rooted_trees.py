@@ -364,7 +364,7 @@ class RootedTree(str):
         pl.scatter([0],[0])
         if self!='T': self.plot_subtree(0,0,1.)
 
-        fs=int(pl.ceil(30./nrows))
+        fs=int(np.ceil(30./nrows))
         pl.title(ttitle,{'fontsize': fs})
         pl.xticks([])
         pl.yticks([])
