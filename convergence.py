@@ -29,7 +29,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
             - Option to plot versus f-evals or dt
 
     """
-    pl.clf(); pl.draw(); pl.hold(True)
+    pl.clf(); pl.hold(True)
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
     err=[]
@@ -39,24 +39,23 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
         bs5=rk.loadRKM('BS5')
         bigN=grids[-1]*4
         print 'solving on fine grid with '+str(bigN)+' points'
-        t,u=bs5(ivp.rhs,ivp.u0,ivp.T,N=grids[-1]*4)
+        t,u=bs5(ivp,N=grids[-1]*4)
         print 'done'
         exsol = u[-1].copy()
     for method in methods:
-        print method.name
+        print 'Solving with method ',method.name
         err0=[]
         for i,N in enumerate(grids):
-            t,u=method(ivp.rhs,ivp.u0,ivp.T,N=N)
+            t,u=method(ivp,N=N)
             err0.append(np.linalg.norm(u[-1]-exsol))
         err.append(err0)
         work=[grid*len(method) for grid in grids]
         pl.loglog(work,err0,label=method.name,linewidth=3)
-        pl.xlabel('Function evaluations')
-        pl.ylabel('Error at $t_{final}$')
-    pl.legend()
+    pl.xlabel('Function evaluations')
+    pl.ylabel('Error at $t_{final}$')
+    pl.legend(loc='best')
     pl.hold(False)
     pl.draw()
-    pl.ioff()
     return err
 
 
@@ -118,5 +117,4 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
     pl.legend(loc='best')
     pl.hold(False)
     pl.draw()
-    pl.ioff()
     return work,err

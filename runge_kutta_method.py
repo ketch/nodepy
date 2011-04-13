@@ -449,7 +449,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             if scalefac==None: scalefac=m
         else: scalefac=1.
         R=np.abs(p(Z*scalefac)/q(Z*scalefac))
-        #pl.clf()
+        pl.clf()
         if filled:
             pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
         else:
@@ -457,7 +457,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.title('Absolute Stability Region for '+self.name)
         pl.hold(True)
         if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
-        #if len(q)>1: pl.plot(np.real(q.r),np.imag(p.r),'xk')  
         if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
         pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
