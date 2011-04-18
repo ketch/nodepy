@@ -39,14 +39,14 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
         bs5=rk.loadRKM('BS5')
         bigN=grids[-1]*4
         print 'solving on fine grid with '+str(bigN)+' points'
-        t,u=bs5(ivp.rhs,ivp.u0,ivp.T,N=grids[-1]*4)
+        t,u=bs5(ivp,N=bigN)
         print 'done'
         exsol = u[-1].copy()
     for method in methods:
-        print method.name
+        print "solving with %s" % method.name
         err0=[]
         for i,N in enumerate(grids):
-            t,u=method(ivp.rhs,ivp.u0,ivp.T,N=N)
+            t,u=method(ivp,N=N)
             err0.append(np.linalg.norm(u[-1]-exsol))
         err.append(err0)
         work=[grid*len(method) for grid in grids]
@@ -89,7 +89,7 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
     err=np.ones([len(methods),len(tols)])
     work=np.zeros([len(methods),len(tols)])
     for ivp in ivps:
-        print ivp
+        print "solving problem %s" % ivp
         try:
             exsol = ivp.exact(ivp.T)
         except:

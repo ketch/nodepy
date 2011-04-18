@@ -39,6 +39,7 @@ from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import numpy as np
 import pylab as pl
+import snp
 
 
 #=====================================================
@@ -67,14 +68,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
 
     def __init__(self,A=None,b=None,alpha=None,beta=None,
-            name='Runge-Kutta Method',description=''):
+            name='Runge-Kutta Method',description='',mode='exact'):
         r"""
             Initialize a Runge-Kutta method.  For explicit methods,
             the class ExplicitRungeKuttaMethod should be used instead.
         """
+        A,b,alpha,beta=snp.normalize(A,b,alpha,beta)
         # Here there is a danger that one could change A
         # and c would never be updated
-        # Maybe A,b, and c should be accessible through a setter function?
+        # A,b, and c should be properties
         a1,a2=A is not None, b is not None
         a3,a4=alpha is not None, beta is not None
         if not ( ( (a1 and a2) and not (a3 or a4) ) or
@@ -109,8 +111,23 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         self.b=b
         self.c=np.sum(self.A,1)
+
         self.name=name
         self.info=description
+
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        import copy
+        numself = copy.deepcopy(self)
+        if self.A.dtype==object:
+            numself.A=np.array(self.A,dtype=np.float64)
+            numself.b=np.array(self.b,dtype=np.float64)
+            numself.c=np.array(self.c,dtype=np.float64)
+        return numself
 
     def __repr__(self): 
         """
@@ -120,16 +137,27 @@ class RungeKuttaMethod(GeneralLinearMethod):
         ______
           | b
         """
+        from utils import shortstring
+
+        c = [shortstring(ci) for ci in self.c]
+        clenmax = max([len(ci) for ci in c])
+        A = [shortstring(ai) for ai in self.A.reshape(-1)]
+        alenmax = max([len(ai) for ai in A])
+        b = [shortstring(bi) for bi in self.b]
+        blenmax = max([len(bi) for bi in b])
+        colmax=max(alenmax,blenmax)
+
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
-            s+='%6.3f |' % self.c[i]
+            s+=c[i]+' '*(clenmax-len(c[i])+1)+'|'
             for j in range(len(self)):
-                s+=' %6.3f' % self.A[i,j]
+                ss=shortstring(self.A[i,j])
+                s+=' '*(colmax-len(ss)+1)+ss
             s+='\n'
-        s+='_______|'+('_______'*len(self))+'\n'
-        s+= '       |'
+        s+='_'*(clenmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
+        s+= ' '*(clenmax+1)+'|'
         for j in range(len(self)):
-            s+=' %6.3f' % self.b[j]
+            s+=' '*(colmax-len(b[j])+1)+b[j]
         return s
 
     def __eq__(self,rkm):
@@ -347,17 +375,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             TODO: Implement the different approaches through optional keyword
         """
-        from sympy import factorial
+        from sympy import factorial,Rational
         A,b,c=self.A,self.b,self.c
-        C=np.diag(c)
+        C=snp.diag(c)
         code=runge_kutta_order_conditions(p)
-        z=np.zeros(len(code)+1)
-        tau=np.zeros([p,len(self)])
+        z=snp.zeros(len(code)+1)
+        tau=snp.zeros([p,len(self)])
         for j in range(1,p):
             tau[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
         for i in range(len(code)):
             exec('z[i]='+code[i])
-        z[-1]=np.dot(b,c**(p-1))-1./p
+        z[-1]=np.dot(b,c**(p-1))-Rational(1,p)
         return z
 
     def stage_order(self,tol=1.e-14):
@@ -401,8 +429,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - q -- Numpy poly representing the denominator
 
         """
-        p1=np.poly(self.A-np.tile(self.b,(len(self),1)))
-        q1=np.poly(self.A)
+        import sympy
+
+        if self.A.dtype==object:
+            Asym=sympy.matrices.Matrix(self.A)
+            bsym=sympy.matrices.Matrix(np.tile(self.b,(len(self),1)))
+            xsym=Asym-bsym
+            x=sympy.var('x')
+            p1=xsym.charpoly(x).coeffs
+            q1=Asym.charpoly(x).coeffs
+        else:
+            p1=np.poly(self.A-np.tile(self.b,(len(self),1)))
+            q1=np.poly(self.A)
         p=np.poly1d(p1[::-1])    # Numerator
         q=np.poly1d(q1[::-1])    # Denominator
         return p,q
@@ -757,16 +795,29 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         ______
           | b
         """
+        from utils import shortstring
+
+        c = [shortstring(ci) for ci in self.c]
+        clenmax = max([len(ci) for ci in c])
+        A = [shortstring(ai) for ai in self.A.reshape(-1)]
+        alenmax = max([len(ai) for ai in A])
+        b = [shortstring(bi) for bi in self.b]
+        blenmax = max([len(bi) for bi in b])
+        colmax=max(alenmax,blenmax)
+
+        s=self.name+'\n'+self.info+'\n'
+
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
-            s+='%6.3f |' % self.c[i]
+            s+=c[i]+' '*(clenmax-len(c[i])+1)+'|'
             for j in range(i):
-                s+=' %6.3f' % self.A[i,j]
+                ss=shortstring(self.A[i,j])
+                s+=' '*(colmax-len(ss)+1)+ss
             s+='\n'
-        s+='_______|'+('________'*len(self))+'\n'
-        s+= '       |'
+        s+='_'*(clenmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
+        s+= ' '*(clenmax+1)+'|'
         for j in range(len(self)):
-            s+=' %6.3f' % self.b[j]
+            s+=' '*(colmax-len(b[j])+1)+b[j]
         return s
 
     def __step__(self,f,t,u,dt,x=None):
@@ -951,19 +1002,34 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
           | b
           | bhat
         """
+        from utils import shortstring
+
+        c = [shortstring(ci) for ci in self.c]
+        clenmax = max([len(ci) for ci in c])
+        A = [shortstring(ai) for ai in self.A.reshape(-1)]
+        alenmax = max([len(ai) for ai in A])
+        b = [shortstring(bi) for bi in self.b]
+        blenmax = max([len(bi) for bi in b])
+        bhat = [shortstring(bi) for bi in self.bhat]
+        bhatlenmax = max([len(bi) for bi in bhat])
+        colmax=max(alenmax,blenmax,bhatlenmax)
+
+        s=self.name+'\n'+self.info+'\n'
+
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
-            s+='%6.3f |' % self.c[i]
+            s+=c[i]+' '*(clenmax-len(c[i])+1)+'|'
             for j in range(i):
-                s+=' %6.3f' % self.A[i,j]
+                ss=shortstring(self.A[i,j])
+                s+=' '*(colmax-len(ss)+1)+ss
             s+='\n'
-        s+='_______|'+('_______'*len(self))+'\n'
-        s+= '       |'
+        s+='_'*(clenmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
+        s+= ' '*(clenmax+1)+'|'
         for j in range(len(self)):
-            s+=' %6.3f' % self.b[j]
-        s+='\n'; s+= '       |'
+            s+=' '*(colmax-len(b[j])+1)+b[j]
+        s+= '\n'+' '*(clenmax+1)+'|'
         for j in range(len(self)):
-            s+=' %6.3f' % self.bhat[j]
+            s+=' '*(colmax-len(bhat[j])+1)+bhat[j]
         return s
 
 
@@ -1213,8 +1279,8 @@ def shu_osher_to_butcher(alpha,beta):
                     np.size(beta,1)]==[m+1,m+1,m]):
         raise RungeKuttaError(
              'Inconsistent dimensions of Shu-Osher arrays')
-    X=np.eye(m)-alpha[0:m,:]
-    A=np.linalg.solve(X,beta[0:m,:])
+    X=snp.eye(m)-alpha[0:m,:]
+    A=snp.solve(X,beta[0:m,:])
     b=beta[m,:]+np.dot(alpha[m,:],A)
     return A,b
 
@@ -1242,16 +1308,22 @@ def loadRKM(which='All'):
 
         Also various Lobatto and Radau methods.
     """
-    from numpy import sqrt
+    from math import sqrt
+    from sympy import sqrt, Rational
+
     RK={}
+
+    half=Rational(1,2)
+    one =Rational(1,1)
+
     #================================================
-    A=np.array([1])
-    b=np.array([1])
+    A=np.array([1],dtype=object)
+    b=np.array([1],dtype=object)
     RK['BE']=RungeKuttaMethod(A,b,name='Implicit Euler')
 
     #================================================
-    A=np.array([0])
-    b=np.array([1])
+    A=np.array([0],dtype=object)
+    b=np.array([1],dtype=object)
     RK['FE']=ExplicitRungeKuttaMethod(A,b,name='Forward Euler')
 
     #================================================
@@ -1262,60 +1334,60 @@ def loadRKM(which='All'):
                 "The optimal 2-stage, 2nd order downwind SSP Runge-Kutta method with one star")
 
     #================================================
-    A=np.array([[1.,-sqrt(5),sqrt(5),-1.],[1.,3.,(10-7.*sqrt(5))/5.,sqrt(5)/5.],[1.,(10.+7*sqrt(5))/12.,3.,-sqrt(5)/5.],[1.,5.,5.,1.]])/12.
-    b=np.array([1.,5.,5.,1.])/12.
+    A=np.array([[one,-sqrt(5),sqrt(5),-one],[one,3*one,(10-7*sqrt(5))/5,sqrt(5)/5],[one,(10+7*sqrt(5))/5,3*one,-sqrt(5)/5],[one,5*one,5*one,one]])/12
+    b=np.array([one,5*one,5*one,one])/12
     RK['LobattoIIIC4']=RungeKuttaMethod(A,b,name='LobattoIIIC4',
                 description="The LobattoIIIC method with 4 stages")
 
     #================================================
-    A=np.array([[1./6,-1./3,1./6],[1./6,5./12,-1./12],[1./6,2./3,1./6]])
-    b=np.array([1./6,2./3,1./6])
+    A=np.array([[one/6,-one/3,one/6],[one/6,5*one/12,-one/12],[one/6,2*one/3,one/6]])
+    b=np.array([one/6,2*one/3,one/6])
     RK['LobattoIIIC3']=RungeKuttaMethod(A,b,name='LobattoIIIC3',
                 description="The LobattoIIIC method with 3 stages")
 
     #================================================
-    A=np.array([[1./2,-1./2],[1./2,1./2]])
-    b=np.array([1./2,1./2])
+    A=np.array([[half,-half],[half,half]])
+    b=np.array([half,half])
     RK['LobattoIIIC2']=RungeKuttaMethod(A,b,name='LobattoIIIC2',
                 description="The LobattoIIIC method with 2 stages")
 
     #================================================
-    A=np.array([[0.,0.],[1./2,1./2]])
-    b=np.array([1./2,1./2])
+    A=np.array([[0,0],[half,half]])
+    b=np.array([half,half])
     RK['LobattoIIIA2']=RungeKuttaMethod(A,b,name='LobattoIIIA2',
                 description="The LobattoIIIA method with 2 stages")
 
     #================================================
-    A=np.array([[5./12,-1./12],[3./4,1./4]])
-    b=np.array([3./4,1./4])
+    A=np.array([[5*one/12,-1*one/12],[3*one/4,1*one/4]])
+    b=np.array([3*one/4,1*one/4])
     RK['RadauIIA2']=RungeKuttaMethod(A,b,name='RadauIIA2',
                 description="The RadauIIA method with 2 stages")
 
     #================================================
-    A=np.array([[(88-7*np.sqrt(6))/360,(296-169*np.sqrt(6))/1800,(-2+3*np.sqrt(6))/225],
-                [(296+169*np.sqrt(6))/1800,(88+7*np.sqrt(6))/360,(-2-3*np.sqrt(6))/225],
-                [(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9]])
-    b=np.array([(16-np.sqrt(6))/36,(16+np.sqrt(6))/36,1/9])
+    A=np.array([[(88-7*sqrt(6))/360,(296-169*sqrt(6))/1800,(-2+3*sqrt(6))/225],
+                [(296+169*sqrt(6))/1800,(88+7*sqrt(6))/360,(-2-3*sqrt(6))/225],
+                [(16-sqrt(6))/36,(16+sqrt(6))/36,one/9]])
+    b=np.array([(16-sqrt(6))/36,(16+sqrt(6))/36,one/9])
     RK['RadauIIA3']=RungeKuttaMethod(A,b,name='RadauIIA3',
                 description="The RadauIIA method with 3 stages")
 
     #================================================
-    A=np.array([[0,0],[1.,0]])
-    b=np.array([1./2,1./2])
+    A=np.array([[0,0],[one,0]])
+    b=np.array([half,half])
     RK['SSP22']=ExplicitRungeKuttaMethod(A,b,name='SSPRK22',
                 description=
                 "The optimal 2-stage, 2nd order SSP Runge-Kutta method")
 
     #================================================
-    A=np.array([[0,0,0],[1.,0,0],[1./4,1./4,0]])
-    b=np.array([1./6,1./6,2./3])
+    A=np.array([[0,0,0],[one,0,0],[one/4,one/4,0]])
+    b=np.array([one/6,one/6,2*one/3])
     RK['SSP33']=ExplicitRungeKuttaMethod(A,b,name='SSPRK33',
                 description=
                 "The optimal 3-stage, 3rd order SSP Runge-Kutta method")
 
     #================================================
-    A=np.array([[0,0,0],[1./3,0,0],[0.,2./3,0]])
-    b=np.array([1./4,0.,3./4])
+    A=np.array([[0,0,0],[one/3,0,0],[0.,2*one/3,0]])
+    b=np.array([one/4,0,3*one/4])
     RK['Heun33']=ExplicitRungeKuttaMethod(A,b,name='Heun33',
                 description= "Heun's 3-stage, 3rd order")
 
@@ -1932,7 +2004,7 @@ def DC(s,theta=0.,grid='eq'):
 #============================================================
 # Extrapolation methods
 #============================================================
-def extrap(s,seq='harmonic'):
+def extrap(s,seq='harmonic',mode='exact'):
     """ Construct extrapolation methods.
         For now, based on explicit Euler, but allowing arbitrary sequences.
 
@@ -1956,28 +2028,28 @@ def extrap(s,seq='harmonic'):
 
     """
 
-    if seq=='harmonic': N=np.arange(s)+1;
-    elif seq=='Romberg': N=np.arange(s)+1;  N=2**(N-1)
+    if seq=='harmonic': N=snp.arange(s)+1;
+    elif seq=='Romberg': N=snp.arange(s)+1;  N=2**(N-1)
 
     J=np.cumsum(N)+1
 
     nrs = J[-1]
 
-    alpha=np.zeros([nrs+s*(s-1)/2.,nrs+s*(s-1)/2.-1])
-    beta=np.zeros([nrs+s*(s-1)/2.,nrs+s*(s-1)/2.-1])
+    alpha=snp.zeros([nrs+s*(s-1)/2,nrs+s*(s-1)/2-1])
+    beta=snp.zeros([nrs+s*(s-1)/2,nrs+s*(s-1)/2-1])
 
 
-    alpha[1,0]=1.
-    beta[1,0]=1./N[0]
+    alpha[1,0]=1
+    beta[1,0]=1/N[0]
 
     for j in range(1,len(N)):
         #Form T_j1:
-        alpha[J[j-1],0] = 1.
-        beta[J[j-1],0]=1./N[j]
+        alpha[J[j-1],0] = 1
+        beta[J[j-1],0]=1/N[j]
 
         for i in range(1,N[j]):
-            alpha[J[j-1]+i,J[j-1]+i-1]=1.
-            beta[J[j-1]+i,J[j-1]+i-1]=1./N[j]
+            alpha[J[j-1]+i,J[j-1]+i-1]=1
+            beta[J[j-1]+i,J[j-1]+i-1]=1/N[j]
     
     #We have formed the T_j1
     #Now form the rest
@@ -1988,8 +2060,8 @@ def extrap(s,seq='harmonic'):
 
     for j in range(1,s):
         #form T_{j+1,2}:
-        alpha[nrs-1+j,J[j]-1]=1.+1./(N[j]/N[j-1]-1.)
-        alpha[nrs-1+j,J[j-1]-1]=-1./(N[j]/N[j-1]-1.)
+        alpha[nrs-1+j,J[j]-1]=1+1/(N[j]/N[j-1]-1)
+        alpha[nrs-1+j,J[j-1]-1]=-1/(N[j]/N[j-1]-1)
 
     #Now form all the rest, up to T_ss
 
@@ -1997,12 +2069,9 @@ def extrap(s,seq='harmonic'):
     for k in range(2,s):
         for ind,j in enumerate(range(k,s)):
             #form T_{j+1,k+1}:
-            alpha[nsd+ind,nsd-(s-k)+ind] = 1+1./(N[j]/N[j-k]-1.)
-            alpha[nsd+ind,nsd-(s-k)+ind-1] = -1./(N[j]/N[j-k]-1.)
+            alpha[nsd+ind,nsd-(s-k)+ind] = 1+1/(N[j]/N[j-k]-1)
+            alpha[nsd+ind,nsd-(s-k)+ind-1] = -1/(N[j]/N[j-k]-1)
         nsd += s-k
-
-    #print alpha
-    #print beta
 
     name='extrap'+str(s)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()

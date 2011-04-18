@@ -53,6 +53,7 @@ class ODESolver:
                 * Implement an option to not keep all output (for efficiency).
                 * Option to keep error estimate history
         """
+        numself = self.__num__()
         f=ivp.rhs; u0=ivp.u0; T=ivp.T
         u=[u0]; t=[t0]; dthist=[]
         rejected_steps=0
@@ -61,12 +62,12 @@ class ODESolver:
             if dt is None: dt=(T-t0)/N
             while t[-1]<T:
                 if t[-1]+dt>T: dt=T-t[-1]
-                if x is not None: u.append(self.__step__(f,t,u,dt,x=x))
-                else: u.append(self.__step__(f,t,u,dt))
+                if x is not None: u.append(numself.__step__(f,t,u,dt,x=x))
+                else: u.append(numself.__step__(f,t,u,dt))
                 t.append(t[-1]+dt)
 
         else:                   # Error-control mode
-            p=self.embedded_method.order()
+            p=numself.embedded_method.order()
             alpha = 0.7/p; beta = 0.4/p; kappa = 0.9
             facmin = 0.2; facmax = 5.
             errestold = errtol
@@ -75,7 +76,7 @@ class ODESolver:
             if dt is None: print 'ERROR: Must specify initial timestep for error-control mode'
             while t[-1]<T:
                 if t[-1]+dt>T: dt=T-t[-1]
-                unew,errest = self.__step__(f,t,u,dt,errest=True,x=x)
+                unew,errest = numself.__step__(f,t,u,dt,errest=True,x=x)
                 if errest<=errtol:      # Step accepted
                     u.append(unew)
                     t.append(t[-1]+dt)
