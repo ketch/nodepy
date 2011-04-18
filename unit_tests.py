@@ -83,7 +83,7 @@ class linAmradTest(RungeKuttaTestCase):
 
     def runTest(self):
         for method, R in self.knownValues:
-            self.assertAlmostEqual(self.RKs[method].linear_absolute_monotonicity_radius(),R,3)
+            self.assertAlmostEqual(self.RKs[method].linear_absolute_monotonicity_radius(),R,2)
 
 if __name__== "__main__":
     ut.main()

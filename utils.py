@@ -22,3 +22,9 @@ def permutations(str):
         for perm in permutations(str[1:]):
             for i in range(len(perm)+1):
                 yield perm[:i] + str[0:1] + perm[i:]
+
+def shortstring(x):
+    import numpy as np
+    if x.__class__ is np.float64:
+        return '%6.3f' % x
+    else: return str(x)
