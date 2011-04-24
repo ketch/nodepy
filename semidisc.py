@@ -10,35 +10,38 @@ For now, only semi-discretizations of one-dimensional PDEs are supported.
 """
 
 import numpy as np
+from ivp import IVP
 
-class SemiDiscretization(IVP):
+class LinearSemiDiscretization(IVP):
     """
-        Class for semi-discretizations of PDEs.
+        Class for linear semi-discretizations of PDEs.
         Inherits from IVP, but possesses a grid and
         is parameterized by grid size.
+
+        Any instance should provide:
+
+        - L: the matrix representation of the right-hand-side
+        - N, xmin, xmax (describing the grid)
     """
 
-def load_semidisc(sdname,N=50,xmin=0.,xmax=1.,nghost=2,bctype=periodic):
-    sd=SemiDiscretization()
+def load_semidisc(sdname,N=50,xmin=0.,xmax=1.):
+    sd=LinearSemiDiscretization()
     #Set up grid
-    sd.dx=1./N;         #Grid spacing
-    N2=N+2*nghost;      #Total number of points, including ghosts
-    sd.x=np.linspace(-(nghost-0.5)*dx,1.+(nghost-0.5)*dx,N2)
+    dx=(xmax-xmin)/N;         #Grid spacing
+    sd.x=np.linspace(xmin,xmax,N)
+    sd.N=N
     if sdname=='upwind advection':
-        sd.rhs = upwind_advection_rhs
+        sd.L = upwind_advection_matrix(N,dx)
     else: print 'unrecognized sdname'
-    sd.bc=bc
-    sd.bctype=bctype
+    sd.rhs=lambda t,u : np.dot(sd.L,u)
+    sd.u0 = np.sin(2*np.pi*sd.x)
+    sd.T = 1.
     return sd
 
-def upwind_advection_rhs(t,u,sd):
-    N=len(u)
-    du = zeros(N)
-    du[1:] = - sd.dx * (u[1:]-u[:-1])
-
-def bc(t,u,bctype):
-    if bctype=='periodic':
-        u[0:nghost]  = u[-2*nghost:-nghost] # Periodic boundary
-        u[-nghost:]  = u[nghost:2*nghost]   # Periodic boundary
-    else: print 'Unrecognized bctype'
-    return u
+def upwind_advection_matrix(N,dx):
+    from scipy.sparse import spdiags
+    e=np.ones(N)
+    #L=spdiags([-e,e,e],[0,-1,N-1],N,N)/dx
+    L=(np.diag(-e)+np.diag(e[1:],-1))/dx
+    L[0,-1]=1./dx
+    return L
