@@ -30,24 +30,25 @@ def load_semidisc(sdname,order=1,N=50,xmin=0.,xmax=1.):
     dx=(xmax-xmin)/N;               # Grid spacing
     sd.x=np.linspace(xmin,xmax,N)   # Grid
     sd.N=N
+    
+    # The spatial discretization set also the initial condition
     if sdname=='upwind advection':
-        sd.L = upwind_advection_matrix(N,dx)
-        print sd.L
+        sd.L,sd.u0 = upwind_advection_matrix(N,sd.x,dx)
     elif sdname == 'spectral difference advection':
-        sd.flxPnts = spectral_difference_matrix(N,dx,order)
+        sd.L,sd.u0 = spectral_difference_matrix(N,x,dx,order)
     else: print 'unrecognized sdname'
     sd.rhs=lambda t,u : np.dot(sd.L,u)
-    sd.u0 = np.sin(2*np.pi*sd.x)
     sd.T = 1.
     return sd
 
-def upwind_advection_matrix(N,dx):
+def upwind_advection_matrix(N,x,dx):
     from scipy.sparse import spdiags
     e=np.ones(N)
     #L=spdiags([-e,e,e],[0,-1,N-1],N,N)/dx
     L=(np.diag(-e)+np.diag(e[1:],-1))/dx
     L[0,-1]=1./dx
-    return L
+    u0 = np.sin(2*np.pi*x)
+    return L,u0
 
 def spectral_difference_matrix(N,dx,order):
     import sys
@@ -177,9 +178,27 @@ def spectral_difference_matrix(N,dx,order):
         L[nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1),nbrSolPnts*(iBlock+1):nbrSolPnts*(iBlock+2)] = DMp1[:,:]
 
 
-    pcolor(L)
+    # Add periodic boundary condition contributions to the operator L
+    #################################################################
+    # Apply BC to the first cell --> DMm1
+    L[0:nbrSolPnts,nbrSolPnts*(N-1):nbrSolPnts*(N)] = DMm1[:,:]    
 
-    return
+    # Apply BC to the last cell --> DMp1
+    # Actually here we are doing nothing because it is a fully upwind scheme with 1D advection equation 
+    L[nbrSolPnts*(N-1):nbrSolPnts*(N),0:nbrSolPnts] = DMp1[:,:]  
+
+
+    # Introduce grid spacing factor
+    ###############################
+    L = L*1/dx
+
+
+    # Construct initial solution
+    ############################
+    u0 = np.zeros((dimL))
+
+   
+    return L,u0
 
 
 
