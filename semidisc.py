@@ -86,9 +86,6 @@ def spectral_difference_matrix(N,dx,order):
        sys.exit()
 
 
-    #print fluxPnts
-    #print solPnts
-
     # Number of solution and flux points
     ####################################
     nbrFluxPnts = fluxPnts.size
@@ -105,8 +102,6 @@ def spectral_difference_matrix(N,dx,order):
             for iCon in range(0,nbrSolPnts):
                 if iCon != iSol:
                     extrSolToFlux[iFlux,iSol] = extrSolToFlux[iFlux,iSol]*(fluxPnts[iFlux]-solPnts[iCon])/(solPnts[iSol]-solPnts[iCon])
-
-    #print extrSolToFlux
             
            
   
@@ -130,7 +125,6 @@ def spectral_difference_matrix(N,dx,order):
             fluxCurrCell[iFlux,iSol] = extrSolToFlux[iFlux,iSol]  # We assume convective velocity = 1, i.e. the flux function is 
                                                                   # f= a*u
 
-    #print fluxCurrCell
 
 
     # Flux at the boundaries flux points
@@ -143,10 +137,6 @@ def spectral_difference_matrix(N,dx,order):
         fluxCurrCell[nbrFluxPnts-1,iSol] = faceLeft*extrSolToFlux[nbrFluxPnts-1,iSol]
         fluxRightCell[nbrFluxPnts-1,iSol] = faceRight*extrSolToFlux[0,iSol]
 
-    #print fluxCurrCell
-    #print fluxRightCell
-    #print fluxLeftCell
-    
 
     # Matrix for the calculation of the flux derivative at the solution points
     ##########################################################################
@@ -164,23 +154,13 @@ def spectral_difference_matrix(N,dx,order):
             # Factor 2 comes from Jacobian determinant
             derivFluxInSolPnts[iSol,iFlux] = derivFluxInSolPnts[iSol,iFlux]*2.0
 
-    #print derivFluxInSolPnts
 
 
     # Compute the products between the matrix of the derivatives and the solution contributions
     ###########################################################################################
     DMm1 = np.dot(derivFluxInSolPnts,fluxLeftCell)
-    #print DMm1
     DM0  = np.dot(derivFluxInSolPnts,fluxCurrCell)
-    #print DM0
     DMp1 = np.dot(derivFluxInSolPnts,fluxRightCell)
-    #print DMp1
-
-    #print type(DMm1)
-    #print type(fluxLeftCell)
-    #print type(fluxLeftCell)
-    #print type(fluxCurrCell)
-    #print type(fluxRightCell)
 
     # Create block tridiagonal matrix
     #################################
