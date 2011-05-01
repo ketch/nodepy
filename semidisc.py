@@ -164,20 +164,20 @@ def spectral_difference_matrix(N,dx,order):
 
     # Create block tridiagonal matrix
     #################################
-    dimL = nbrSolPnts*3
+    dimL = nbrSolPnts*N
     L = np.zeros((dimL,dimL))
 
     # Main block diagonal
-    for iBlock in range(0,3):
+    for iBlock in range(0,N):
         L[nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1),nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1)] = DM0[:,:] 
     
     # Lower and upper blocks diagonal
-    for iBlock in range(0,2):
+    for iBlock in range(0,N-1):
         L[nbrSolPnts*(iBlock+1):nbrSolPnts*(iBlock+2),nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1)] = DMm1[:,:]
         L[nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1),nbrSolPnts*(iBlock+1):nbrSolPnts*(iBlock+2)] = DMp1[:,:]
 
 
-    
+    pcolor(L)
 
     return
 
