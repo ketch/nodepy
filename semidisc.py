@@ -27,17 +27,21 @@ class LinearSemiDiscretization(IVP):
 def load_semidisc(sdname,order=1,N=50,xmin=0.,xmax=1.):
     sd=LinearSemiDiscretization()
     #Set up grid
+    sd.N=N                          # Number of cells
     dx=(xmax-xmin)/N;               # Grid spacing
-    sd.x=np.linspace(xmin,xmax,N)   # Grid
-    sd.N=N
+    sd.x=np.linspace(xmin,xmax,N)   # Position of the interfaces
     
     # The spatial discretization set also the initial condition
     if sdname=='upwind advection':
         sd.L,sd.u0 = upwind_advection_matrix(N,sd.x,dx)
     elif sdname == 'spectral difference advection':
-        sd.L,sd.u0 = spectral_difference_matrix(N,x,dx,order)
+        sd.L,sd.u0 = spectral_difference_matrix(N,sd.x,dx,order)
     else: print 'unrecognized sdname'
+    
+    # Define the RHS
     sd.rhs=lambda t,u : np.dot(sd.L,u)
+
+    # Define the final time
     sd.T = 1.
     return sd
 
@@ -50,7 +54,7 @@ def upwind_advection_matrix(N,x,dx):
     u0 = np.sin(2*np.pi*x)
     return L,u0
 
-def spectral_difference_matrix(N,dx,order):
+def spectral_difference_matrix(N,x,dx,order):
     import sys
 
     # Set coordinates of flux and solutions points according to the order of the scheme
@@ -165,15 +169,16 @@ def spectral_difference_matrix(N,dx,order):
 
     # Create block tridiagonal matrix
     #################################
-    dimL = nbrSolPnts*N
+    nbrCells = N-1
+    dimL = nbrSolPnts*nbrCells
     L = np.zeros((dimL,dimL))
 
     # Main block diagonal
-    for iBlock in range(0,N):
+    for iBlock in range(0,nbrCells):
         L[nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1),nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1)] = DM0[:,:] 
     
     # Lower and upper blocks diagonal
-    for iBlock in range(0,N-1):
+    for iBlock in range(0,nbrCells-1):
         L[nbrSolPnts*(iBlock+1):nbrSolPnts*(iBlock+2),nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1)] = DMm1[:,:]
         L[nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1),nbrSolPnts*(iBlock+1):nbrSolPnts*(iBlock+2)] = DMp1[:,:]
 
@@ -181,11 +186,11 @@ def spectral_difference_matrix(N,dx,order):
     # Add periodic boundary condition contributions to the operator L
     #################################################################
     # Apply BC to the first cell --> DMm1
-    L[0:nbrSolPnts,nbrSolPnts*(N-1):nbrSolPnts*(N)] = DMm1[:,:]    
+    L[0:nbrSolPnts,nbrSolPnts*(nbrCells-1):nbrSolPnts*nbrCells] = DMm1[:,:]    
 
     # Apply BC to the last cell --> DMp1
     # Actually here we are doing nothing because it is a fully upwind scheme with 1D advection equation 
-    L[nbrSolPnts*(N-1):nbrSolPnts*(N),0:nbrSolPnts] = DMp1[:,:]  
+    L[nbrSolPnts*(nbrCells-1):nbrSolPnts*nbrCells,0:nbrSolPnts] = DMp1[:,:]  
 
 
     # Introduce grid spacing factor
@@ -196,6 +201,21 @@ def spectral_difference_matrix(N,dx,order):
     # Construct initial solution
     ############################
     u0 = np.zeros((dimL))
+
+    # Create cell centers
+    xCenter = np.zeros((nbrCells))
+    for i in range(0,nbrCells):
+        xCenter[i] = (x[i+1]+x[i])/2 
+
+    #print x.size
+
+    # Create solution points position
+    # Here the solution points at the interface are reated two times because of the
+    # spectral difference method
+    xSolPnts = np.zeros(dimL)
+    for i in range(0,nbrCells):
+        for j in range(0,nbrSolPnts):
+            xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 0.5*dx*solPnts[j]
 
    
     return L,u0
