@@ -31,19 +31,23 @@ def load_semidisc(sdname,order=1,N=50,xmin=0.,xmax=1.):
     dx=(xmax-xmin)/N;               # Grid spacing
     sd.x=np.linspace(xmin,xmax,N)   # Position of the interfaces
     
-    # The spatial discretization set also the initial condition
+    # The spatial discretization sets also the initial condition
+    # because the number of DOF is scheme dependent
     if sdname=='upwind advection':
         sd.L,sd.u0 = upwind_advection_matrix(N,sd.x,dx)
     elif sdname == 'spectral difference advection':
-        sd.L,sd.u0 = spectral_difference_matrix(N,sd.x,dx,order)
+        sd.L,sd.xSol,sd.u0 = spectral_difference_matrix(N,sd.x,dx,order)
     else: print 'unrecognized sdname'
     
-    # Define the RHS
+    # Define RHS
     sd.rhs=lambda t,u : np.dot(sd.L,u)
 
-    # Define the final time
-    sd.T = 1.
+    # Set final time
+    sd.T = 10.
+
     return sd
+
+
 
 def upwind_advection_matrix(N,x,dx):
     from scipy.sparse import spdiags
@@ -53,6 +57,8 @@ def upwind_advection_matrix(N,x,dx):
     L[0,-1]=1./dx
     u0 = np.sin(2*np.pi*x)
     return L,u0
+
+
 
 def spectral_difference_matrix(N,x,dx,order):
     import sys
@@ -193,10 +199,10 @@ def spectral_difference_matrix(N,x,dx,order):
     L[nbrSolPnts*(nbrCells-1):nbrSolPnts*nbrCells,0:nbrSolPnts] = DMp1[:,:]  
 
 
-    # Introduce grid spacing factor
-    ###############################
-    L = L*1/dx
-
+    # Bring spatial discretization on the RHS of the equation
+    #########################################################
+    L = -1*L
+    
 
     # Construct initial solution
     ############################
@@ -207,8 +213,6 @@ def spectral_difference_matrix(N,x,dx,order):
     for i in range(0,nbrCells):
         xCenter[i] = (x[i+1]+x[i])/2 
 
-    #print x.size
-
     # Create solution points position
     # Here the solution points at the interface are reated two times because of the
     # spectral difference method
@@ -217,8 +221,9 @@ def spectral_difference_matrix(N,x,dx,order):
         for j in range(0,nbrSolPnts):
             xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 0.5*dx*solPnts[j]
 
+    u0 = np.sin(2*np.pi*xSolPnts)
    
-    return L,u0
+    return L,xSolPnts,u0
 
 
 
