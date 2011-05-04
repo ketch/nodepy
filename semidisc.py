@@ -24,26 +24,37 @@ class LinearSemiDiscretization(IVP):
         - N, xmin, xmax (describing the grid)
     """
 
-def load_semidisc(sdname,order=1,N=50,xmin=0.,xmax=1.):
+def load_semidisc(sdName,N=50,xMin=0.,xMax=1.,order=1):
     sd=LinearSemiDiscretization()
+
     #Set up grid
-    sd.N=N                          # Number of cells
-    dx=(xmax-xmin)/N;               # Grid spacing
-    sd.x=np.linspace(xmin,xmax,N)   # Position of the interfaces
-    
+    ############
+    # Number of cells
+    sd.N=N
+
+    # Grid spacing
+    dx=(xMax-xMin)/N;                               
+
+    # Cell centers position
+    sd.xCenter = np.zeros(N)
+    sd.xCenter[0] = xMin
+    for i in range(1,N):
+        sd.xCenter[i] = xMin+dx*i
+
     # The spatial discretization sets also the initial condition
-    # because the number of DOF is scheme dependent
-    if sdname=='upwind advection':
-        sd.L,sd.u0 = upwind_advection_matrix(N,sd.x,dx)
-    elif sdname == 'spectral difference advection':
-        sd.L,sd.xSol,sd.u0 = spectral_difference_matrix(N,sd.x,dx,order)
+    # because the number of DOF depends on the scheme
+    if sdName=='upwind advection':
+        sd.L,sd.u0 = upwind_advection_matrix(N,sd.xCenter,dx)
+    elif sdName == 'spectral difference advection':
+        sd.L,sd.xSol,sd.u0 = spectral_difference_matrix(N,sd.xCenter,dx,order)
     else: print 'unrecognized sdname'
     
     # Define RHS
+    # In this case is simply L*u
     sd.rhs=lambda t,u : np.dot(sd.L,u)
-
+    
     # Set final time
-    sd.T = 10.
+    sd.T = 1.
 
     return sd
 
@@ -60,8 +71,11 @@ def upwind_advection_matrix(N,x,dx):
 
 
 
-def spectral_difference_matrix(N,x,dx,order):
+def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     import sys
+    
+    np.set_printoptions(threshold=np.nan)
+
 
     # Set coordinates of flux and solutions points according to the order of the scheme
     if order == 1:
@@ -75,8 +89,8 @@ def spectral_difference_matrix(N,x,dx,order):
             
     elif order == 3:
         # 3rd order
-        fluxPnts = np.array([ -1.0 , -0.58 , 0.58 , 1.0 ])
-        solPnts = np.array([ -1.0 ,         0.58 , 1.0 ])
+        fluxPnts = np.array([ -1.0 , -0.57 , 0.57 , 1.0 ])
+        solPnts = np.array([ -1.0 ,         0.57 , 1.0 ])
     
     elif order == 4:
         # 4th order
@@ -163,7 +177,7 @@ def spectral_difference_matrix(N,x,dx,order):
                             contribution = contribution*(solPnts[iSol]-fluxPnts[iFac])/(fluxPnts[iFlux]-fluxPnts[iFac])
                     derivFluxInSolPnts[iSol,iFlux] = derivFluxInSolPnts[iSol,iFlux] + contribution
             # Factor 2 comes from Jacobian determinant
-            derivFluxInSolPnts[iSol,iFlux] = derivFluxInSolPnts[iSol,iFlux]*2.0
+            derivFluxInSolPnts[iSol,iFlux] = derivFluxInSolPnts[iSol,iFlux]*2.0/dx
 
 
 
@@ -174,8 +188,7 @@ def spectral_difference_matrix(N,x,dx,order):
     DMp1 = np.dot(derivFluxInSolPnts,fluxRightCell)
 
     # Create block tridiagonal matrix
-    #################################
-    nbrCells = N-1
+    #################################  
     dimL = nbrSolPnts*nbrCells
     L = np.zeros((dimL,dimL))
 
@@ -202,16 +215,10 @@ def spectral_difference_matrix(N,x,dx,order):
     # Bring spatial discretization on the RHS of the equation
     #########################################################
     L = -1*L
-    
-
+  
     # Construct initial solution
     ############################
     u0 = np.zeros((dimL))
-
-    # Create cell centers
-    xCenter = np.zeros((nbrCells))
-    for i in range(0,nbrCells):
-        xCenter[i] = (x[i+1]+x[i])/2 
 
     # Create solution points position
     # Here the solution points at the interface are reated two times because of the
@@ -219,7 +226,19 @@ def spectral_difference_matrix(N,x,dx,order):
     xSolPnts = np.zeros(dimL)
     for i in range(0,nbrCells):
         for j in range(0,nbrSolPnts):
-            xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 0.5*dx*solPnts[j]
+            xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
+        #if i == 0:
+        #            #        if j == nbrSolPnts-1:
+        #            xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
+        #            xSolPnts[i*nbrSolPnts+j+1] = xSolPnts[i*nbrSolPnts+j]
+        #        elif:
+        #            xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
+        #elif:
+        #     for j in range(1,nbrSolPnts):
+        #         xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
+        #         xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
+
+
 
     u0 = np.sin(2*np.pi*xSolPnts)
    

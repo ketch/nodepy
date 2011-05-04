@@ -6,7 +6,7 @@ from nodepy import *
 import matplotlib.pyplot as pl
 
 # Create spatial operator L (i.e. u' = L u)
-spectralDifference = semidisc.load_semidisc('spectral difference advection',6)
+spectralDifference = semidisc.load_semidisc('spectral difference advection',order=2)
 
 # Create time marching
 rk4=rk.loadRKM('RK44')
