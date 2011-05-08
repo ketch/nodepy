@@ -66,7 +66,6 @@ def load_semidisc(sdName,N=10,xMin=0.,xMax=1.,order=1):
     sd.uExact = np.zeros(nbrCellsExact)
     sd.uExact = np.sin(2*np.pi*sd.xExact)
 
-
     return sd
 
 
@@ -86,8 +85,6 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     import sys
     
     np.set_printoptions(threshold=np.nan)
-
-    print nbrCells
 
 
     # Set coordinates of flux and solutions points according to the order of the scheme
@@ -234,21 +231,8 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     # spectral difference method
     xSolPnts = np.zeros(dimL)
     for i in range(0,nbrCells):
-        print xCenter[i]
         for j in range(0,nbrSolPnts):
             xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
-        #if i == 0:
-        #            #        if j == nbrSolPnts-1:
-        #            xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
-        #            xSolPnts[i*nbrSolPnts+j+1] = xSolPnts[i*nbrSolPnts+j]
-        #        elif:
-        #            xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
-        #elif:
-        #     for j in range(1,nbrSolPnts):
-        #         xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
-        #         xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
-
-
 
     u0 = np.sin(2*np.pi*xSolPnts)
 
