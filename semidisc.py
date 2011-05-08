@@ -24,7 +24,7 @@ class LinearSemiDiscretization(IVP):
         - N, xmin, xmax (describing the grid)
     """
 
-def load_semidisc(sdName,N=50,xMin=0.,xMax=1.,order=1):
+def load_semidisc(sdName,N=10,xMin=0.,xMax=1.,order=1):
     sd=LinearSemiDiscretization()
 
     #Set up grid
@@ -37,9 +37,9 @@ def load_semidisc(sdName,N=50,xMin=0.,xMax=1.,order=1):
 
     # Cell centers position
     sd.xCenter = np.zeros(N)
-    sd.xCenter[0] = xMin
+    sd.xCenter[0] = xMin + dx/2.0
     for i in range(1,N):
-        sd.xCenter[i] = xMin+dx*i
+        sd.xCenter[i] = sd.xCenter[0]+dx*i
 
     # The spatial discretization sets also the initial condition
     # because the number of DOF depends on the scheme
@@ -55,6 +55,17 @@ def load_semidisc(sdName,N=50,xMin=0.,xMax=1.,order=1):
     
     # Set final time
     sd.T = 1.
+
+
+    # Construct "exact" solution by using a large number of cells. 
+    # Probably this is not the best place to construct it because if one want
+    # to change the the initial solution he must also change the intial condition
+    # in the spatial discretization.
+    nbrCellsExact = 100
+    sd.xExact=np.linspace(xMin,xMax,nbrCellsExact)   # Position of the interfaces
+    sd.uExact = np.zeros(nbrCellsExact)
+    sd.uExact = np.sin(2*np.pi*sd.xExact)
+
 
     return sd
 
@@ -76,6 +87,8 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     
     np.set_printoptions(threshold=np.nan)
 
+    print nbrCells
+
 
     # Set coordinates of flux and solutions points according to the order of the scheme
     if order == 1:
@@ -86,22 +99,18 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
         # 2nd order
         fluxPnts = np.array([ -1.0 , 0.0 , 1.0 ])
         solPnts = np.array([ -1.0 ,       1.0 ])
-            
     elif order == 3:
         # 3rd order
         fluxPnts = np.array([ -1.0 , -0.57 , 0.57 , 1.0 ])
         solPnts = np.array([ -1.0 ,         0.57 , 1.0 ])
-    
     elif order == 4:
         # 4th order
         fluxPnts = np.array([ -1.0 , -0.78 , 0.0 , 0.78 , 1.0 ])
         solPnts = np.array([ -1.0 , -0.78 ,       0.78 , 1.0 ])
-
     elif order == 5:
         # 5th order
         fluxPnts = np.array([ -1.0 , -0.83 , -0.36 , 0.36 , 0.83 , 1.0 ])
         solPnts = np.array([ -1.0 , -0.83 ,         0.36 , 0.83 , 1.0 ])
-    
     elif order == 6:
         # 6th order
         fluxPnts = np.array([ -1.0 , -0.88 , -0.53 , 0.0 , 0.53 , 0.88 , 1.0 ])
@@ -225,6 +234,7 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     # spectral difference method
     xSolPnts = np.zeros(dimL)
     for i in range(0,nbrCells):
+        print xCenter[i]
         for j in range(0,nbrSolPnts):
             xSolPnts[i*nbrSolPnts+j] = xCenter[i] + 1./2.*dx*solPnts[j]
         #if i == 0:
@@ -241,6 +251,7 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
 
 
     u0 = np.sin(2*np.pi*xSolPnts)
+
    
     return L,xSolPnts,u0
 
