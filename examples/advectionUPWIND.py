@@ -26,7 +26,9 @@ t,y=rk4(upwind)
 
 # Plot the soution
 ##################
+pl.plot(upwind.xExact,upwind.uExactInit,label = 'Initial condition')
 pl.plot(upwind.xExact,upwind.uExact,label = 'Exact solution')
+
 pl.plot(upwind.xCenter,y[-1],label = 'Upwind solution')
 pl.title('1D linear advection equation')
 pl.xlabel('x')

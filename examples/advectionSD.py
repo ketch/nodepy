@@ -30,6 +30,8 @@ t,y=rk4(spectralDifference)
 # Plot the soution
 ##################
 pl.plot(spectralDifference.xExact,spectralDifference.uExact,label = 'Exact solution')
+pl.plot(spectralDifference.xExact,spectralDifference.uExactInit,label = 'Initial solution')
+
 
 # Check if we want a 1st-order spectral difference solution. If we want that, prepare some arrays
 # for pretty plots
@@ -66,6 +68,6 @@ else:
 pl.title('1D linear advection equation')
 pl.xlabel('x')
 pl.ylabel('u')
-pl.legend()
+#pl.legend()
 pl.show()
 

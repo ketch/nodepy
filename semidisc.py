@@ -11,6 +11,7 @@ For now, only semi-discretizations of one-dimensional PDEs are supported.
 
 import numpy as np
 from ivp import IVP
+import sys
 
 class LinearSemiDiscretization(IVP):
     """
@@ -24,7 +25,7 @@ class LinearSemiDiscretization(IVP):
         - N, xmin, xmax (describing the grid)
     """
 
-def load_semidisc(sdName,N=10,xMin=0.,xMax=1.,order=1):
+def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     sd=LinearSemiDiscretization()
 
     #Set up grid
@@ -54,17 +55,51 @@ def load_semidisc(sdName,N=10,xMin=0.,xMax=1.,order=1):
     sd.rhs=lambda t,u : np.dot(sd.L,u)
     
     # Set final time
-    sd.T = 1.
+    sd.T = 5.9
 
 
     # Construct exact solution by using a large number of cells. 
     # Probably this is not the best place to construct it because if one want
     # to change the the initial solution he must also change the intial condition
     # in the spatial discretization.
-    nbrCellsExact = 100
-    sd.xExact=np.linspace(xMin,xMax,nbrCellsExact)   # Position of the interfaces
-    sd.uExact = np.zeros(nbrCellsExact)
-    sd.uExact = np.sin(2*np.pi*sd.xExact)
+    #############################################################################
+    nbrCellsExact = 2000
+    sd.xExact = np.linspace(xMin,xMax,nbrCellsExact)   # Position of the interfaces
+    sd.uExactInit = np.zeros(nbrCellsExact)
+    sd.uExactInit = np.sin(2*np.pi*sd.xExact)
+
+    # Compute the real final position of the last point. 
+    # One point is enough because it is a rigid translation in the x direction
+    xExactTmp = sd.xExact+sd.T
+    xLastPnt = xExactTmp[nbrCellsExact-1]
+  
+    from math import modf
+
+    b,a = modf(xLastPnt)
+
+    
+    # 1st Solution
+    ##############
+    sd.uExact = np.zeros((nbrCellsExact))
+    sd.uExact = np.sin(2*np.pi*(sd.xExact-b))
+    
+    # 2nd Solution
+    ##############
+    #if b != 0.:
+    #    # Copy part of the solution on the left
+    #    for i in range(0,nbrCellsExact):
+    #        if  xExactTmp[i] > a:
+    #            index = i
+    #            break
+    #    # New exact solution with periodic BC
+    #    sd.uExact[0] = sd.uExactInit[index-1]
+    #    sd.uExact[1:nbrCellsExact-index+1] = sd.uExactInit[index:nbrCellsExact]
+    #    sd.uExact[nbrCellsExact-index+1:nbrCellsExact+1] = sd.uExactInit[0:index]
+    #        
+    #    sd.xExact = np.linspace(xMin,xMax,nbrCellsExact+1)
+    #else:
+    #    sd.uExact = sd.uExact
+    #    sd.xExact = np.linspace(xMin,xMax,nbrCellsExact)
 
     return sd
 
