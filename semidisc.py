@@ -57,7 +57,7 @@ def load_semidisc(sdName,N=10,xMin=0.,xMax=1.,order=1):
     sd.T = 1.
 
 
-    # Construct "exact" solution by using a large number of cells. 
+    # Construct exact solution by using a large number of cells. 
     # Probably this is not the best place to construct it because if one want
     # to change the the initial solution he must also change the intial condition
     # in the spatial discretization.
