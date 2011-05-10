@@ -78,12 +78,11 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     b,a = modf(xLastPnt)
 
     
-    # 1st Solution
-    ##############
+    # 1st approach: valid for classical periodic initial condition, e.g. sin(), cos(), etc.
     sd.uExact = np.zeros((nbrCellsExact))
     sd.uExact = np.sin(2*np.pi*(sd.xExact-b))
     
-    # 2nd Solution
+    # 2nd approach: general
     ##############
     #if b != 0.:
     #    # Copy part of the solution on the left
