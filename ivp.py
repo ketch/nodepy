@@ -25,8 +25,9 @@ class IVP:
 
     """
     def __init__(self,f=None,u0=1.,T=1.):
-        self.u0=u0
-        self.rhs=f
+        self.u0  = u0
+        self.rhs = f
+        self.T   = T
 
     def __repr__(self):
         try:

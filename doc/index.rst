@@ -58,6 +58,12 @@ looking into this.
           substantial inline documentation within the various
           modules, and you are encouraged to look there.
 
+Dependencies
+================================
+NodePy has recently begun to support exact computation of
+some properties, for which it relies on the sympy package.
+Due to some recent changes in sympy, it is necessary to use version
+0.6.7 (rather than the latest sympy version).
 
 Classes of Numerical ODE Solvers
 ================================
