@@ -1,8 +1,8 @@
 #Make matlab script to evaluate error coefficient
 #for RK methods
 
-import rooted_trees as rt
-import runge_kutta_method as rk
+from nodepy import rooted_trees as rt
+from nodepy import runge_kutta_method as rk
 
 p=10
 
