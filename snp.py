@@ -17,7 +17,7 @@ def normalize(*arrays):
             shape=array.shape
             onedarray=array.reshape(-1)
             for i,elem in enumerate(onedarray):
-                if not isinstance(elem,sympy.core.basic.Basic):
+                if not isinstance(elem,sympy.basic.Basic):
                     onedarray[i]=sympy.Rational(elem)
     if len(arrays)==1: return arrays[0]
     else: return arrays
