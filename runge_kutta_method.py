@@ -440,8 +440,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             bsym=sympy.matrices.Matrix(np.tile(self.b,(len(self),1)))
             xsym=Asym-bsym
             x=sympy.var('x')
-            p1=xsym.charpoly(x).coeffs
-            q1=Asym.charpoly(x).coeffs
+            p1=xsym.charpoly(x).coeffs()
+            q1=Asym.charpoly(x).coeffs()
         else:
             p1=np.poly(self.A-np.tile(self.b,(len(self),1)))
             q1=np.poly(self.A)
