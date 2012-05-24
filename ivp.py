@@ -48,6 +48,12 @@ def load_ivp(ivpname):
         ivp.exact = lambda t : ivp.u0*exp(t)
         ivp.T = 5.
         ivp.description = 'The linear scalar test problem'
+    elif ivpname=='zoltan':
+        ivp.u0=1.
+        ivp.rhs = lambda t,u: -100*abs(u)
+        ivp.exact = lambda t : ivp.u0*exp(-100*t)
+        ivp.T = 10.
+        ivp.description = 'The linear scalar test problem with abs value'
     elif ivpname=='nlsin':
         ivp.u0=1.
         ivp.rhs = lambda t,u: 4.*u*float(sin(t))**3*cos(t)

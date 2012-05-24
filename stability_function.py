@@ -91,3 +91,57 @@ def pade_exp(k,j):
         Qcoeffs=[newcoeff]+Qcoeffs
     Q=pl.poly1d(Qcoeffs)
     return P,Q
+
+def taylor(p):
+    r"""
+        Return the Taylor polynomial of the exponential, up to order p.
+    """
+    from scipy import factorial
+
+    coeffs=1./factorial(np.arange(p+1))
+
+    return np.poly1d(coeffs[::-1])
+
+def plot_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
+                color='r',filled=True,scaled=False,plotroots=True,
+                alpha=1.,scalefac=None):
+    r""" 
+        The region of absolute stability
+        of a Runge-Kutta method, is the set
+
+        `\{ z \in C : |\phi (z)|\le 1 \}`
+
+        where $\phi(z)$ is the stability function of the method.
+
+        **Input**: (all optional)
+            - N       -- Number of gridpoints to use in each direction
+            - bounds  -- limits of plotting region
+            - color   -- color to use for this plot
+            - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+    """
+    m=len(p)
+    x=np.linspace(bounds[0],bounds[1],N)
+    y=np.linspace(bounds[2],bounds[3],N)
+    X=np.tile(x,(N,1))
+    Y=np.tile(y[:,np.newaxis],(1,N))
+    Z=X+Y*1j
+    if scaled: 
+        if scalefac==None: scalefac=m
+    else: scalefac=1.
+    R=np.abs(p(Z*scalefac)/q(Z*scalefac))
+    pl.clf()
+    if filled:
+        pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
+    else:
+        pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
+    pl.title('Absolute Stability Region')
+    pl.hold(True)
+    if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
+    if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
+    pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+    pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+    pl.axis('Image')
+    pl.hold(False)
+    pl.draw()
+
+

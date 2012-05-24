@@ -121,7 +121,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         pl.plot([0,0],[-10,10],'--k',linewidth=2)
         pl.plot([-10,2],[0,0],'--k',linewidth=2)
         pl.hold(False)
-        pl.show()
+        pl.draw()
 
     def is_explicit(self):
         return self.beta[-1]==0
