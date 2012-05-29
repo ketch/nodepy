@@ -2082,6 +2082,110 @@ def extrap(s,seq='harmonic',mode='exact'):
     name='extrap'+str(s)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
+def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
+    """ Construct extrapolation methods.
+        For now, based on explicit Euler, but allowing arbitrary sequences.
+
+        **Input**: s -- number of grid points & number of correction iterations
+
+        **Output**: A ExplicitRungeKuttaMethod
+
+        Note that the number of stages is NOT equal to s.  The order
+        is equal to s+1.
+
+        **References**: 
+
+            #. [Hairer]_ chapter II.9
+
+        **TODO**: 
+
+            - generalize base method
+            - Eliminate the unnecessary stages, and make the construction
+                more numerically stable
+
+
+    """
+
+    N=2*snp.arange(s)+2;
+    #M=rk.snp.arange(s)+1
+    #N=snp.arange(s)+1;N=2**(N-1); N=2*N;
+    J=np.cumsum(N)+1
+    order_reducer=0;
+    if embedded=='yes' and s>1:
+            order_reducer=1;
+    nrs = J[-1]
+    
+    alpha=snp.zeros([nrs+s*(s-1)/2-order_reducer,nrs+s*(s-1)/2-1-order_reducer])
+    beta=snp.zeros([nrs+s*(s-1)/2-order_reducer,nrs+s*(s-1)/2-1-order_reducer])
+    
+    alpha[1,0]=1
+    alpha[2,0]=1
+    beta[1,0]=1/N[0]
+    beta[2,1]=2/N[0]
+
+    for j in range(1,len(N)):
+        #Form T_j1:
+	#kash='j='+repr(j)
+	#print kash
+        alpha[J[j-1],0] = 1
+        alpha[J[j-1]+1,0] = 1
+        beta[J[j-1],0]=1/N[j]
+        beta[J[j-1]+1,J[j-1]]=2/N[j]
+        for i in range(1,int(N[j]/2)):
+            #kas='j='+repr(j)+'and i='+repr(i)
+	    #print kas
+            alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)]=1
+            alpha[J[j-1]+3+2*(i-1),J[j-1]+1+2*(i-1)]=1
+            beta[J[j-1]+2+2*(i-1),J[j-1]+1+2*(i-1)]=2/N[j]
+            beta[J[j-1]+3+2*(i-1),J[j-1]+2+2*(i-1)]=2/N[j]
+    
+    #We have formed the T_j1
+    #Now form the rest
+    #
+    #Really there are no more "stages", and we could form T_ss directly
+    #but we need to work out the formula
+    #This is a numerically unstable alternative (fails for s>5)
+    if (embedded=='yes' and s>2) or embedded=='no':
+        for j in range(1,s):
+            #form T_{j+1,2}:
+            alpha[nrs-1+j,J[j]-1]=1+1/((N[j]/N[j-1])**2-1)
+            alpha[nrs-1+j,J[j-1]-1]=-1/((N[j]/N[j-1])**2-1)
+    
+    #Now form all the rest, up to T_ss
+
+    nsd = nrs-1+s
+    for k in range(2,s-order_reducer):
+        for ind,j in enumerate(range(k,s)):
+            #form T_{j+1,k+1}:
+            alpha[nsd+ind,nsd-(s-k)+ind] = 1+1/((N[j]/N[j-k])**2-1)
+            alpha[nsd+ind,nsd-(s-k)+ind-1] = -1/((N[j]/N[j-k])**2-1)
+        nsd += s-k
+    #alpha=alpha[0:-2][:];
+    name='gbsextrap'+str(s)
+    if shuosher=='yes':
+          return alpha, beta
+    else:
+          return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
+   
+
+def embeddedrkpair_gbsextrap (s, seq='harmonic'):
+    """ 
+        Returns an embedded RK pair
+    """
+    alpha1, beta1 = gbsextrap(s, shuosher='yes')
+    alpha2, beta2 = gbsextrap(s,embedded='yes', shuosher='yes')
+
+    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
+    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
+    
+    
+    if s>1:
+        bhat = snp.zeros(len(rk1.b))
+        bhat[0:-1]=rk2.b
+    else:
+        bhat=rk2.b
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat)
+
 
 #============================================================
 # Miscellaneous functions
