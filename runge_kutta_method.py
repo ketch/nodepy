@@ -476,7 +476,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
-        p,q=self.stability_function()
+        numself = self.__num__()
+        p,q=numself.stability_function()
         m=len(p)
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
