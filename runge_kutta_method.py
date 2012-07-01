@@ -891,7 +891,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         vals = np.array([p(-zz) for zz in np.linspace(0.,z,z/0.01)])
         notok=np.where(vals>1.+eps)[0]
         if len(notok)==0: return z
-        else: return zz[min(notok)]
+        else: 
+            zz = np.linspace(0.,z,z/0.01)
+            return zz[min(notok)]
 
     def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
                                             tol=3.e-16):
