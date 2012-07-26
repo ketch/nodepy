@@ -623,6 +623,29 @@ class RungeKuttaMethod(GeneralLinearMethod):
         else:
             return 0
 
+    def denominator_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
+                                            tol=3.e-16):
+        """ 
+            Returns the radius of absolute monotonicity
+            of the denominator of the stability function of a Runge-Kutta method.
+        """
+        from utils import bisect
+        p,q=self.stability_function()
+        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,q)
+        return r
+
+    def numerator_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
+                                            tol=3.e-16):
+        """ 
+            Returns the radius of absolute monotonicity
+            of the numerator of the stability function of a Runge-Kutta method.
+        """
+        from utils import bisect
+        p,q=self.stability_function()
+        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
+        return r
+
+
     def is_absolutely_monotonic(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method is absolutely monotonic
             at $z=-r$.
@@ -718,14 +741,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
         alphanew=np.dot(M,alpha)
         dnew=np.dot(M,d)
         alphatildenew=np.dot(M,alphatilde)
-        #Don't we need to check that -(I-M)alphatilde>=0 also?
-        #print np.dot(I-M,-alphatilde)
+        if self.is_explicit():
+            # Assuming d is positive, we can redistribute it
+            # But this may not be the optimal way
+            alphanew[1:,0]+=dnew[1:]/2.
+            alphatildenew[1:,0]+=dnew[1:]/2.
+            dnew[1:]=0.
         return dnew, alphanew, alphatildenew
 
 
     def is_splittable(self,r,tol=1.e-15):
         d,alpha,alphatilde=self.split(r,tol=tol)
-        if max(abs(self.A[0,:]))<tol: alpha[1:,0]+=d[1:]/2.
         if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: return True
         else: return False
 
@@ -2109,13 +2135,13 @@ def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
 
     """
 
-    N=2*snp.arange(s)+2;
+    N=2*snp.arange(s)+2
     #M=rk.snp.arange(s)+1
-    #N=snp.arange(s)+1;N=2**(N-1); N=2*N;
+    #N=snp.arange(s)+1;N=2**(N-1); N=2*N
     J=np.cumsum(N)+1
-    order_reducer=0;
+    order_reducer=0
     if embedded=='yes' and s>1:
-            order_reducer=1;
+        order_reducer=1
     nrs = J[-1]
     
     alpha=snp.zeros([nrs+s*(s-1)/2-order_reducer,nrs+s*(s-1)/2-1-order_reducer])
@@ -2166,9 +2192,9 @@ def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
     #alpha=alpha[0:-2][:];
     name='gbsextrap'+str(s)
     if shuosher=='yes':
-          return alpha, beta
+        return alpha, beta
     else:
-          return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
+        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
    
 
 def embeddedrkpair_gbsextrap (s, seq='harmonic'):
