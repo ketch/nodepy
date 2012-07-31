@@ -899,7 +899,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         vals = np.array([abs(p(1j*zz)) for zz in np.linspace(0.,z,z/0.01)])
         unstable_z=np.where(vals>1.+eps)[0]
         if len(unstable_z)==0: return z
-        else: return zz[min(unstable_z)]
+        else: 
+            zz = np.linspace(0.,z,z/0.01)
+            return zz[min(unstable_z)]
 
     def real_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
         p,q=self.stability_function()
@@ -2047,7 +2049,7 @@ def extrap(s,seq='harmonic',mode='exact'):
         **Output**: A ExplicitRungeKuttaMethod
 
         Note that the number of stages is NOT equal to s.  The order
-        is equal to s+1.
+        is equal to s.
 
         **References**: 
 
@@ -2062,7 +2064,7 @@ def extrap(s,seq='harmonic',mode='exact'):
 
     """
 
-    if seq=='harmonic': N=snp.arange(s)+1;
+    if seq=='harmonic': N=snp.arange(s)+1
     elif seq=='Romberg': N=snp.arange(s)+1;  N=2**(N-1)
 
     J=np.cumsum(N)+1
@@ -2090,7 +2092,6 @@ def extrap(s,seq='harmonic',mode='exact'):
     #
     #Really there are no more "stages", and we could form T_ss directly
     #but we need to work out the formula
-    #This is a numerically unstable alternative (fails for s>5)
 
     for j in range(1,s):
         #form T_{j+1,2}:
@@ -2111,32 +2112,21 @@ def extrap(s,seq='harmonic',mode='exact'):
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
 def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
-    """ Construct extrapolation methods.
-        For now, based on explicit Euler, but allowing arbitrary sequences.
+    """ Construct extrapolation methods based on GBS.
 
-        **Input**: s -- number of grid points & number of correction iterations
+        **Input**: s -- number of extrapolation terms
 
         **Output**: A ExplicitRungeKuttaMethod
 
         Note that the number of stages is NOT equal to s.  The order
-        is equal to s+1.
+        is equal to 2s.
 
         **References**: 
 
             #. [Hairer]_ chapter II.9
-
-        **TODO**: 
-
-            - generalize base method
-            - Eliminate the unnecessary stages, and make the construction
-                more numerically stable
-
-
     """
 
     N=2*snp.arange(s)+2
-    #M=rk.snp.arange(s)+1
-    #N=snp.arange(s)+1;N=2**(N-1); N=2*N
     J=np.cumsum(N)+1
     order_reducer=0
     if embedded=='yes' and s>1:
@@ -2153,26 +2143,21 @@ def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
 
     for j in range(1,len(N)):
         #Form T_j1:
-	#kash='j='+repr(j)
-	#print kash
         alpha[J[j-1],0] = 1
         alpha[J[j-1]+1,0] = 1
         beta[J[j-1],0]=1/N[j]
         beta[J[j-1]+1,J[j-1]]=2/N[j]
         for i in range(1,int(N[j]/2)):
-            #kas='j='+repr(j)+'and i='+repr(i)
-	    #print kas
-            alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)]=1
-            alpha[J[j-1]+3+2*(i-1),J[j-1]+1+2*(i-1)]=1
-            beta[J[j-1]+2+2*(i-1),J[j-1]+1+2*(i-1)]=2/N[j]
-            beta[J[j-1]+3+2*(i-1),J[j-1]+2+2*(i-1)]=2/N[j]
+            alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)  ]=1
+            alpha[J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+1]=1
+            beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1]=2/N[j]
+            beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2]=2/N[j]
     
     #We have formed the T_j1
     #Now form the rest
     #
     #Really there are no more "stages", and we could form T_ss directly
     #but we need to work out the formula
-    #This is a numerically unstable alternative (fails for s>5)
     if (embedded=='yes' and s>2) or embedded=='no':
         for j in range(1,s):
             #form T_{j+1,2}:
@@ -2198,7 +2183,9 @@ def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
 
 def embeddedrkpair_gbsextrap (s, seq='harmonic'):
     """ 
-        Returns an embedded RK pair
+        Returns an embedded RK pair.  The prinicpal method has
+        order 2s and the embedded method has order 2(s-1).
+        Both methods are constructed based on GBS extrapolation.
     """
     alpha1, beta1 = gbsextrap(s, shuosher='yes')
     alpha2, beta2 = gbsextrap(s,embedded='yes', shuosher='yes')
@@ -2212,7 +2199,7 @@ def embeddedrkpair_gbsextrap (s, seq='harmonic'):
         bhat[0:-1]=rk2.b
     else:
         bhat=rk2.b
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat)
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat).dj_reduce()
 
 
 #============================================================
