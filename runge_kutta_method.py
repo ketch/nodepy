@@ -896,11 +896,10 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             else: zlo=z
                 
         #Now check more carefully:
-        zz=np.linspace(0.,z,z/0.01)
-        vals=np.array(map(p,zz*1j))
-        notok=np.where(vals>1.+eps)[0]
-        if len(notok)==0: return z
-        else: return zz[min(notok)]
+        vals = np.array([abs(p(1j*zz)) for zz in np.linspace(0.,z,z/0.01)])
+        unstable_z=np.where(vals>1.+eps)[0]
+        if len(unstable_z)==0: return z
+        else: return zz[min(unstable_z)]
 
     def real_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
         p,q=self.stability_function()
@@ -915,11 +914,11 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 
         #Now check more carefully:
         vals = np.array([p(-zz) for zz in np.linspace(0.,z,z/0.01)])
-        notok=np.where(vals>1.+eps)[0]
-        if len(notok)==0: return z
+        unstable_z=np.where(vals>1.+eps)[0]
+        if len(unstable_z)==0: return z
         else: 
             zz = np.linspace(0.,z,z/0.01)
-            return zz[min(notok)]
+            return zz[min(unstable_z)]
 
     def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
                                             tol=3.e-16):
