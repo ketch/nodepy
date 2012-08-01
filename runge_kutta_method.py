@@ -735,19 +735,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
         s=len(self)
         I=np.eye(s+1)
         d,P=self.canonical_shu_osher_form(r)
-        alpha=P*(P>0)
-        alphatilde=-P*(P<0)
-        M=np.linalg.inv(I+2*alphatilde)
-        alphanew=np.dot(M,alpha)
-        dnew=np.dot(M,d)
-        alphatildenew=np.dot(M,alphatilde)
+        P_plus=P*(P>0)
+        P_minus=-P*(P<0)
+        M=np.linalg.inv(I+2*P_minus)
+        alpha=np.dot(M,P_plus)
+        gamma=np.dot(M,d)
+        alphatilde=np.dot(M,P_minus)
         if self.is_explicit():
-            # Assuming d is positive, we can redistribute it
+            # Assuming gamma is positive, we can redistribute it
             # But this may not be the optimal way
-            alphanew[1:,0]+=dnew[1:]/2.
-            alphatildenew[1:,0]+=dnew[1:]/2.
-            dnew[1:]=0.
-        return dnew, alphanew, alphatildenew
+            alpha[1:,0]+=gamma[1:]/2.
+            alphatilde[1:,0]+=gamma[1:]/2.
+            gamma[1:]=0.
+        return gamma, alpha, alphatilde
 
 
     def is_splittable(self,r,tol=1.e-15):
