@@ -488,7 +488,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
             if scalefac==None: scalefac=m
         else: scalefac=1.
         R=np.abs(p(Z*scalefac)/q(Z*scalefac))
-        pl.clf()
         if filled:
             pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
         else:
@@ -732,21 +731,29 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #==========================================
 
     def split(self,r,tol=1.e-15):
+        import numpy as np
         s=len(self)
         I=np.eye(s+1)
         d,P=self.canonical_shu_osher_form(r)
+        P=P.astype(np.float64) # To avoid object * bool
+
+        # Split P into positive and negative parts
         P_plus=P*(P>0)
         P_minus=-P*(P<0)
+
+        # Form new coefficients
         M=np.linalg.inv(I+2*P_minus)
         alpha=np.dot(M,P_plus)
         gamma=np.dot(M,d)
         alphatilde=np.dot(M,P_minus)
+
         if self.is_explicit():
             # Assuming gamma is positive, we can redistribute it
             # But this may not be the optimal way
             alpha[1:,0]+=gamma[1:]/2.
             alphatilde[1:,0]+=gamma[1:]/2.
             gamma[1:]=0.
+
         return gamma, alpha, alphatilde
 
 
@@ -1344,7 +1351,6 @@ def loadRKM(which='All'):
 
         Also various Lobatto and Radau methods.
     """
-    from math import sqrt
     from sympy import sqrt, Rational
 
     RK={}
@@ -1887,11 +1893,13 @@ def RKC1(m,eps=0):
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
 
-def RKC2(m,eps=0):
+def RKC2(m,epsilon=0):
     """ Construct the m-stage, second order 
         Explicit Runge-Kutta-Chebyshev methods of Verwer (m>=2).
 
-        **Input**: m -- number of stages
+        **Inputs**: 
+                m -- number of stages
+                epsilon -- damping factor
         **Output**: A ExplicitRungeKuttaMethod
 
         **Examples**::
@@ -1915,7 +1923,7 @@ def RKC2(m,eps=0):
     import scipy.special.orthogonal as orth
 
     Tm=orth.chebyt(m)
-    w0=1.+eps/m**2
+    w0=1.+epsilon/m**2
     w1=Tm.deriv()(w0)/Tm.deriv(2)(w0)
 
     alpha=np.zeros([m+1,m])
@@ -2334,14 +2342,18 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
 
             where $\phi(z)=p(z)/q(z)$ is the rational function.
 
-            **Input**: (all optional)
+            **Input**: 
+            required
+                - p       -- numerator (numpy.poly1d)
+                - p       -- denominator (numpy.poly1d)
+            
+            optional
                 - N       -- Number of gridpoints to use in each direction
                 - bounds  -- limits of plotting region
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
     """
     m=len(p)
-    print m
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
     X=np.tile(x,(N,1))
@@ -2349,7 +2361,6 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
     Z=X+Y*1j
     if not scaled: R=np.abs(p(Z)/q(Z))
     else: R=np.abs(p(Z*m)/q(Z*m))
-    #pl.clf()
     if filled:
         pl.contourf(X,Y,R,[0,1],colors=color)
     else:
@@ -2400,3 +2411,32 @@ def relative_accuracy_efficiency(rk1,rk2):
     A2=rk2.principal_error_norm()
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
+
+def linearly_stable_step_size(rk, L, acc=1.e-7):
+    r"""
+        Determine the maximum linearly stable step size for Runge-Kutta method
+        rk applied to the IVP $u' = Lu$, by computing the eigenvalues of $L$
+        and determining the values of the stability function of rk at the eigenvalues.
+
+        Note that this analysis is not generally appropriate if L is non-normal.
+    """
+
+    from utils import bisect
+
+    tol=1.e-14
+    p,q = rk.stability_function()
+    lamda = np.linalg.eigvals(L)
+    hmax = 2.5*len(rk)**2 / max(abs(lamda))
+    h=bisect(0,hmax,acc,tol,is_linearly_stable, params=(p,q,lamda))
+    return h
+
+
+def is_linearly_stable(h,tol,params):
+    p=params[0]
+    q=params[1]
+    lamda=params[2]
+    R = abs(p(h*lamda)/q(h*lamda))
+    if max(R) > 1.+tol:
+        return 0
+    else:
+        return 1
