@@ -1156,8 +1156,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
 
     def is_FSAL(self):
-        if all(self.A[-1,:]==self.b): return True
-        elif all(self.A[-1,:]==self.bhat): return True
+        if np.all(self.A[-1,:]==self.b): return True
+        elif np.all(self.A[-1,:]==self.bhat): return True
         else: return False
 
 #=====================================================
@@ -1196,8 +1196,7 @@ def elementary_weight(tree):
             * Two different types of multiplication; or
             * Full tensor expressions
 
-        The latter is an issue in the Sympy tracker, but it's not
-        clear when it will be available.
+        The latter is now available in Sympy.
 
         **References**:
             [butcher2003]_
@@ -2412,7 +2411,7 @@ def relative_accuracy_efficiency(rk1,rk2):
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
 
-def linearly_stable_step_size(rk, L, acc=1.e-7):
+def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
     r"""
         Determine the maximum linearly stable step size for Runge-Kutta method
         rk applied to the IVP $u' = Lu$, by computing the eigenvalues of $L$
@@ -2422,12 +2421,17 @@ def linearly_stable_step_size(rk, L, acc=1.e-7):
     """
 
     from utils import bisect
+    import matplotlib.pyplot as plt
 
     tol=1.e-14
     p,q = rk.stability_function()
     lamda = np.linalg.eigvals(L)
     hmax = 2.5*len(rk)**2 / max(abs(lamda))
     h=bisect(0,hmax,acc,tol,is_linearly_stable, params=(p,q,lamda))
+    if plot:
+        rk.plot_stability_region()
+        plt.hold(True)
+        plt.plot(np.real(h*lamda), np.imag(h*lamda),'o')
     return h
 
 

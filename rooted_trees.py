@@ -688,7 +688,7 @@ def Dmap(tree):
     Butcher's function D(t).  Represents differentiation.
     Defined by D(t)=0 except for D('T')=1.
     """
-    return tree=='T'
+    return 1*(tree=='T')
 
 def Dmap_str(tree):
     return str(int(tree=='T'))
