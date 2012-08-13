@@ -817,7 +817,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return False
 
     def is_FSAL(self):
-        return all(self.A[-1,:]==self.b)
+        return np.all(self.A[-1,:]==self.b)
 
 #=====================================================
 class ExplicitRungeKuttaMethod(RungeKuttaMethod):
@@ -954,6 +954,25 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
     def work_per_step(self):
         if self.is_FSAL(): return len(self)-1
         else: return len(self)
+
+    def num_seq_dep_stages(self):
+        r"""Number of sequentially dependent stages.
+
+        If the method is parallelized, this is the minimum number
+        of sequential function evaluations that must be made."""
+
+        n_s = [0]*len(self)
+        for i in range(len(self)):
+            for j in range(i):
+                if self.A[i,j] != 0:
+                    n_s[i] = max(n_s[i], n_s[j]+1)
+
+        n = 0
+        for i in range(len(self)):
+            if self.b[i] != 0:
+                n = max(n, n_s[i]+1)
+        return n
+
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
