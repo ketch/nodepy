@@ -39,8 +39,8 @@ class LinearMultistepMethod(GeneralLinearMethod):
             #. [butcher2003]_
     """
     def __init__(self,alpha,beta,name='Linear multistep method'):
-        self.beta=beta/float(alpha[-1])
-        self.alpha=alpha/float(alpha[-1])
+        self.beta=beta/(alpha[-1])
+        self.alpha=alpha/(alpha[-1])
         self.name=name
 
     def characteristic_polynomials(self):
@@ -72,8 +72,8 @@ class LinearMultistepMethod(GeneralLinearMethod):
     def satisfies_order_conditions(self,p,tol):
         """ Return True if the linear multistep method satisfies 
             the conditions of order p (only) """
-        #Roundoff errors seem to be amplified here...
-        ii=np.arange(len(self.alpha))
+        import snp
+        ii=snp.arange(len(self.alpha))
         return abs(sum(ii**p*self.alpha-p*self.beta*ii**(p-1)))<tol
 
     def ssp_coefficient(self):
@@ -137,28 +137,27 @@ def Adams_Bashforth(k):
         They are generated using equations (1.5) and (1.7) from 
         [hairer1993]_ III.1, along with the binomial expansion.
 
-        .. note::
-            Accuracy is lost when evaluating the order conditions
-            for methods with many steps.  This could be avoided by using 
-            SAGE rationals instead of NumPy doubles for the coefficient
-            representation.
-
         References:
             #. [hairer1993]_
     """
-    from scipy import comb
-    alpha=np.zeros(k+1)
-    beta=np.zeros(k+1)
-    alpha[k]=1.
-    alpha[k-1]=-1.
-    gamma=np.zeros(k)
-    gamma[0]=1.
-    beta[k-1]=1.
-    betaj=np.zeros(k+1)
+    import sympy
+    from sympy import Rational
+    import snp
+
+    one = Rational(1,1)
+
+    alpha=snp.zeros(k+1)
+    beta=snp.zeros(k+1)
+    alpha[k]=one
+    alpha[k-1]=-one
+    gamma=snp.zeros(k)
+    gamma[0]=one
+    beta[k-1]=one
+    betaj=snp.zeros(k+1)
     for j in range(1,k):
-        gamma[j]=1-sum(gamma[:j]/np.arange(j+1,1,-1))
+        gamma[j]=one-sum(gamma[:j]/snp.arange(j+1,1,-1))
         for i in range(0,j+1):
-            betaj[k-i-1]=(-1.)**i*comb(j,i)*gamma[j]
+            betaj[k-i-1]=(-one)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
         beta=beta+betaj
     name=str(k)+'-step Adams-Bashforth method'
     return LinearMultistepMethod(alpha,beta,name=name)
@@ -175,28 +174,25 @@ def Adams_Moulton(k):
         Exercise 3 from Hairer & Wanner III.1, along with the binomial 
         expansion.
 
-        .. note::
-            Accuracy is lost when evaluating the order conditions
-            for methods with many steps.  This could be avoided by using 
-            SAGE rationals instead of NumPy doubles for the coefficient
-            representation.
-
         References:
             [hairer1993]_
     """
-    from scipy import comb
-    alpha=np.zeros(k+1)
-    beta=np.zeros(k+1)
-    alpha[k]=1.
-    alpha[k-1]=-1.
-    gamma=np.zeros(k+1)
-    gamma[0]=1.
-    beta[k]=1.
-    betaj=np.zeros(k+1)
+    import sympy
+    import snp
+
+    alpha=snp.zeros(k+1)
+    beta=snp.zeros(k+1)
+    alpha[k]=1
+    alpha[k-1]=-1
+    gamma=snp.zeros(k+1)
+    gamma[0]=1
+    beta[k]=1
+    betaj=snp.zeros(k+1)
     for j in range(1,k+1):
-        gamma[j]= -sum(gamma[:j]/np.arange(j+1,1,-1))
+        gamma[j]= -sum(gamma[:j]/snp.arange(j+1,1,-1))
         for i in range(0,j+1):
-            betaj[k-i]=(-1.)**i*comb(j,i)*gamma[j]
+            betaj[k-i]=(-1)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
+            #betaj[k-i]=(-1.)**i*comb(j,i)*gamma[j]
         beta=beta+betaj
     name=str(k)+'-step Adams-Moulton method'
     return LinearMultistepMethod(alpha,beta,name=name)
@@ -212,26 +208,22 @@ def backward_difference_formula(k):
         They are generated using equation (1.22') from Hairer & Wanner III.1,
         along with the binomial expansion.
 
-        .. note::
-            Accuracy is lost when evaluating the order conditions
-            for methods with many steps.  This could be avoided by using 
-            SAGE rationals instead of NumPy doubles for the coefficient
-            representation.
-
         **References**:
             #.[hairer1993]_ pp. 364-365
     """
-    from scipy import comb
-    alpha=np.zeros(k+1)
-    beta=np.zeros(k+1)
-    beta[k]=1.
-    gamma=np.zeros(k+1)
-    gamma[0]=1.
-    alphaj=np.zeros(k+1)
+    import sympy
+    import snp
+
+    alpha=snp.zeros(k+1)
+    beta=snp.zeros(k+1)
+    beta[k]=1
+    gamma=snp.zeros(k+1)
+    gamma[0]=1
+    alphaj=snp.zeros(k+1)
     for j in range(1,k+1):
-        gamma[j]= 1./j
+        gamma[j]= sympy.Rational(1,j)
         for i in range(0,j+1):
-            alphaj[k-i]=(-1.)**i*comb(j,i)*gamma[j]
+            alphaj[k-i]=(-1)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
         alpha=alpha+alphaj
     name=str(k)+'-step BDF method'
     return LinearMultistepMethod(alpha,beta,name=name)
@@ -240,12 +232,15 @@ def elmm_ssp2(k):
     r"""
         Returns the optimal SSP k-step linear multistep method of order 2.
     """
-    alpha=np.zeros(k+1)
-    beta=np.zeros(k+1)
-    alpha[-1]=1.
-    alpha[0]=-1./(k-1.)**2
-    alpha[k-1]=-((k-1.)**2-1.)/(k-1.)**2
-    beta[k-1]=k/(k-1.)
+    import sympy
+    import snp
+
+    alpha=snp.zeros(k+1)
+    beta=snp.zeros(k+1)
+    alpha[-1]=sympy.Rational(1,1)
+    alpha[0]=sympy.Rational(-1,(k-1)**2)
+    alpha[k-1]=sympy.Rational(-(k-1)**2+1,(k-1)**2)
+    beta[k-1]=sympy.Rational(k,k-1)
     name='Optimal '+str(k)+'-step, 2nd order SSP method.'
     return LinearMultistepMethod(alpha,beta,name=name)
 
@@ -257,10 +252,13 @@ def loadLMM(which='All'):
         TODO: 
             - Others?
     """
+    import snp
+    import sympy
+
     LM={}
     #================================================
-    alpha=np.array([-12.,75.,-200.,300.,-300.,137.])/137.
-    beta=np.array([60.,-300.,600.,-600.,300.,0.])/137
+    alpha=snp.array([-12,75,-200,300,-300,137])/sympy.Rational(137,1)
+    beta=snp.array([60,-300,600,-600,300,0])/sympy.Rational(137,1)
     LM['eBDF5']=LinearMultistepMethod(alpha,beta,'eBDF 5')
     if which=='All':
         return LM

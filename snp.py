@@ -40,6 +40,10 @@ def solve(A,b):
     else:
         return np.linalg.solve(A,b)
 
+def linspace(start,stop,num=50,endpoint=True,retstep=False):
+    "This doesn't generally work as desired."
+    return normalize(np.linspace(start,stop,num,endpoint,retstep))
+
 def arange(start,stop=None,step=None,mode='exact'):
     return normalize(np.arange(start,stop,step,dtype=dtypes[mode]))
 
@@ -51,3 +55,6 @@ def diag(x):
 
 def poly(A,mode='exact'):
     if mode=='exact': return sympy.berkowitz
+
+def array(x):
+    return np.array(x,dtype=object)
