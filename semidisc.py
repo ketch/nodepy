@@ -11,7 +11,6 @@ For now, only semi-discretizations of one-dimensional PDEs are supported.
 
 import numpy as np
 from ivp import IVP
-import sys
 
 class LinearSemiDiscretization(IVP):
     """
@@ -45,7 +44,8 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     # The spatial discretization sets also the initial condition
     # because the number of DOF depends on the scheme
     if sdName=='upwind advection':
-        sd.L,sd.u0 = upwind_advection_matrix(N,sd.xCenter,dx)
+        sd.L  = upwind_advection_matrix(N,dx)
+        sd.u0 = np.sin(2*np.pi*sd.xCenter)
     elif sdName == 'spectral difference advection':
         sd.L,sd.xSol,sd.u0 = spectral_difference_matrix(N,sd.xCenter,dx,order)
     else: print 'unrecognized sdname'
@@ -103,21 +103,45 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     return sd
 
 
-
-def upwind_advection_matrix(N,x,dx):
-    from scipy.sparse import spdiags
+def upwind_advection_matrix(N,dx):
+    #from scipy.sparse import spdiags
     e=np.ones(N)
     #L=spdiags([-e,e,e],[0,-1,N-1],N,N)/dx
-    L=(np.diag(-e)+np.diag(e[1:],-1))/dx
-    L[0,-1]=1./dx
-    u0 = np.sin(2*np.pi*x)
-    return L,u0
+    L=(np.diag(-e)+np.diag(e[1:],-1))
+    L[0,-1]=1.
+    L=L/dx
+    return L
 
+
+def centered_advection_matrix(N,dx=0):
+    "3-point centered difference approximation of first derivative."
+    if dx==0: dx=1./N
+    e=np.ones(N)
+    L=(np.diag(-0.5*e[1:],1)+np.diag(0.5*e[1:],-1))
+    L[0,-1]=0.5
+    L[-1,0]=-0.5
+    L=L/dx
+    return L
+
+def centered_diffusion_matrix(N,dx=0):
+    "3-point centered difference approximation of second derivative."
+    if dx==0: dx=1./N
+    e=np.ones(N)
+    L=(np.diag(e[1:],1)-2.*np.diag(e,0)+np.diag(e[1:],-1))
+    L[0,-1]=1.
+    L[-1,0]=1.
+    L=L/dx**2
+    return L
+
+def centered_advection_diffusion_matrix(a,b,N,dx=0):
+    if dx==0: dx=1./N
+    L1 = centered_advection_matrix(N,dx)
+    L2 = centered_diffusion_matrix(N,dx)
+    L = a*L1 + b*L2
+    return L
 
 
 def spectral_difference_matrix(nbrCells,xCenter,dx,order):
-    import sys
-    
     np.set_printoptions(threshold=np.nan)
 
 
@@ -147,8 +171,7 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
         fluxPnts = np.array([ -1.0 , -0.88 , -0.53 , 0.0 , 0.53 , 0.88 , 1.0 ])
         solPnts = np.array([ -1.0 , -0.88 , -0.53 ,       0.53 , 0.88 , 1.0 ])
     else:
-       print "Error: min order 1, max order 6"
-       sys.exit()
+       raise Exception("Error: min order 1, max order 6")
 
 
     # Number of solution and flux points
