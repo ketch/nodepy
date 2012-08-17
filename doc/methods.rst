@@ -20,5 +20,4 @@ methods, and extrapolation methods.
 
 .. _create_lsrkm:
 
-`blah <../../source/conf.py>`_
 `<index.html>`_

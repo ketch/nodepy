@@ -30,17 +30,16 @@ Some distinctive design goals are:
     (hence powerful) representaton of an object is used whenever
     possible.  Thus, order conditions are generated using products
     on rooted trees (or other recursions) rather than being hard-coded.
-  * **Floating-point representation**: Most quantities, such as coefficients
-    of integration methods, are represented with double-precision numbers.
-    This means also that, for the most part, properties of methods that
-    are in truth exact (discretely-valued) are determined by numerical
+  * **Numerical representation**: The most precise representation possible
+    is used for quantities such as coefficients: rational numbers (using
+    SymPy's Rational class) when available, floating-point numbers otherwise.
+    Where necessary, method properties are determined by numerical
     calculations, using appropriate tolerances.  Thus the "order" of
-    a method is determined by checking whether the order conditions are
+    a method with floating-point coefficients is determined by checking whether
+    the order conditions are
     satisfied to within a small value (near machine-epsilon).
-    Of course, for some purposes an exact representation of rational
-    coefficients and exact computation of method properties would
-    be preferable.  However, since such an approach would be less
-    generally applicable, this is planned as future work.
+    For efficiency reasons, coefficients are always converted to floating-point
+    for purposes of applying the method to a problem.
 
 In general, user-friendliness of the interface and readability of
 the code are prioritized over performance.
@@ -60,18 +59,27 @@ looking into this.
 
 Dependencies
 ================================
-NodePy has recently begun to support exact computation of
-some properties, for which it relies on the sympy package.
-Due to some recent changes in sympy, it is necessary to use version
-0.6.7 (rather than the latest sympy version).
+  * Python 2.7
+  * Numpy, Matplotlib
+  * SymPy (note: NodePy is now compatible with SymPy 0.7.1)
 
 Classes of Numerical ODE Solvers
 ================================
 
 NodePy includes classes for the following types of methods:
     - :ref:`Runge-Kutta Methods <create_rkm>`
+        - Implicit
+        - Explicit
+        - Embedded pairs
+        - Low-storage methods
+        - Extrapolation methods
+        - Integral deferred correction methods
+        - Strong stability preserving methods
+        - Runge-Kutta-Chebyshev methods
     - :ref:`Linear Multistep Methods <create_lmm>`
     - :ref:`Two-step Runge-Kutta Methods <create_tsrkm>`
+Arbitrary methods in these classes can be instantiated by specifying
+their coefficients.
 
 
 Analysis of Methods
@@ -84,7 +92,8 @@ NodePy includes functions for analyzing many properties, including:
     - Accuracy
         - Order of accuracy
         - Error coefficients
-        - Generation of Python and MATLAB code for checking order conditions
+        - Relative accuracy efficiency
+        - Generation of Python and MATLAB code for order conditions
 
 
 Testing Methods
@@ -99,7 +108,7 @@ initial value problem as argument.  For methods with error estimates,
 adaptive time-stepping can be used based on a specified error tolerance.
 NodePy also includes automated functions for convergence testing.
 
-In the future, NodePy will also support solving semi-discretizations
+In the future, NodePy may also support solving semi-discretizations
 of initial boundary value PDEs.
 
 
