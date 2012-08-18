@@ -17,13 +17,13 @@ Contributing
 
 Contributions to the package are most welcome.  If you have 
 used NodePy for research, chances are that others would find your
-code useful.  If you would like to contribute to the project, send me
-an e-mail.
+code useful.  Feel free to either e-mail a patch or fork and issue
+a pull request on Github.
 
 
 License
 =======================
-NodePy is distributed under the terms of the Berkeley Software Distribution
+NodePy is distributed under the terms of the modified Berkeley Software Distribution
 (BSD) license.  The license is in the file nodepy/LICENSE.txt and
 reprinted below.
 
@@ -39,9 +39,6 @@ modification, are permitted provided that the following conditions are met:
   * Redistributions in binary form must reproduce the above copyright 
     notice, this list of conditions and the following disclaimer in the 
     documentation and/or other materials provided with the distribution.
-  * Neither the name of King Abdullah University of Science & Technology nor 
-    the names of its contributors may be used to endorse or promote products 
-    derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 

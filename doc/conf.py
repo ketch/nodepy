@@ -23,19 +23,29 @@ import sys, os
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.0'
 
+sys.path.append(os.path.abspath('./ext'))
+
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 
               'sphinx.ext.doctest', 
               'sphinx.ext.todo', 
               'sphinx.ext.coverage', 
-              'sphinx.ext.jsmath', 
               'sphinx.ext.ifconfig', 
               'sphinx.ext.graphviz', 
               'sphinx.ext.inheritance_diagram',
               'matplotlib.sphinxext.only_directives',
               'matplotlib.sphinxext.plot_directive',
               'sphinx.ext.viewcode']
+
+# Add mathjax extension
+extensions.append('mathjax')
+
+# Point to the MathJax CDN (latest MathJax.js stable release)
+#mathjax_path = 'https://d3eoax9i5htok0.cloudfront.net/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
+##############################################################################################################
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -241,7 +251,5 @@ man_pages = [
      [u'David Ketcheson'], 1)
 ]
 
-jsmath_path = 'http://web.kaust.edu.sa/faculty/davidketcheson/jsMath/easy/load.js'
-#jsmath_path = '/Users/ketch/jsMath/easy/load.js'
 default_role = 'math'
 keep_warnings = 'True'
