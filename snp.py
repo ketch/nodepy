@@ -14,7 +14,6 @@ def normalize(*arrays):
     for array in arrays:
         if array==None: continue
         if array.dtype==object:
-            shape=array.shape
             onedarray=array.reshape(-1)
             for i,elem in enumerate(onedarray):
                 if not isinstance(elem,sympy.basic.Basic):
