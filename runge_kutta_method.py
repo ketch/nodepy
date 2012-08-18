@@ -79,14 +79,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         # Here there is a danger that one could change A
         # and c would never be updated
         # A,b, and c should be properties
-        a1,a2=A is not None, b is not None
-        a3,a4=alpha is not None, beta is not None
-        if not ( ( (a1 and a2) and not (a3 or a4) ) or
-                    ( (a3 and a4) and not (a1 or a2) ) ):
-            raise RungeKuttaError("""To initialize a Runge-Kutta method,
+        butcher   = (A is not None) and (b is not None)
+        shu_osher = (alpha is not None) and (beta is not None)
+        if not (butcher + shu_osher == 1):
+            raise Exception("""To initialize a Runge-Kutta method,
                 you must provide either Butcher arrays or Shu-Osher arrays,
                 but not both.""")
-        if A is not None: #Initialize with Butcher arrays
+        if butcher:
             # Check that number of stages is consistent
             m=np.size(A,0) # Number of stages
             if m>1:
@@ -97,7 +96,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 if not np.size(b)==1:
                     raise RungeKuttaError(
                      'Inconsistent dimensions of Butcher arrays')
-        if alpha is not None: #Initialize with Shu-Osher arrays
+        elif shu_osher:
             self.alpha=alpha
             self.beta=beta
             A,b=shu_osher_to_butcher(alpha,beta)
@@ -105,17 +104,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if len(np.shape(A))==2: self.A=A
         else: self.A=np.array([A]) #Fix for 1-stage methods
 
+        self.b=b
+        self.c=np.sum(self.A,1) # Assume stage order >= 1
+
+        self.name=name
+        self.info=description
+
         if not isinstance(self,ExplicitRungeKuttaMethod):
             if not np.triu(self.A).any():
                 print """Warning: this method appears to be explicit, but is
                        being initialized as a RungeKuttaMethod rather than
                        as an ExplicitRungeKuttaMethod."""
 
-        self.b=b
-        self.c=np.sum(self.A,1)
-
-        self.name=name
-        self.info=description
 
     def __num__(self):
         """
@@ -167,6 +167,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Methods considered equal if their Butcher arrays are
 
             TODO: Instead check whether methods have the same elementary weights
+                  up to some order.
         """
         K1=np.vstack([self.A,self.b])
         K2=np.vstack([rkm.A,rkm.b])
@@ -273,7 +274,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Typically used to reduce reducible methods.
 
             Note that stages in the NumPy arrays are indexed from zero,
-            so to remove stage s use remove_stage(s-1).
+            so to remove stage j use remove_stage(j-1).
         """
         A=np.delete(np.delete(self.A,stage,1),stage,0)
         b=np.delete(self.b,stage)
@@ -293,11 +294,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
         corresponding to a given tree.
         """
         from numpy import dot
+        from sympy import Rational, simplify
         code=elementary_weight_str(tree)
         b=self.b
         A=self.A
         c=self.c
-        exec('coeff=('+code+'-1./'+str(tree.density())+')')
+        if A.dtype == object:
+            exec('coeff=simplify('+code+'-Rational(1,'+str(tree.density())+'))')
+        else:
+            exec('coeff=('+code+'-1./'+str(tree.density())+')')
         return coeff/tree.symmetry()
 
     def error_coeffs(self,p):
@@ -516,7 +521,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, order star is filled in (solid); otherwise it is outlined
         """
-        p,q=self.stability_function()
+        p,q=self.__num__().stability_function()
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))
