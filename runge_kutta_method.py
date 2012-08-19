@@ -40,6 +40,7 @@ from general_linear_method import GeneralLinearMethod
 import numpy as np
 import snp
 import matplotlib.pyplot as pl
+import sympy
 
 
 #=====================================================
@@ -90,11 +91,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
             m=np.size(A,0) # Number of stages
             if m>1:
                 if not np.all([np.size(A,1),np.size(b)]==[m,m]):
-                    raise RungeKuttaError(
+                    raise Exception(
                      'Inconsistent dimensions of Butcher arrays')
             else:
                 if not np.size(b)==1:
-                    raise RungeKuttaError(
+                    raise Exception(
                      'Inconsistent dimensions of Butcher arrays')
         elif shu_osher:
             self.alpha=alpha
@@ -211,12 +212,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
     # Reducibility
     #============================================================
 
-    def dj_reducible(self,tol=1.e-13):
+    def _dj_reducible_stages(self,tol=1.e-13):
         """ Determine whether the method is DJ-reducible.
+
             A method is DJ-reducible if it contains any stage that
             does not influence the output.
 
-            Returns a list of irrelevant stages.  If the method is
+            Returns a list of unnecessary stages.  If the method is
             DJ-irreducible, returns an empty list.
         """
         from copy import copy
@@ -238,18 +240,42 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return Nset
 
     def dj_reduce(self,tol=1.e-13):
-        """Remove all DJ-reducible stages."""
+        """Remove all DJ-reducible stages.
+
+            A method is DJ-reducible if it contains any stage that
+            does not influence the output.
+
+            **Examples**::
+            
+                Construct a reducible method:
+                >>> from nodepy import rk
+                >>> A=np.array([[0,0],[1,0]])
+                >>> b=np.array([1,0])
+                >>> rkm = rk.ExplicitRungeKuttaMethod(A,b)
+
+                Check that it is reducible:
+                >>> rkm._dj_reducible_stages()
+                [1]
+
+                Reduce it by removing stage 1 (the second stage):
+                >>> rkm.dj_reduce()
+                Runge-Kutta Method
+                <BLANKLINE>                
+                 0 |
+                ___|___
+                   |  1
+        """
         reducible=True
         while(reducible):
-            djs = self.dj_reducible(tol=tol)
+            djs = self._dj_reducible_stages(tol=tol)
             if len(djs)>0: 
                 reducible = True
-                self.remove_stage(djs[0])
+                self._remove_stage(djs[0])
             else: reducible = False
         return self
 
 
-    def hs_reducible(self,tol=1.e-13):
+    def _hs_reducible_stages(self,tol=1.e-13):
         """ 
             Determine whether the method is HS-reducible.
             A Runge-Kutta method is HS-reducible if two
@@ -269,12 +295,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 mindiff=min(mindiff,dif)
         return False, mindiff
 
-    def remove_stage(self,stage):
+    def _remove_stage(self,stage):
         """ Eliminate a stage of a Runge-Kutta method.
             Typically used to reduce reducible methods.
 
             Note that stages in the NumPy arrays are indexed from zero,
-            so to remove stage j use remove_stage(j-1).
+            so to remove stage j use _remove_stage(j-1).
         """
         A=np.delete(np.delete(self.A,stage,1),stage,0)
         b=np.delete(self.b,stage)
@@ -292,6 +318,23 @@ class RungeKuttaMethod(GeneralLinearMethod):
         Returns the coefficient in the Runge-Kutta method's error expansion
         multiplying a single elementary differential,
         corresponding to a given tree.
+
+           **Examples**::
+            
+                Construct an RK method and some rooted trees:
+                >>> from nodepy import rk, rt
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> tree4 = rt.list_trees(4)[0]
+                >>> tree5 = rt.list_trees(5)[0]
+
+                The method has order 4, so this gives zero:
+                >>> rk4.error_coefficient(tree4)
+                0
+
+                This is non-zero, as the method doesn't
+                satisfy fifth-order conditions:
+                >>> rk4.error_coefficient(tree5)
+                -1/720
         """
         from numpy import dot
         from sympy import Rational, simplify
@@ -328,12 +371,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
             * `A^{q+2}_{max}`: Max-norm of the vector of next order error coefficients
             * `D`: The largest (in magnitude) coefficient in the Butcher array
 
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.error_metrics()
+                (0.01450458234319821, 1/120, 0.016035314699606992, 1/144, 1)
+                
             Reference: [kennedy2000]_
         """
-        q=self.order(1.e-13)
+        q=self.order()
         tau_1=self.error_coeffs(q+1)
         tau_2=self.error_coeffs(q+2)
-        print tau_1
+
         A_qp1=np.sqrt(float(np.sum(np.array(tau_1)**2)))
         A_qp1_max=max([abs(tau) for tau in tau_1])
         A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
@@ -352,8 +402,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return np.sqrt(float(np.sum(np.array(errs)**2)))
 
     def order(self,tol=1.e-14):
-        """ 
-            Returns the order of a Runge-Kutta method.
+        """ The order of a Runge-Kutta method.
+
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.order()
+                4
         """
         p=0
         while True:
@@ -406,6 +462,16 @@ class RungeKuttaMethod(GeneralLinearMethod):
             assumptions $B(\\xi)$ and $C(\\xi)$ are satisfied for
             $1 \\le \\xi \\le k$.
 
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.stage_order()
+                1
+                >>> gl2 = rk.loadRKM('GL2')
+                >>> gl2.stage_order()
+                2
+
             **References**:
                 #. Dekker and Verwer
                 #. [butcher2003]_
@@ -436,6 +502,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
             **Output**:
                 - p -- Numpy poly representing the numerator
                 - q -- Numpy poly representing the denominator
+
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> p,q = rk4.stability_function()
+                >>> print p
+                         4          3       2
+                0.04167 x + 0.1667 x + 0.5 x + 1 x + 1
 
         """
         import sympy
@@ -684,7 +759,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
     # Representations
     #============================================================
-    def standard_shu_osher_form(self,r=None):
+    def optimal_shu_osher_form(self,r=None):
         r"""
             Gives a Shu-Osher form in which the SSP coefficient is
             evident (i.e., in which $\\alpha_{ij},\\beta_{ij} \\ge 0$ and
@@ -720,8 +795,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return alpha, beta
 
     def canonical_shu_osher_form(self,r):
-        r""" Return d,P where P is the matrix P=r(I+rK)^{-1}K 
-             and d is the vector d=(I+rK)^{-1}e=(I-P)e
+        r""" d,P where P is the matrix `P=r(I+rK)^{-1}K`
+             and d is the vector `d=(I+rK)^{-1}e=(I-P)e`
         """
         s=len(self)
         K=np.vstack([self.A,self.b])
@@ -822,6 +897,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return False
 
     def is_FSAL(self):
+        """True if method is "First Same As Last"."""
         return np.all(self.A[-1,:]==self.b)
 
 #=====================================================
@@ -897,6 +973,17 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         return unew
 
     def imaginary_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
+        r"""
+            Length of imaginary axis half-interval contained in the
+            method's region of absolute stability.
+
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.imaginary_stability_interval()
+                2.8284274972975254
+        """
         p,q=self.stability_function()
         zhi=zmax
         zlo=0.
@@ -916,6 +1003,18 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             return zz[min(unstable_z)]
 
     def real_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
+        r"""
+            Length of negative real axis interval contained in the
+            method's region of absolute stability.
+    
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.real_stability_interval()
+                2.785294223576784
+        """
+
         p,q=self.stability_function()
         zhi=zmax
         zlo=0.
@@ -945,18 +1044,16 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         from utils import bisect
         p,q=self.stability_function()
         if q.order!=0 or q[0]!=1:
-            print q
-            print 'Not yet implemented for rational functions'
-            return 0
+            raise NotImplementedError('Not yet implemented for rational functions')
         else:
             r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
         return r
-
 
     def is_explicit(self):
         return True
 
     def work_per_step(self):
+        "Number of function evaluations required for one step."
         if self.is_FSAL(): return len(self)-1
         else: return len(self)
 
@@ -964,8 +1061,29 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         r"""Number of sequentially dependent stages.
 
         If the method is parallelized, this is the minimum number
-        of sequential function evaluations that must be made."""
+        of sequential function evaluations that must be made.
 
+            **Examples**::
+
+                Extrapolation methods are parallelizable:
+                >>> from nodepy import rk
+                >>> ex4 = rk.extrap(4)
+                >>> len(ex4)
+                7
+                >>> ex4.num_seq_dep_stages()
+                4
+                
+                So are deferred correction methods:
+                >>> dc4 = rk.DC(4)
+                >>> len(dc4)
+                20
+                >>> dc4.num_seq_dep_stages()
+                8
+
+                Unless `\theta` is non-zero:
+                >>> rk.DC(4,theta=1).num_seq_dep_stages()
+                20
+        """
         n_s = [0]*len(self)
         for i in range(len(self)):
             for j in range(i):
@@ -1032,7 +1150,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         a3,a4=alpha is not None, beta is not None
         if not ( ( (a1 and a2) and not (a3 or a4) ) or
                     ( (a3 and a4) and not (a1 or a2) ) ):
-            raise RungeKuttaError("""To initialize a Runge-Kutta method,
+            raise Exception("""To initialize a Runge-Kutta method,
                 you must provide either Butcher arrays or Shu-Osher arrays,
                 but not both.""")
         if A is not None: #Initialize with Butcher arrays
@@ -1040,11 +1158,11 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             m=np.size(A,0) # Number of stages
             if m>1:
                 if not np.all([np.size(A,1),np.size(b)]==[m,m]):
-                    raise RungeKuttaError(
+                    raise Exception(
                      'Inconsistent dimensions of Butcher arrays')
             else:
                 if not np.size(b)==1:
-                    raise RungeKuttaError(
+                    raise Exception(
                      'Inconsistent dimensions of Butcher arrays')
         if alpha is not None: #Initialize with Shu-Osher arrays
             self.alpha=alpha
@@ -1183,22 +1301,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         if np.all(self.A[-1,:]==self.b): return True
         elif np.all(self.A[-1,:]==self.bhat): return True
         else: return False
-
 #=====================================================
 #End of ExplicitRungeKuttaPair class
-#=====================================================
-
-#=====================================================
-class RungeKuttaError(Exception):
-#=====================================================
-    """
-        Exception class for Runge Kutta methods.
-    """
-    def __init__(self,msg='Runge Kutta Error'):
-        self.msg=msg
-
-    def __str__(self):
-        return self.msg
 #=====================================================
 
 #=====================================================
@@ -1220,7 +1324,8 @@ def elementary_weight(tree):
             * Two different types of multiplication; or
             * Full tensor expressions
 
-        The latter is now available in Sympy.
+        The latter is now available in Sympy, but I haven't
+        tried to use it here.
 
         **References**:
             [butcher2003]_
@@ -1236,6 +1341,16 @@ def elementary_weight_str(tree,style='python'):
     """
         Constructs Butcher's elementary weights for a Runge-Kutta method
         as strings suitable for numpy execution.
+
+        **Examples**:
+
+            >>> from nodepy import rk, rt
+            >>> tree = rt.list_trees(5)[0]
+            >>> rk.elementary_weight_str(tree)
+            'dot(b,dot(A,c**3))'
+
+            >>> rk.elementary_weight_str(tree,style='matlab')
+            "b'*((A*c.^3))"
     """
     from strmanip import collect_powers, mysimp
     from rooted_trees import Dmap_str
@@ -1247,9 +1362,9 @@ def elementary_weight_str(tree,style='python'):
     return ewstr
 
 def RKeta(tree):
+    raise Exception('This function does not work correctly; use the _str version')
     from rooted_trees import Dprod
     from sympy import symbols
-    raise Exception('This function does not work correctly; use the _str version')
     if tree=='':  return symbols('e',commutative=False)
     if tree=='T': return symbols('c',commutative=False)
     return symbols('A',commutative=False)*Dprod(tree,RKeta)
@@ -1343,7 +1458,7 @@ def shu_osher_to_butcher(alpha,beta):
     m=np.size(alpha,1)
     if not np.all([np.size(alpha,0),np.size(beta,0),
                     np.size(beta,1)]==[m+1,m+1,m]):
-        raise RungeKuttaError(
+        raise Exception(
              'Inconsistent dimensions of Shu-Osher arrays')
     X=snp.eye(m)-alpha[0:m,:]
     A=snp.solve(X,beta[0:m,:])
@@ -1510,8 +1625,8 @@ def loadRKM(which='All'):
     RK['Mid22']=ExplicitRungeKuttaMethod(A,b,name='Midpoint Runge-Kutta')
 
     #================================================
-    A=np.array([[0,0,0,0],[1./2,0,0,0],[0,1./2,0,0],[0,0,1,0]])
-    b=np.array([1./6,1./3,1./3,1./6])
+    A=snp.array([[0,0,0,0],[half,0,0,0],[0,half,0,0],[0,0,one,0]])
+    b=snp.array([one/6,one/3,one/3,one/6])
     RK['RK44']=ExplicitRungeKuttaMethod(A,b,name='Classical RK4')
 
     #================================================
@@ -1603,10 +1718,22 @@ def RK22_family(gamma):
 
         **Input**: gamma -- family parameter
         **Output**: An ExplicitRungeKuttaMethod
+        **Examples**::
 
+            >>> from nodepy import rk
+            >>> rk.RK22_family(-1)
+            Runge-Kutta Method
+            <BLANKLINE>
+             0    |
+             -1/2 |  -1/2
+            ______|____________
+                  |     2    -1
     """
-    A=np.array([[0,0],[1./(2.*gamma),0]])
-    b=np.array([1.-gamma,gamma])
+    from sympy import Rational
+    one = Rational(1,1)
+
+    A=snp.array([[0,0],[one/(2*gamma),0]])
+    b=snp.array([one-gamma,gamma])
     return ExplicitRungeKuttaMethod(A,b)
 
 def RK44_family(w):
@@ -1616,10 +1743,26 @@ def RK44_family(w):
         **Input**: w -- family parameter
         **Output**: An ExplicitRungeKuttaMethod
 
+        **Examples**::
+
+            >>> from nodepy import rk
+            >>> rk.RK44_family(1)
+            Runge-Kutta Method
+            <BLANKLINE>
+             0   |
+             1/2 |  1/2
+             1/2 |  1/3   1/6
+             1   |  0     -2    3
+            _____|________________________
+                 |   1/6  -1/3     1   1/6
+                       
     """
-    A=np.array([[0,0,0,0],[1./2,0,0,0],[1./2-1./(6*w),1./(6*w),0,0],
-                [0,1.-3.*w,3.*w,0]])
-    b=np.array([1./6,2./3-w,w,1./6])
+    from sympy import Rational
+    one = Rational(1,1)
+
+    A=snp.array([[0,0,0,0],[one/2,0,0,0],[one/2-one/(6*w),one/(6*w),0,0],
+                [0,one-3*w,3*w,0]])
+    b=snp.array([one/6,2*one/3-w,w,one/6])
     return ExplicitRungeKuttaMethod(A,b)
 
 
@@ -1676,29 +1819,34 @@ def SSPRK3(m):
 
             Load the 4-stage method:
             >>> SSP43=SSPRK3(4)
+            >>> SSP43
+            SSPRK43
+            <BLANKLINE>
+             0   |
+             1/2 |  1/2
+             1   |  1/2  1/2
+             1/2 |  1/6  1/6  1/6
+            _____|____________________
+                 |  1/6  1/6  1/6  1/2
 
-            Runge-Kutta Method
-
-            0.000 |  0.000  0.000  0.000  0.000
-            0.500 |  0.500  0.000  0.000  0.000
-            1.000 |  0.500  0.500  0.000  0.000
-            0.500 |  0.167  0.167  0.167  0.000
-           _______|____________________________
-                  |  0.167  0.167  0.167  0.500
-
+            >>> SSP43.absolute_monotonicity_radius()
+            1.9999999999527063
 
         **References**: 
             #. [ketcheson2008]_
 
     """
-    n=np.sqrt(m)
-    assert n==round(n), "SSPRKm3 methods must have m=n^2"
+    from sympy import sqrt, Rational
+    one = Rational(1)
+
+    n = sqrt(m)
+    assert n==int(n), "SSPRKm3 methods must have m=n^2"
     assert m>=4, "SSPRKm3 methods must have m>=4"
-    r=float(m-n)
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
-    alpha[n*(n+1)/2,n*(n+1)/2-1]=(n-1.)/(2*n-1.)
+    r = m - n
+    alpha=np.vstack([snp.zeros(m),snp.eye(m)])
+    alpha[n*(n+1)/2,n*(n+1)/2-1]=(n-one)/(2*n-one)
     beta=alpha/r
-    alpha[n*(n+1)/2,(n-1)*(n-2)/2]=n/(2*n-1.)
+    alpha[n*(n+1)/2,(n-1)*(n-2)/2]=n/(2*n-one)
     name='SSPRK'+str(m)+'3'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
@@ -2415,7 +2563,7 @@ def python_to_matlab(code):
         Convert python code string (order condition) to matlab code string
         Doesn't really work yet.  We need to do more parsing.
     """
-    print code
+    #print code
     outline=code
     outline=outline.replace("**",".^")
     outline=outline.replace("*",".*")
@@ -2425,8 +2573,8 @@ def python_to_matlab(code):
     outline=outline.replace("dot(A,","(A*")
     outline=outline.replace("( c)","c")
     outline=outline.replace("-0","")
-    print outline
-    print '******************'
+    #print outline
+    #print '******************'
     return outline
 
 def relative_accuracy_efficiency(rk1,rk2):
