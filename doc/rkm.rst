@@ -54,7 +54,7 @@ $a_{21}$, for instance, corresponds to my_rk.a[1,0].
 The abscissas $c$ are automatically set to the row sums of $A$ (this
 implies that every stage has has stage order at least equal to 1).
 Alternatively, a method may be specified in Shu-Osher form, by coefficient
-arrays $\\alpha,\\beta$::
+arrays $\alpha,\beta$::
 
     >> rk22=rk.RungeKuttaMethod(alpha=alpha,beta=beta)
 
