@@ -25,6 +25,8 @@ def permutations(str):
 
 def shortstring(x):
     import numpy as np
-    if x.__class__ is np.float64:
+    import sympy.core.numbers
+    if x.__class__ is np.float64 or x.__class__ is sympy.Float:
         return '%6.3f' % x
-    else: return str(x)
+    else: 
+        return ' '+str(x)

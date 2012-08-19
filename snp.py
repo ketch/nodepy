@@ -9,7 +9,7 @@ dtypes={'exact':object,'numeric':np.float64}
 
 def normalize(*arrays):
     """
-    For symbolic arrays, converts all non-symbolic entries to sympy Rationals.
+    For symbolic arrays, converts all non-symbolic entries to sympy types.
     """
     for array in arrays:
         if array==None: continue
@@ -17,13 +17,21 @@ def normalize(*arrays):
             onedarray=array.reshape(-1)
             for i,elem in enumerate(onedarray):
                 if not isinstance(elem,sympy.basic.Basic):
-                    onedarray[i]=sympy.Rational(elem)
+                    onedarray[i]=sympy.S(elem)
     if len(arrays)==1: return arrays[0]
     else: return arrays
 
 
+def ones(n,mode='exact'):
+    return normalize(np.ones(n,dtype=dtypes[mode]))
+
 def eye(n,mode='exact'):
     return normalize(np.eye(n,dtype=dtypes[mode]))
+
+def tri(n,mode='exact'):
+    x = np.array(1*(np.tri(n)>0),dtype=dtypes[mode])
+    x = normalize(x)
+    return x
 
 def solve(A,b):
     if A.dtype==object:
@@ -57,3 +65,8 @@ def poly(A,mode='exact'):
 
 def array(x):
     return np.array(x,dtype=object)
+
+def simplify(x):
+    shape = x.shape
+    x = map(sympy.simplify,x.reshape(-1))
+    return np.reshape(x,shape)

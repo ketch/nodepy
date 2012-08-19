@@ -15,7 +15,7 @@
 * Find its radius of absolute monotonicity::
 
     >>> ssp104.absolute_monotonicity_radius()
-    5.9999999999490683
+    5.999999999949068
 
 * Load a dictionary with many methods::
 
@@ -28,7 +28,7 @@
     <BLANKLINE>
      0.000 |
      0.500 |  0.500
-    _______|________________
+    _______|______________
            |  0.000  1.000
 
 **References**:  
@@ -151,11 +151,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
-            s+=c[i]+' '*(clenmax-len(c[i])+1)+'|'
+            s+=c[i]+' '*(clenmax-len(c[i])+1)+'| '
             for j in range(len(self)):
                 ss=shortstring(self.A[i,j])
-                s+=' '*(colmax-len(ss)+1)+ss
-            s+='\n'
+                s+=ss.ljust(colmax+1)
+            s=s.rstrip()+'\n'
         s+='_'*(clenmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
         s+= ' '*(clenmax+1)+'|'
         for j in range(len(self)):
@@ -854,11 +854,11 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
-            s+=c[i]+' '*(clenmax-len(c[i])+1)+'|'
+            s+=c[i]+' '*(clenmax-len(c[i])+1)+'| '
             for j in range(i):
                 ss=shortstring(self.A[i,j])
-                s+=' '*(colmax-len(ss)+1)+ss
-            s+='\n'
+                s+=ss.ljust(colmax+1)
+            s=s.rstrip()+'\n'
         s+='_'*(clenmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
         s+= ' '*(clenmax+1)+'|'
         for j in range(len(self)):
@@ -1348,6 +1348,8 @@ def shu_osher_to_butcher(alpha,beta):
     X=snp.eye(m)-alpha[0:m,:]
     A=snp.solve(X,beta[0:m,:])
     b=beta[m,:]+np.dot(alpha[m,:],A)
+    A = snp.simplify(A)
+    b = snp.simplify(b)
     return A,b
 
 def loadRKM(which='All'):
@@ -1639,15 +1641,15 @@ def SSPRK2(m):
             >>> SSP42
             SSPRK42
             <BLANKLINE>
-             0.000 |
+             0     |
              0.333 |  0.333
              0.667 |  0.333  0.333
              1.000 |  0.333  0.333  0.333
-            _______|________________________________
+            _______|____________________________
                    |  0.250  0.250  0.250  0.250
 
             >>> SSP42.absolute_monotonicity_radius()
-            2.9999999999745341
+            2.999999999974534
 
         **References**: 
             #. [ketcheson2008]_
@@ -1716,12 +1718,13 @@ def SSPRKm(m):
             >>> SSP44
             SSPRK44
             <BLANKLINE>
-             0.000 |
-             1.000 |  1.000
-             2.000 |  1.000  1.000
-             3.000 |  1.000  1.000  1.000
-            _______|________________________________
-                   |  0.625  0.292  0.042  0.042
+             0 |
+             1 |  1
+             2 |  1     1
+             3 |  1     1     1
+            ___|________________________
+               |   5/8  7/24  1/24  1/24
+
 
             >>> SSP44.absolute_monotonicity_radius()
             0.9999999999308784
@@ -1729,23 +1732,23 @@ def SSPRKm(m):
         **References**: 
             #. [gottlieb2001]_
     """
-    from sympy import factorial
+    from sympy import factorial, Rational
 
     assert m>=2, "SSPRKm methods must have m>=2"
 
-    alph=np.zeros([m+1,m+1])
-    alph[1,0]=1.
+    alph=snp.zeros([m+1,m+1])
+    alph[1,0]=1
     for mm in range(2,m+1):
         for k in range(1,m):
-            alph[mm,k]=1./k * alph[mm-1,k-1]
-            alph[mm,mm-1]=1./factorial(mm)
-            alph[mm,0] = 1.-sum(alph[mm,1:])
+            alph[mm,k]= Rational(alph[mm-1,k-1],k)
+            alph[mm,mm-1]=Rational(1,factorial(mm))
+            alph[mm,0] = 1-sum(alph[mm,1:])
 
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
-    alpha[m,m-1]=1./factorial(m)
+    alpha=np.vstack([snp.zeros(m),snp.eye(m)])
+    alpha[m,m-1]=Rational(1/factorial(m))
     beta=alpha.copy()
     alpha[m,1:m-1]=alph[m,1:m-1]
-    alpha[m,0] = 1.-sum(alpha[m,1:])
+    alpha[m,0] = 1-sum(alpha[m,1:])
     name='SSPRK'+str(m)*2
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
@@ -1764,15 +1767,15 @@ def SSPIRK1(m):
             >>> ISSP41
             SSPIRK41
             <BLANKLINE>
-             0.250 |  0.250  0.000  0.000  0.000
-             0.500 |  0.250  0.250  0.000  0.000
-             0.750 |  0.250  0.250  0.250  0.000
-             1.000 |  0.250  0.250  0.250  0.250
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
+             1/4 |  1/4  0    0    0
+             1/2 |  1/4  1/4  0    0
+             3/4 |  1/4  1/4  1/4  0
+             1   |  1/4  1/4  1/4  1/4
+            _____|____________________
+                 |  1/4  1/4  1/4  1/4
     """
-    A=np.tri(m)/m
-    b=np.ones(m)/m
+    A=snp.tri(m)/m
+    b=snp.ones(m)/m
     name='SSPIRK'+str(m)+'1'
     return RungeKuttaMethod(A,b,name=name)
 
@@ -1791,12 +1794,12 @@ def SSPIRK2(m):
             >>> ISSP42
             SSPIRK42
             <BLANKLINE>
-             0.125 |  0.125  0.000  0.000  0.000
-             0.375 |  0.250  0.125  0.000  0.000
-             0.625 |  0.250  0.250  0.125  0.000
-             0.875 |  0.250  0.250  0.250  0.125
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
+             1/8 |  1/8  0    0    0
+             3/8 |  1/4  1/8  0    0
+             5/8 |  1/4  1/4  1/8  0
+             7/8 |  1/4  1/4  1/4  1/8
+            _____|____________________
+                 |  1/4  1/4  1/4  1/4
 
             >>> ISSP42.absolute_monotonicity_radius()
             7.999999999992724
@@ -1804,10 +1807,11 @@ def SSPIRK2(m):
         **References**:
             #. [ketcheson2009]_
     """
-    r=2.*m
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    from sympy import Rational
+    r=2*m
+    alpha=np.vstack([snp.zeros(m),snp.eye(m)])
     beta=alpha/r
-    for i in range(m): beta[i,i]=1./r
+    for i in range(m): beta[i,i]=Rational(1,r)
     name='SSPIRK'+str(m)+'2'
     return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
@@ -1826,24 +1830,25 @@ def SSPIRK3(m):
             >>> ISSP43
             SSPIRK43
             <BLANKLINE>
-             0.113 |  0.113  0.000  0.000  0.000
-             0.371 |  0.258  0.113  0.000  0.000
-             0.629 |  0.258  0.258  0.113  0.000
-             0.887 |  0.258  0.258  0.258  0.113
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
+             -15**(1/2)/10 + 1/2 |  -15**(1/2)/10 + 1/2  0                    0                    0
+             -15**(1/2)/30 + 1/2 |  15**(1/2)/15         -15**(1/2)/10 + 1/2  0                    0
+             15**(1/2)/30 + 1/2  |  15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2  0
+             15**(1/2)/10 + 1/2  |  15**(1/2)/15         15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2
+            _____________________|____________________________________________________________________________________
+                                 |                  1/4                  1/4                  1/4                  1/4
 
             >>> ISSP43.absolute_monotonicity_radius()
-            6.8729833461475209
+            6.872983343691885
 
         **References**:
             #. [ketcheson2009]_
     """
-    r=m-1+np.sqrt(m**2-1)
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
+    from sympy import sqrt, Rational, simplify
+    r=m-1+sqrt(m**2-1)
+    alpha=np.vstack([snp.zeros(m),snp.eye(m)])
     alpha[-1,-1]=((m+1)*r)/(m*(r+2))
     beta=alpha/r
-    for i in range(m): beta[i,i]=1./2*(1-np.sqrt((m-1.)/(m+1.)))
+    for i in range(m): beta[i,i]=Rational(1,2)*(1-sqrt(Rational(m-1,m+1)))
     name='SSPIRK'+str(m)+'3'
     return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
@@ -1865,11 +1870,11 @@ def RKC1(m,eps=0):
             >>> RKC41
             RKC41
             <BLANKLINE>
-             0.000 |
+             0     |
              0.063 |  0.063
              0.250 |  0.125  0.125
              0.563 |  0.188  0.250  0.125
-            _______|________________________________
+            _______|____________________________
                    |  0.250  0.375  0.250  0.125
 
         **References**: 
@@ -1932,11 +1937,11 @@ def RKC2(m,epsilon=0):
             >>> RKC42
             RKC42
             <BLANKLINE>
-            -0.000 |
+             0     |
              0.200 |  0.200
              0.200 |  0.100  0.100
              0.533 | -0.178  0.237  0.474
-            _______|________________________________
+            _______|____________________________
                    | -0.797  0.375  1.000  0.422
 
         **References**: 
@@ -1998,12 +2003,12 @@ def dcweights(x):
     A=np.vander(x).T
     A=A[::-1,:]
     F=0*A
-    n=np.arange(len(x))+1
+    n=snp.arange(len(x))+1
     for i in range(len(x)-1):
         a=x[i]; b=x[i+1]
         f=(b**n-a**n)/n
         F[:,i]=f
-    w=np.linalg.solve(A,F)
+    w=snp.solve(A,F)
 
     return w
 
@@ -2468,3 +2473,8 @@ def is_linearly_stable(h,tol,params):
         return 0
     else:
         return 1
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
