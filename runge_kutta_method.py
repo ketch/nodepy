@@ -1843,7 +1843,7 @@ def SSPIRK3(m):
         **References**:
             #. [ketcheson2009]_
     """
-    from sympy import sqrt, Rational, simplify
+    from sympy import sqrt, Rational
     r=m-1+sqrt(m**2-1)
     alpha=np.vstack([snp.zeros(m),snp.eye(m)])
     alpha[-1,-1]=((m+1)*r)/(m*(r+2))
@@ -1856,9 +1856,12 @@ def SSPIRK3(m):
 #============================================================
 # Families of Runge-Kutta-Chebyshev methods
 #============================================================
-def RKC1(m,eps=0):
+def RKC1(m,epsilon=0):
     """ Construct the m-stage, first order 
-        Explicit Runge-Kutta-Chebyshev methods of Verwer (m>=1).
+        explicit Runge-Kutta-Chebyshev methods of Verwer (m>=1).
+
+        'epsilon' is a damping parameter used to avoid tangency of the
+        stability region boundary to the negative real axis.
 
         **Input**: m -- number of stages
         **Output**: A ExplicitRungeKuttaMethod
@@ -1870,48 +1873,52 @@ def RKC1(m,eps=0):
             >>> RKC41
             RKC41
             <BLANKLINE>
-             0     |
-             0.063 |  0.063
-             0.250 |  0.125  0.125
-             0.563 |  0.188  0.250  0.125
-            _______|____________________________
-                   |  0.250  0.375  0.250  0.125
+             0    |
+             1/16 |  1/16
+             1/4  |  1/8   1/8
+             9/16 |  3/16  1/4   1/8
+            ______|________________________
+                  |   1/4   3/8   1/4   1/8
 
         **References**: 
             #. [verwer2004]_
     """
 
-    import scipy.special.orthogonal as orth
+    import sympy
+    one = sympy.Rational(1)
 
-    Tm=orth.chebyt(m)
-    w0=1.+eps/m**2
-    w1=Tm(w0)/Tm.deriv()(w0)
+    x=sympy.Symbol('x')
+    Tm=sympy.special.polynomials.chebyshevt_poly(m,x)
 
-    alpha=np.zeros([m+1,m])
-    beta=np.zeros([m+1,m])
+    w0=one+epsilon/m**2
+    w1=sympy.Rational(Tm.subs(x,w0),Tm.diff().subs(x,w0))
 
-    b=np.zeros(m+1)
-    a=np.zeros(m+1)
-    mu=np.zeros(m+1)
-    nu=np.zeros(m+1)
-    mut=np.zeros(m+1)
-    gamt=np.zeros(m+1)
+    alpha=snp.zeros([m+1,m])
+    beta=snp.zeros([m+1,m])
 
-    b[0]=1.
-    b[1]=1./w0
+    b=snp.zeros(m+1)
+    a=snp.zeros(m+1)
+    mu=snp.zeros(m+1)
+    nu=snp.zeros(m+1)
+    mut=snp.zeros(m+1)
+    gamt=snp.zeros(m+1)
+
+    b[0]=one
+    b[1]=one/w0
     mut[1] = b[1]*w1
-    alpha[1,0]=1.
+    alpha[1,0]=one
     beta[1,0]=mut[1]
 
     for j in range(2,m+1):
-        b[j] = 1./orth.eval_chebyt(j,w0)
-        a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
-        mu[j]= 2.*b[j]*w0/b[j-1]
+        Tj=sympy.special.polynomials.chebyshevt_poly(j,x)
+        b[j] = one/Tj.subs(x,w0)
+        a[j] = one-b[j]*Tj.subs(x,w0)
+        mu[j]= 2*b[j]*w0/b[j-1]
         nu[j]= -b[j]/b[j-2]
         mut[j] = mu[j]*w1/w0
         gamt[j] = -a[j-1]*mut[j]
 
-        alpha[j,0]=1.-mu[j]-nu[j]
+        alpha[j,0]=one-mu[j]-nu[j]
         alpha[j,j-1]=mu[j]
         alpha[j,j-2]=nu[j]
         beta[j,j-1]=mut[j]
@@ -1937,50 +1944,54 @@ def RKC2(m,epsilon=0):
             >>> RKC42
             RKC42
             <BLANKLINE>
-             0     |
-             0.200 |  0.200
-             0.200 |  0.100  0.100
-             0.533 | -0.178  0.237  0.474
-            _______|____________________________
-                   | -0.797  0.375  1.000  0.422
+             0    |
+             1/5  |  1/5
+             1/5  |  1/10    1/10
+             8/15 |  -8/45   32/135  64/135
+            ______|________________________________
+                  |  -51/64     3/8       1   27/64
 
         **References**: 
             #. [verwer2004]_
     """
+    import sympy
+    one = sympy.Rational(1)
 
-    import scipy.special.orthogonal as orth
+    x=sympy.Symbol('x')
+    Tm=sympy.special.polynomials.chebyshevt_poly(m,x)
 
-    Tm=orth.chebyt(m)
-    w0=1.+epsilon/m**2
-    w1=Tm.deriv()(w0)/Tm.deriv(2)(w0)
+    w0=one+epsilon/m**2
+    w1=sympy.Rational(Tm.diff().subs(x,w0),Tm.diff(x,2).subs(x,w0))
 
-    alpha=np.zeros([m+1,m])
-    beta=np.zeros([m+1,m])
+    alpha=snp.zeros([m+1,m])
+    beta=snp.zeros([m+1,m])
 
-    b=np.zeros(m+1)
-    a=np.zeros(m+1)
-    mu=np.zeros(m+1)
-    nu=np.zeros(m+1)
-    mut=np.zeros(m+1)
-    gamt=np.zeros(m+1)
+    b=snp.zeros(m+1)
+    a=snp.zeros(m+1)
+    mu=snp.zeros(m+1)
+    nu=snp.zeros(m+1)
+    mut=snp.zeros(m+1)
+    gamt=snp.zeros(m+1)
+    
+    T2 = sympy.special.polynomials.chebyshevt_poly(2,x)
+    b[0]=sympy.Rational(T2.diff(x,2).subs(x,w0),(T2.diff().subs(x,w0))**2)
 
-    T2=orth.chebyt(2)
-    b[0]=T2.deriv(2)(w0)/(T2.deriv()(w0))**2
-    b[1]=1./w0
+    b[1]=one/w0
     mut[1] = b[1]*w1
-    alpha[1,0]=1.
+    alpha[1,0]=one
     beta[1,0]=mut[1]
 
     for j in range(2,m+1):
-        Tj=orth.chebyt(j)
-        b[j] = Tj.deriv(2)(w0)/(Tj.deriv()(w0))**2
-        a[j] = 1.-b[j]*orth.eval_chebyt(j,w0)
-        mu[j]= 2.*b[j]*w0/b[j-1]
+        Tj=sympy.special.polynomials.chebyshevt_poly(j,x)
+        b[j] = sympy.Rational(Tj.diff(x,2).subs(x,w0),(Tj.diff().subs(x,w0))**2)
+
+        a[j] = one-b[j]*Tj.subs(x,w0)
+        mu[j]= 2*b[j]*w0/b[j-1]
         nu[j]= -b[j]/b[j-2]
         mut[j] = mu[j]*w1/w0
         gamt[j] = -a[j-1]*mut[j]
 
-        alpha[j,0]=1.-mu[j]-nu[j]
+        alpha[j,0]=one-mu[j]-nu[j]
         alpha[j,j-1]=mu[j]
         alpha[j,j-2]=nu[j]
         beta[j,j-1]=mut[j]
@@ -2126,16 +2137,15 @@ def extrap(s,seq='harmonic',mode='exact'):
     #We have formed the T_j1
     #Now form the rest
     #
-    #Really there are no more "stages", and we could form T_ss directly
-    #but we need to work out the formula
+    #Really there are no more "stages", and we could form T_ss directly.
+    #but it is simpler to add auxiliary stages and then reduce.
 
     for j in range(1,s):
         #form T_{j+1,2}:
         alpha[nrs-1+j,J[j]-1]=1+1/(N[j]/N[j-1]-1)
         alpha[nrs-1+j,J[j-1]-1]=-1/(N[j]/N[j-1]-1)
 
-    #Now form all the rest, up to T_ss
-
+    #Now form all the rest, up to T_ss:
     nsd = nrs-1+s
     for k in range(2,s):
         for ind,j in enumerate(range(k,s)):
