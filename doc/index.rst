@@ -78,6 +78,7 @@ NodePy includes classes for the following types of methods:
         - Runge-Kutta-Chebyshev methods
     - :ref:`Linear Multistep Methods <create_lmm>`
     - :ref:`Two-step Runge-Kutta Methods <create_tsrkm>`
+
 Arbitrary methods in these classes can be instantiated by specifying
 their coefficients.
 

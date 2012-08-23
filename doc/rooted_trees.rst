@@ -9,6 +9,7 @@ Rooted Trees
 
 
 .. autoclass:: nodepy.rooted_trees.RootedTree
+   :noindex:
 
 Plotting trees
 ==============
@@ -18,6 +19,7 @@ For convenience, the method plot_all_trees() plots the whole forest of rooted
 trees of a given order.
 
 .. automethod:: nodepy.rooted_trees.RootedTree.plot
+   :noindex:
 
 .. plot::
    :include-source:
@@ -36,16 +38,21 @@ trees of a given order.
 Functions on rooted trees
 ===========================
 .. automethod:: nodepy.rooted_trees.RootedTree.order
+   :noindex:
 
 .. automethod:: nodepy.rooted_trees.RootedTree.density
+   :noindex:
 
 .. automethod:: nodepy.rooted_trees.RootedTree.symmetry
+   :noindex:
 
 Computing products on trees
 ===========================
 .. automethod:: nodepy.rooted_trees.RootedTree.Gprod
+   :noindex:
 
 .. automethod:: nodepy.rooted_trees.RootedTree.lamda
+   :noindex:
 
 Using rooted trees to generate order conditions
 ===============================================

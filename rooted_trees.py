@@ -151,11 +151,12 @@ class RootedTree(str):
         return sigma
 
     def Emap(self,a=1):
-        """ 
-        Butcher's function E^a(t).
-        This is the B-series for the exact solution advanced 'a' steps
+        r""" 
+        Butcher's function `E^a(t)`.
+        This is the B-series for the exact solution advanced $a$ steps
         in time.
         **Reference**: 
+
             [butcher1997]_
         """
         return Rational(a**self.order(),(self.density()))
@@ -541,8 +542,9 @@ def list_trees(p,ind='all'):
     Returns rooted trees of order p.
 
     INPUT: 
-        p   -- order of trees desired
-        ind -- if given, returns a single tree corresponding to this index.
+    
+        - p   -- order of trees desired
+        - ind -- if given, returns a single tree corresponding to this index.
                 Not very useful since the ordering isn't obvious.
                 
     OUTPUT: list of all trees of order p (or just one, if ind is provided).

@@ -16,6 +16,7 @@ Runge-Kutta method:
    ssp104.plot_stability_region(bounds=[-15,1,-10,10])
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.plot_stability_region
+   :noindex:
 
 Region of absolute stability for the 3-step Adams-Moulton method:
 
@@ -27,6 +28,7 @@ Region of absolute stability for the 3-step Adams-Moulton method:
    am3.plot_stability_region()
 
 .. automethod:: nodepy.linear_multistep_method.LinearMultistepMethod.plot_stability_region
+   :noindex:
 
 
 
@@ -44,3 +46,4 @@ Runge-Kutta method:
    ssp104.plot_order_star()
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.plot_stability_region
+   :noindex:

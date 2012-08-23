@@ -43,6 +43,19 @@ class LinearMultistepMethod(GeneralLinearMethod):
         self.alpha=alpha/(alpha[-1])
         self.name=name
 
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        import copy
+        numself = copy.deepcopy(self)
+        if self.alpha.dtype==object:
+            numself.alpha=np.array(self.alpha,dtype=np.float64)
+            numself.beta=np.array(self.beta,dtype=np.float64)
+        return numself
+
     def characteristic_polynomials(self):
         r"""
         Returns the characteristic polynomials (also known as generating
@@ -111,7 +124,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         import matplotlib.pyplot as pl
         theta=np.linspace(0.,2*np.pi,N)
         z=np.exp(theta*1j)
-        rho,sigma=self.characteristic_polynomials()
+        rho,sigma=self.__num__().characteristic_polynomials()
         val=rho(z)/sigma(z)
         #clf()
         pl.plot(np.real(val),np.imag(val),color=color,linewidth=2)

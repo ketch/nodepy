@@ -16,8 +16,3 @@ methods, and extrapolation methods.
     rkm
     lmm
     tsrkm
-
-
-.. _create_lsrkm:
-
-`<index.html>`_

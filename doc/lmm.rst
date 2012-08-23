@@ -1,5 +1,7 @@
 .. contents::
 
+.. _create_lmm:
+
 Linear Multistep methods
 ==================================
 A linear multistep method computes the next solution value from the values
@@ -13,6 +15,7 @@ the above form is used in NodePy.
 Methods are automatically normalized so that $\\alpha_k=1$.
 
 .. automodule:: nodepy.linear_multistep_method
+   :noindex:
 
 ------------------------
 Instantiation
@@ -42,21 +45,25 @@ Adams-Bashforth Methods
 ------------------------
 
 .. automethod:: nodepy.linear_multistep_method.Adams_Bashforth
+   :noindex:
 
 Adams-Moulton Methods
 ------------------------
 
 .. automethod:: nodepy.linear_multistep_method.Adams_Moulton
+   :noindex:
 
 Backward-difference formulas
 ------------------------------
 
 .. automethod:: nodepy.linear_multistep_method.backward_difference_formula
+   :noindex:
 
 Optimal Explicit SSP methods
 ------------------------------
 
 .. automethod:: nodepy.linear_multistep_method.elmm_ssp2
+   :noindex:
 
 ------------------------
 Stability
@@ -65,7 +72,9 @@ Stability
 Characteristic Polynomials
 ------------------------------
 .. automethod:: nodepy.linear_multistep_method.LinearMultistepMethod.characteristic_polynomials
+   :noindex:
 
 Plotting The Stability Region
 ------------------------------
 .. automethod:: nodepy.linear_multistep_method.LinearMultistepMethod.plot_stability_region
+   :noindex:

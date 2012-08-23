@@ -48,11 +48,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
     r""" 
         General class for implicit and explicit Runge-Kutta Methods.
-        The method is defined by its Butcher array ($A,b,c$).
+        The method is defined by its Butcher array (`A,b,c`).
         It is assumed everywhere that  `c_i=\sum_j A_{ij}`.
         
         A Runge-Kutta Method is initialized by providing either:
-            #. Butcher arrays $A$ and $b$ with valid and consistent 
+            #. Butcher arrays `A` and `b` with valid and consistent 
                dimensions; or
             #. Shu-Osher arrays `\alpha` and `\beta` with valid and
                consistent dimensions 
@@ -61,7 +61,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         The Butcher arrays are used as the primary representation of
         the method.  If Shu-Osher arrays are provided instead, the
-        Butcher arrays are computed by :ref:`shu_osher_to_butcher`.
+        Butcher arrays are computed by :meth:`shu_osher_to_butcher`.
     """
 
     #============================================================
@@ -451,8 +451,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             over all stages, of the
             order of accuracy of that stage.  It can be shown to be
             equal to the largest integer k such that the simplifying
-            assumptions $B(\\xi)$ and $C(\\xi)$ are satisfied for
-            $1 \\le \\xi \\le k$.
+            assumptions `B(\\xi)` and `C(\\xi)` are satisfied for
+            `1 \\le \\xi \\le k`.
 
             **Examples**::
 
@@ -482,7 +482,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def stability_function(self):
         r""" 
             The stability function of a Runge-Kutta method is
-            $\\phi(z)=p(z)/q(z)$, where
+            `\\phi(z)=p(z)/q(z)`, where
 
             $$p(z)=\\det(I - z A + z e b^T)$$
 
@@ -540,7 +540,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             `\{ z \in C : |\phi (z)|\le 1 \}`
 
-            where $\phi(z)$ is the stability function of the method.
+            where `\phi(z)` is the stability function of the method.
 
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction
@@ -578,9 +578,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
                     color='r',filled=True,plotaxes=True):
         r""" The order star of a Runge-Kutta method is the set
             
-            $$ \{ z \in C : |\phi(z)/exp(z)|\le 1 \} $$
+            $$ \\{ z \\in C : | \\phi(z)/\\exp(z) | \\le 1 \\} $$
 
-            where $\phi(z)$ is the stability function of the method.
+            where `\phi(z)` is the stability function of the method.
 
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction
@@ -680,7 +680,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def is_circle_contractive(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method has radius of circle
-            contractivity at least $r$.
+            contractivity at least `r`.
             
             **References**:
                 #. Dekker and Verwer
@@ -719,14 +719,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def is_absolutely_monotonic(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method is absolutely monotonic
-            at $z=-r$.
+            at `z=-r`.
 
-            The method is absolutely monotonic if $(I+rA)^{-1}$ exists
+            The method is absolutely monotonic if `(I+rA)^{-1}` exists
             and
             $$K(I+rA)^{-1} \\ge 0$$
             $$(I+rA)^{-1} e_m \\ge 0$$
 
-            where $e_m$ is the m-by-1 vector of ones and
+            where `e_m` is the m-by-1 vector of ones and
                   K=[ A
                      b^T].
 
@@ -754,8 +754,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def optimal_shu_osher_form(self,r=None):
         r"""
             Gives a Shu-Osher form in which the SSP coefficient is
-            evident (i.e., in which $\\alpha_{ij},\\beta_{ij} \\ge 0$ and
-            $\\alpha_{ij}/\\beta_{ij}=c$ for every $\\beta_{ij}\\ne 0$).
+            evident (i.e., in which `\\alpha_{ij},\\beta_{ij} \\ge 0` and
+            `\\alpha_{ij}/\\beta_{ij}=c` for every `\\beta_{ij}\\ne 0`).
 
             **Input**: 
                 - A RungeKuttaMethod
@@ -854,22 +854,22 @@ class RungeKuttaMethod(GeneralLinearMethod):
             autonomous system with RHS equal to the matrix L, i.e. 
             it returns the matrix G such that when the Runge-Kutta
             method is applied to the system 
-            $u'(t)=Lu$
+            `u'(t)=Lu`
             with stepsize dt, the numerical solution is given by
-            $u^{n+1} = G u^n$.
+            `u^{n+1} = G u^n`.
 
             **Input**:
                 - self -- a Runge-Kutta method
                 - L    -- the RHS of the ODE system
                 - dt   -- the timestep
 
-            The formula for $G$ is (if $L$ is a scalar):
-            $G = 1 + b^T L (I-A L)^{-1} e$
+            The formula for `G` is (if `L` is a scalar):
+            `G = 1 + b^T L (I-A L)^{-1} e`
 
-            where $A$ and $b$ are the Butcher arrays and $e$ is the vector
-            of ones.  If $L$ is a matrix, all quantities above are 
+            where `A` and `b` are the Butcher arrays and `e` is the vector
+            of ones.  If `L` is a matrix, all quantities above are 
             replaced by their Kronecker product with the identity
-            matrix of size $m$, where $m$ is the number of stages of
+            matrix of size `m`, where `m` is the number of stages of
             the Runge-Kutta method.
         """
         neq=np.size(L,0)
@@ -1100,8 +1100,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
     r"""
 
         Class for embedded Runge-Kutta pairs.  These consist of
-        two methods with identical coefficients $a_{ij}$
-        but different coefficients $b_j$ such that the methods
+        two methods with identical coefficients `a_{ij}`
+        but different coefficients `b_j` such that the methods
         have different orders of accuracy.  Typically the
         higher order accurate method is used to advance
         the solution, while the lower order method is
@@ -1115,9 +1115,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         \\hat{u}^{n+1} = & u^{n} + \\Delta t \\sum_{j=1}^{s} \\hat{b}_j f(y_j).
         \\end{align*}
 
-        That is, both methods use the same intermediate stages $y_i$, but different
-        weights.  Typically the weights $\\hat{b}_j$ are chosen so that $\\hat{u}^{n+1}$
-        is accurate of order one less than the order of $u^{n+1}$.  Then their
+        That is, both methods use the same intermediate stages `y_i`, but different
+        weights.  Typically the weights `\\hat{b}_j` are chosen so that `\\hat{u}^{n+1}`
+        is accurate of order one less than the order of `u^{n+1}`.  Then their
         difference can be used as an error estimate.
 
         In NodePy, if *rkp* is a Runge-Kutta pair, the principal (usually
@@ -1312,7 +1312,8 @@ def elementary_weight(tree):
         simplify the expressions.
 
         In order to do things correctly, we need a symbolic
-        system that includes support for either
+        system that includes support for either:
+
             * Two different types of multiplication; or
             * Full tensor expressions
 
@@ -2076,6 +2077,7 @@ def RKC2(m,epsilon=0):
         **Inputs**: 
                 m -- number of stages
                 epsilon -- damping factor
+
         **Output**: A ExplicitRungeKuttaMethod
 
         **Examples**::
@@ -2550,9 +2552,9 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
 
         `\{ z \in C : |\phi (z)|\le 1 \}`
 
-            where $\phi(z)=p(z)/q(z)$ is the rational function.
+        where `\phi(z)=p(z)/q(z)` is the rational function.
 
-            **Input**: 
+        **Input**: 
             required
                 - p       -- numerator (numpy.poly1d)
                 - p       -- denominator (numpy.poly1d)
@@ -2610,8 +2612,8 @@ def relative_accuracy_efficiency(rk1,rk2):
 
     `\eta = \frac{s_2}{s_1} \left(\frac{A_2}{A_1}\right)^{1/p+1}`
 
-    where $s_1,s_2$ are the number of stages of the two methods and
-    $A_1,A_2$ are their principal error norms.
+    where `s_1,s_2` are the number of stages of the two methods and
+    `A_1,A_2` are their principal error norms.
 
     If the result is >1, method 1 is more efficient.
 
@@ -2636,7 +2638,7 @@ def relative_accuracy_efficiency(rk1,rk2):
 def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
     r"""
         Determine the maximum linearly stable step size for Runge-Kutta method
-        rk applied to the IVP $u' = Lu$, by computing the eigenvalues of $L$
+        rk applied to the IVP `u' = Lu`, by computing the eigenvalues of `L`
         and determining the values of the stability function of rk at the eigenvalues.
 
         Note that this analysis is not generally appropriate if L is non-normal.

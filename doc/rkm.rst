@@ -66,6 +66,7 @@ Most significantly, time stepping is currently implemented for explicit methods,
 but not for implicit methods.
 
 .. automodule:: nodepy.runge_kutta_method
+   :noindex:
 
 Accuracy
 --------------------------------------------
@@ -115,22 +116,29 @@ This indicates that, for a desired level of error, the SSP(10,4)
 method will require about 72\% more work.
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.principal_error_norm
+   :noindex:
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.error_metrics
+   :noindex:
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.stage_order
+   :noindex:
 
 Classical (linear) stability
 --------------------------------------------
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.stability_function
+   :noindex:
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.plot_stability_region
+   :noindex:
 
 Nonlinear stability
 --------------------------------------------
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.absolute_monotonicity_radius
+   :noindex:
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.circle_contractivity_radius
+   :noindex:
 
 Reducibility of Runge-Kutta methods
 --------------------------------------------
@@ -140,13 +148,14 @@ both and transforming a reducible method to an equivalent irreducible method.
 Of course, reducibility is dealt with relative to some numerical tolerance,
 since the method coefficients are floating point numbers.
 
-.. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.dj_reducible
+.. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod._dj_reducible_stages
+   :noindex:
 
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.dj_reduce
+   :noindex:
 
-.. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.hs_reducible
-
-.. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.remove_stage
+.. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod._hs_reducible_stages
+   :noindex:
 
 Composing Runge-Kutta methods
 --------------------------------------------
@@ -164,21 +173,26 @@ compose() function.
 Embedded Runge-Kutta Pairs
 ============================
 .. autoclass:: nodepy.runge_kutta_method.ExplicitRungeKuttaPair
+   :noindex:
 
 
 Low-Storage Runge-Kutta methods
 =================================
 .. automodule:: nodepy.low_storage_rk
+   :noindex:
 
 2S/3S methods
 --------------------
 .. autoclass:: nodepy.low_storage_rk.LowStorageRungeKuttaMethod
+   :noindex:
 
 2S/3S embedded pairs
 --------------------
 .. autoclass:: nodepy.low_storage_rk.LowStorageRungeKuttaPair
+   :noindex:
 
 2R/3R embedded pairs
 --------------------
 .. autoclass:: nodepy.low_storage_rk.TwoRRungeKuttaPair
+   :noindex:
 

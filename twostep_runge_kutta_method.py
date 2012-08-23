@@ -21,11 +21,11 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         The representation
         uses the form and notation of [Jackiewicz1995]_.
 
-        \\begin{align*}
+        `\\begin{align*}
         y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \\Delta t \\sum_{k=1}^{s}
         (\\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1\\le j \\le s) \\\\
         u^{n+1} = & \\theta u^{n-1} + (1-\\theta)u^n + \\Delta t \\sum_{j=1}^{s}(\\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
-        \\end{align*}
+        \\end{align*}`
     """
     def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='Type II',name='Two-step Runge-Kutta Method'):
         r"""
