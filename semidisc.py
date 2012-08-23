@@ -134,6 +134,7 @@ def centered_diffusion_matrix(N,dx=0):
     return L
 
 def centered_advection_diffusion_matrix(a,b,N,dx=0):
+    r"3-point centered difference approximation for `a u_x + b u_{xx}`."
     if dx==0: dx=1./N
     L1 = centered_advection_matrix(N,dx)
     L2 = centered_diffusion_matrix(N,dx)

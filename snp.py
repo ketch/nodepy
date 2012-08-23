@@ -57,8 +57,8 @@ def arange(start,stop=None,step=None,mode='exact'):
 def zeros(shape,mode='exact'):
     return normalize(np.zeros(shape,dtype=dtypes[mode]))
 
-def diag(x):
-    return normalize(np.diag(x))
+def diag(v, k=0):
+    return normalize(np.diag(v,k))
 
 def poly(A,mode='exact'):
     if mode=='exact': return sympy.berkowitz

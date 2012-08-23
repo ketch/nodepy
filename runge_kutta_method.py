@@ -26,10 +26,10 @@
     >>> RK['Mid22']
     Midpoint Runge-Kutta
     <BLANKLINE>
-     0.000 |
-     0.500 |  0.500
-    _______|______________
-           |  0.000  1.000
+     0   |
+     1/2 |  1/2
+    _____|__________
+         |    0    1
 
 **References**:  
     #. [butcher2003]_
@@ -183,7 +183,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         return np.size(self.A,0) 
 
-    def __mul__(self,RK2,h1=1,h2=1):
+    def __mul__(self,RK2):
         """ Multiplication is interpreted as composition:
             RK1*RK2 gives the method obtained by applying
             RK2, followed by RK1, each with half the timestep.
@@ -198,15 +198,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 but with everything divided by two.
                 The b_2 matrix block consists of m_1 (row) copies of b_2.
         """
-        f1=h1/(h1+h2)
-        f2=h2/(h1+h2)
-        A1=self.A
-        A2=RK2.A
-        A=np.vstack([
-            np.hstack([A2*f2,np.zeros([np.size(A2,0),np.size(A1,1)])]),
-            np.hstack([np.tile(RK2.b*f2,(len(self),1)),A1*f1])]).squeeze()
-        b=np.hstack([RK2.b*f2,self.b*f1]).squeeze()
-        return RungeKuttaMethod(A,b)
+        return compose(self,RK2,1,1)
 
     #============================================================
     # Reducibility
@@ -984,7 +976,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> rk4.imaginary_stability_interval()
                 2.8284274972975254
         """
-        p,q=self.stability_function()
+        p,q=self.__num__().stability_function()
         zhi=zmax
         zlo=0.
         #Use bisection to get an upper bound:
@@ -1015,7 +1007,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 2.785294223576784
         """
 
-        p,q=self.stability_function()
+        p,q=self.__num__().stability_function()
         zhi=zmax
         zlo=0.
         #Use bisection to get an upper bound:
@@ -1495,17 +1487,18 @@ def loadRKM(which='All'):
 
     RK={}
 
-    half=Rational(1,2)
-    one =Rational(1,1)
+    half = Rational(1,2)
+    one  = Rational(1,1)
+    zero = Rational(0,1)
 
     #================================================
-    A=np.array([1],dtype=object)
-    b=np.array([1],dtype=object)
+    A=np.array([one])
+    b=np.array([one])
     RK['BE']=RungeKuttaMethod(A,b,name='Implicit Euler')
 
     #================================================
-    A=np.array([0],dtype=object)
-    b=np.array([1],dtype=object)
+    A=np.array([zero])
+    b=np.array([one])
     RK['FE']=ExplicitRungeKuttaMethod(A,b,name='Forward Euler')
 
     #================================================
@@ -1513,7 +1506,7 @@ def loadRKM(which='All'):
     beta=np.array([[0,0],[0.822875655532364,0],[-0.215250437021539,0.607625218510713]])
     RK['SSP22star']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name='SSPRK22star',
                 description=
-                "The optimal 2-stage, 2nd order downwind SSP Runge-Kutta method with one star")
+                "The underlying method of the optimal 2-stage, 2nd order downwind SSP Runge-Kutta method with one star")
 
     #================================================
     A=np.array([[one,-sqrt(5),sqrt(5),-one],[one,3*one,(10-7*sqrt(5))/5,sqrt(5)/5],[one,(10+7*sqrt(5))/5,3*one,-sqrt(5)/5],[one,5*one,5*one,one]])/12
@@ -1574,54 +1567,54 @@ def loadRKM(which='All'):
                 description= "Heun's 3-stage, 3rd order")
 
     #================================================
-    A=np.array([[0,0,0],[1./3,0,0],[0.,1.,0]])
-    b=np.array([1./2,0.,1./2])
+    A=np.array([[0,0,0],[one/3,0,0],[0,one,0]])
+    b=np.array([one/2,0,one/2])
     RK['NSSP32']=ExplicitRungeKuttaMethod(A,b,name='NSSPRK32',
                 description= "Wang and Spiteri NSSP32")
 
     #================================================
-    A=np.array([[0,0,0],[-4./9,0,0],[7./6,-1./2,0]])
-    b=np.array([1./4,0.,3./4])
+    A=np.array([[0,0,0],[-4*one/9,0,0],[7*one/6,-one/2,0]])
+    b=np.array([one/4,0.,3*one/4])
     RK['NSSP33']=ExplicitRungeKuttaMethod(A,b,name='NSSPRK33',
                 description= "Wang and Spiteri NSSP33")
 
     #================================================
     m=10
-    r=6.
-    alpha=np.diag(np.ones(m),-1)
-    alpha[5,4]=2./5
-    alpha[m,m-1]=3./5
-    alpha[m,4]=9./25
+    r=6*one
+    alpha=snp.diag(snp.ones(m),-1)
+    alpha[5,4]=2*one/5
+    alpha[m,m-1]=3*one/5
+    alpha[m,4]=9*one/25
     alpha=alpha[:,:m]
     beta=alpha/r
     RK['SSP104']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
                     name='SSPRK10,4',description=
                     "The optimal ten-stage, fourth order Runge-Kutta method")
     #================================================
-    alpha=np.zeros([7,6])
-    beta=np.zeros([7,6])
-    alpha[1,0]=1.
-    alpha[2,0:2]=[3./4,1./4]
-    alpha[3,0:3]=[3./8,1./8,1./2]
-    alpha[4,0:4]=[1./4,1./8,1./8,1./2]
-    alpha[5,0:5]=[89537./2880000,407023./2880000,1511./12000,87./200,4./15]
-    alpha[6,:]  =[4./9,1./15,0.,8./45,0.,14./45]
-    beta[1,0]=1./2
-    beta[2,0:2]=[0.,1./8]
-    beta[3,0:3]=[-1./8,-1./16,1./2]
-    beta[4,0:4]=[-5./64,-13./64,1./8,9./16]
-    beta[5,0:5]=[2276219./40320000,407023./672000,1511./2800,-261./140,8./7]
-    beta[6,:]  =[0.,-8./45,0.,2./3,0.,7./90]
+    alpha=snp.zeros([7,6])
+    beta=snp.zeros([7,6])
+    alpha[1,0]=one
+    alpha[2,0:2]=[3*one/4,1*one/4]
+    alpha[3,0:3]=[3*one/8,1*one/8,1*one/2]
+    alpha[4,0:4]=[1*one/4,1*one/8,1*one/8,1*one/2]
+    alpha[5,0:5]=[89537*one/2880000,407023*one/2880000,1511*one/12000,87*one/200,4*one/15]
+    alpha[6,:]  =[4*one/9,1*one/15,zero,8*one/45,zero,14*one/45]
+    beta[1,0]=1*one/2
+    beta[2,0:2]=[zero,1*one/8]
+    beta[3,0:3]=[-1*one/8,-1*one/16,1*one/2]
+    beta[4,0:4]=[-5*one/64,-13*one/64,1*one/8,9*one/16]
+    beta[5,0:5]=[2276219*one/40320000,407023*one/672000,1511*one/2800,-261*one/140,8*one/7]
+    beta[6,:]  =[zero,-8*one/45,zero,2*one/3,zero,7*one/90]
     RK['Lambert65']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
                         name='Lambert65',description='From Shu-Osher paper')
     #================================================
-    A=np.array([[0,0],[2./3,0]])
-    b=np.array([1./4,3./4])
+    A=np.array([[0,0],[2*one/3,0]])
+    b=np.array([1*one/4,3*one/4])
     RK['MTE22']=ExplicitRungeKuttaMethod(A,b,name='Minimal Truncation Error 22')
 
     #================================================
-    A=np.array([[0,0],[1./2,0]])
-    b=np.array([0.,1.])
+    A=np.array([[0,0],[1*one/2,0]])
+    b=np.array([0,one])
     RK['Mid22']=ExplicitRungeKuttaMethod(A,b,name='Midpoint Runge-Kutta')
 
     #================================================
@@ -1630,49 +1623,49 @@ def loadRKM(which='All'):
     RK['RK44']=ExplicitRungeKuttaMethod(A,b,name='Classical RK4')
 
     #================================================
-    A=np.array([[0,0,0,0,0,0],[1/4.,0,0,0,0,0],[1/8.,1/8.,0,0,0,0],
-         [0,0,1/2.,0,0,0],[3/16.,-3/8.,3/8.,9/16.,0,0],
-         [-3/7.,8/7.,6/7.,-12/7.,8/7.,0]])
-    b=np.array([7/90.,0,16/45.,2/15.,16/45.,7/90.])
+    A=np.array([[0,0,0,0,0,0],[one/4,0,0,0,0,0],[one/8,one/8,0,0,0,0],
+         [0,0,half,0,0,0],[3*one/16,-3*one/8,3*one/8,9*one/16,0,0],
+         [-3*one/7,8*one/7,6*one/7,-12*one/7,8*one/7,0]])
+    b=np.array([7*one/90,0,16*one/45,2*one/15,16*one/45,7*one/90])
     RK['BuRK65']=ExplicitRungeKuttaMethod(A,b,name="Butcher's RK65")
 
     #================================================
-    A=np.array([[1/4.,1/4.-np.sqrt(3.)/6.],[1/4.+np.sqrt(3.)/6.,1/4.]])
-    b=np.array([1/2.,1/2.])
+    A=np.array([[one/4,one/4-sqrt(3)/6],[one/4+sqrt(3)/6,one/4]])
+    b=np.array([half,half])
     RK['GL2']=RungeKuttaMethod(A,b,name="Gauss-Legendre RK24")
 
     #================================================
-    A=np.array([[5/36.,(80-24*np.sqrt(15.))/360.,(50-12*np.sqrt(15.))/360.],
-         [(50+15*np.sqrt(15.))/360.,2/9.,(50-15*np.sqrt(15.))/360.],
-         [(50+12*np.sqrt(15.))/360.,(80+24*np.sqrt(15.))/360.,5/36.]])
-    b=np.array([5/18.,4/9.,5/18.])
+    A=np.array([[5*one/36,(80-24*sqrt(15))/360,(50-12*sqrt(15))/360],
+         [(50+15*sqrt(15))/360,2*one/9,(50-15*sqrt(15))/360],
+         [(50+12*sqrt(15))/360,(80+24*sqrt(15))/360,5*one/36]])
+    b=np.array([5*one/18,4*one/9,5*one/18])
     RK['GL3']=RungeKuttaMethod(A,b,name="Gauss-Legendre RK36")
     #================================================
-    A=np.array([[0,0,0,0,0,0],[1./4,0,0,0,0,0],[3./32,9./32,0,0,0,0],
-        [1932./2197,-7200/2197,7296./2197,0,0,0],
-        [439./216,-8.,3680./513,-845./4104,0,0],
-        [-8./27,2.,-3544./2565,1859./4104,-11./40,0]])
-    b=np.array([16./135,0,6656./12825,28561./56430,-9./50,2./55])
-    bhat=np.array([25./216,0.,1408./2565,2197./4104,-1./5,0.])
+    A=np.array([[0,0,0,0,0,0],[one/4,0,0,0,0,0],[3*one/32,9*one/32,0,0,0,0],
+        [1932*one/2197,-7200*one/2197,7296*one/2197,0,0,0],
+        [439*one/216,-8,3680*one/513,-845*one/4104,0,zero],
+        [-8*one/27,2,-3544*one/2565,1859*one/4104,-11*one/40,zero]])
+    b=np.array([16*one/135,zero,6656*one/12825,28561*one/56430,-9*one/50,2*one/55])
+    bhat=np.array([25*one/216,0,1408*one/2565,2197*one/4104,-1*one/5,zero])
     RK['Fehlberg45']=ExplicitRungeKuttaPair(A,b,bhat,name='Fehlberg RK5(4)6')
     #================================================
-    A=np.array([[0,0,0,0,0,0,0],[1./5,0,0,0,0,0,0],[3./40,9./40,0,0,0,0,0],
-        [44./45,-56/15,32./9,0,0,0,0],
-        [19372./6561,-25360./2187,64448./6561,-212./729,0,0,0],
-        [9017./3168,-355./33,46732./5247,49./176,-5103./18656,0,0],
-        [35./384,0.,500./1113,125./192,-2187./6784,11./84,0]])
-    b=np.array([35./384,0.,500./1113,125./192,-2187./6784,11./84,0])
-    bhat=np.array([5179./57600,0.,7571./16695,393./640,-92097./339200,187./2100,1./40])
+    A=np.array([[0,0,0,0,0,0,0],[one/5,0,0,0,0,0,0],[3*one/40,9*one/40,0,0,0,0,0],
+        [44*one/45,-56*one/15,32*one/9,0,0,0,0],
+        [19372*one/6561,-25360*one/2187,64448*one/6561,-212*one/729,0,0,0],
+        [9017*one/3168,-355*one/33,46732*one/5247,49*one/176,-5103*one/18656,0,0],
+        [35*one/384,0*one,500*one/1113,125*one/192,-2187*one/6784,11*one/84,0]])
+    b=np.array([35*one/384,0*one,500*one/1113,125*one/192,-2187*one/6784,11*one/84,0])
+    bhat=np.array([5179*one/57600,0*one,7571*one/16695,393*one/640,-92097*one/339200,187*one/2100,1*one/40])
     RK['DP5']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince RK5(4)7')
     #================================================
-    A=np.array([[0,0,0,0,0,0,0,0],[1./6,0,0,0,0,0,0,0],[2./27,4./27,0,0,0,0,0,0],
-        [183./1372,-162/343,1053./1372,0,0,0,0,0],
-        [68./297,-4./11,42./143,1960./3861,0,0,0,0],
-        [597./22528,81./352,63099./585728,58653./366080,4617./20480,0,0,0],
-        [174197./959244,-30942./79937,8152137./19744439,666106./1039181,-29421./29068,482048./414219,0,0],
-        [587./8064,0,4440339./15491840,24353./124800,387./44800,2152./5985,7267./94080,0]])
+    A=np.array([[0,0,0,0,0,0,0,0],[one/6,0,0,0,0,0,0,0],[2*one/27,4*one/27,0,0,0,0,0,0],
+        [183*one/1372,-162*one/343,1053*one/1372,0,0,0,0,0],
+        [68*one/297,-4*one/11,42*one/143,1960*one/3861,0,0,0,0],
+        [597*one/22528,81*one/352,63099*one/585728,58653*one/366080,4617*one/20480,0,0,0],
+        [174197*one/959244,-30942*one/79937,8152137*one/19744439,666106*one/1039181,-29421*one/29068,482048*one/414219,0,0],
+        [587*one/8064,0,4440339*one/15491840,24353*one/124800,387*one/44800,2152*one/5985,7267*one/94080,0]])
     b=A[-1,:]
-    bhat=np.array([2479./34992,0.,123./416,612941./3411720,43./1440,2272./6561,79937./1113912,3293./556956])
+    bhat=np.array([2479*one/34992,0*one,123*one/416,612941*one/3411720,43*one/1440,2272*one/6561,79937*one/1113912,3293*one/556956])
     RK['BS5']=ExplicitRungeKuttaPair(A,b,bhat,name='Bogacki-Shampine RK5(4)8')
     #================================================
     A=np.array([[0,0,0,0,0,0,0], [0.392382208054010,0,0,0,0,0,0],
@@ -2235,16 +2228,37 @@ def DC(s,theta=0.,grid='eq'):
 #============================================================
 # Extrapolation methods
 #============================================================
-def extrap(s,seq='harmonic',mode='exact'):
+def extrap(s,seq='harmonic'):
     """ Construct extrapolation methods.
         For now, based on explicit Euler, but allowing arbitrary sequences.
 
         **Input**: s -- number of grid points & number of correction iterations
+                   seq -- extrapolation sequence
 
         **Output**: A ExplicitRungeKuttaMethod
 
         Note that the number of stages is NOT equal to s.  The order
         is equal to s.
+
+
+        **Examples**::
+
+            >>> from nodepy import rk
+            >>> ex3 = rk.extrap(3)
+            >>> ex3
+            extrap3
+            <BLANKLINE>
+             0   |
+             1/2 |  1/2
+             1/3 |  1/3  0
+             2/3 |  1/3  0    1/3
+            _____|____________________
+                 |    0   -2  3/2  3/2
+
+            >>> ex3.num_seq_dep_stages()
+            3
+            >>> ex3.principal_error_norm()
+            0.04606423319938055
 
         **References**: 
 
@@ -2253,23 +2267,23 @@ def extrap(s,seq='harmonic',mode='exact'):
         **TODO**: 
 
             - generalize base method
-            - Eliminate the unnecessary stages, and make the construction
-                more numerically stable
-
-
     """
 
-    if seq=='harmonic': N=snp.arange(s)+1
-    elif seq=='Romberg': N=snp.arange(s)+1;  N=2**(N-1)
+    if seq=='harmonic': 
+        N=snp.arange(s)+1
+    elif seq=='Romberg': 
+        N=snp.arange(s)+1;  N=2**(N-1)
 
     J=np.cumsum(N)+1
-
+    
+    # Number of real stages:
     nrs = J[-1]
 
+    # Shu-Osher arrays
     alpha=snp.zeros([nrs+s*(s-1)/2,nrs+s*(s-1)/2-1])
     beta=snp.zeros([nrs+s*(s-1)/2,nrs+s*(s-1)/2-1])
 
-
+    # T_11
     alpha[1,0]=1
     beta[1,0]=1/N[0]
 
@@ -2282,19 +2296,15 @@ def extrap(s,seq='harmonic',mode='exact'):
             alpha[J[j-1]+i,J[j-1]+i-1]=1
             beta[J[j-1]+i,J[j-1]+i-1]=1/N[j]
     
-    #We have formed the T_j1
-    #Now form the rest
-    #
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
-
     for j in range(1,s):
         #form T_{j+1,2}:
         alpha[nrs-1+j,J[j]-1]=1+1/(N[j]/N[j-1]-1)
         alpha[nrs-1+j,J[j-1]-1]=-1/(N[j]/N[j-1]-1)
 
     #Now form all the rest, up to T_ss:
-    nsd = nrs-1+s
+    nsd = nrs-1+s # Number of stages done
     for k in range(2,s):
         for ind,j in enumerate(range(k,s)):
             #form T_{j+1,k+1}:
@@ -2305,7 +2315,7 @@ def extrap(s,seq='harmonic',mode='exact'):
     name='extrap'+str(s)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
-def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
+def extrap_gbs(s,embedded=False, shuosher=False):
     """ Construct extrapolation methods based on GBS.
 
         **Input**: s -- number of extrapolation terms
@@ -2320,16 +2330,21 @@ def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
             #. [Hairer]_ chapter II.9
     """
 
+    # Only supports harmonic sequence right now
     N=2*snp.arange(s)+2
     J=np.cumsum(N)+1
     order_reducer=0
-    if embedded=='yes' and s>1:
-        order_reducer=1
+    if embedded:
+        if s>1:
+            order_reducer=1
+        else:
+            raise Exception('Embedded pair must have order > 0')
     nrs = J[-1]
     
     alpha=snp.zeros([nrs+s*(s-1)/2-order_reducer,nrs+s*(s-1)/2-1-order_reducer])
     beta=snp.zeros([nrs+s*(s-1)/2-order_reducer,nrs+s*(s-1)/2-1-order_reducer])
     
+    # T_11
     alpha[1,0]=1
     alpha[2,0]=1
     beta[1,0]=1/N[0]
@@ -2347,12 +2362,8 @@ def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
             beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1]=2/N[j]
             beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2]=2/N[j]
     
-    #We have formed the T_j1
-    #Now form the rest
-    #
     #Really there are no more "stages", and we could form T_ss directly
-    #but we need to work out the formula
-    if (embedded=='yes' and s>2) or embedded=='no':
+    if (embedded and s>2) or not embedded:
         for j in range(1,s):
             #form T_{j+1,2}:
             alpha[nrs-1+j,J[j]-1]=1+1/((N[j]/N[j-1])**2-1)
@@ -2367,33 +2378,31 @@ def gbsextrap(s,seq='harmonic',mode='exact',embedded='no', shuosher='no'):
             alpha[nsd+ind,nsd-(s-k)+ind] = 1+1/((N[j]/N[j-k])**2-1)
             alpha[nsd+ind,nsd-(s-k)+ind-1] = -1/((N[j]/N[j-k])**2-1)
         nsd += s-k
-    #alpha=alpha[0:-2][:];
-    name='gbsextrap'+str(s)
-    if shuosher=='yes':
+    name='GBS extrapolation method of order '+str(s)
+    if shuosher:
         return alpha, beta
     else:
         return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
    
 
-def embeddedrkpair_gbsextrap (s, seq='harmonic'):
+def extrap_gbs_pair(s, seq='harmonic'):
     """ 
         Returns an embedded RK pair.  The prinicpal method has
         order 2s and the embedded method has order 2(s-1).
         Both methods are constructed based on GBS extrapolation.
     """
-    alpha1, beta1 = gbsextrap(s, shuosher='yes')
-    alpha2, beta2 = gbsextrap(s,embedded='yes', shuosher='yes')
+    if s<2:
+        raise Exception('Embedded pair must have order > 0')
+
+    alpha1, beta1 = extrap_gbs(s, shuosher=True)
+    alpha2, beta2 = extrap_gbs(s,embedded=True, shuosher=True)
 
     rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
     rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
-    
-    
-    if s>1:
-        bhat = snp.zeros(len(rk1.b))
-        bhat[0:-1]=rk2.b
-    else:
-        bhat=rk2.b
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat).dj_reduce()
+    bhat = np.resize(rk2.b,rk1.b.shape)
+
+    name='GBS extrapolation pair of order '+str(s)+'('+str(s-2)+')'
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name).dj_reduce()
 
 
 #============================================================
@@ -2492,8 +2501,7 @@ def RKOCstr2code(ocstr):
     return occode
 
 def compose(RK1,RK2,h1=1,h2=1):
-    """ Multiplication is interpreted as composition:
-    RK1*RK2 gives the method obtained by applying
+    """ The method obtained by applying
     RK2, followed by RK1, each with half the timestep.
 
     **Output**::
@@ -2507,16 +2515,32 @@ def compose(RK1,RK2,h1=1,h2=1):
         but with everything divided by two.
         The b_2 matrix block consists of m_1 (row) copies of b_2.
 
+    **Examples**::
 
+        What method is obtained by two successive FE steps?
+        >>> from nodepy import rk
+        >>> fe=rk.loadRKM('FE')
+        >>> fe*fe
+        Runge-Kutta Method
+        <BLANKLINE>
+         0     |
+         0.500 |  0.500
+        _______|______________
+               |  0.500  0.500
+                
+
+    TODO: Generalize this for any number of inputs
     """
-    #TODO: Think about whether this is the right thing to return.
     f1=h1/(h1+h2)
     f2=h2/(h1+h2)
     A=np.vstack([
     np.hstack([RK2.A*f2,np.zeros([np.size(RK2.A,0),np.size(RK1.A,1)])]),
         np.hstack([np.tile(RK2.b*f2,(len(RK1),1)),RK1.A*f1])]).squeeze()
     b=np.hstack([RK2.b*f2,RK1.b*f1]).squeeze()
-    return RungeKuttaMethod(A,b)
+    if RK1.is_explicit() and RK2.is_explicit():
+        return ExplicitRungeKuttaMethod(A,b)
+    else:
+        return RungeKuttaMethod(A,b)
 
 def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
                           color='r',filled=True,scaled=False):
@@ -2588,6 +2612,17 @@ def relative_accuracy_efficiency(rk1,rk2):
 
     where $s_1,s_2$ are the number of stages of the two methods and
     $A_1,A_2$ are their principal error norms.
+
+    If the result is >1, method 1 is more efficient.
+
+    **Examples**::
+
+        Compare Fehlberg's method with Dormand-Prince
+        >>> from nodepy import rk
+        >>> dp5 = rk.loadRKM('DP5')
+        >>> f45 = rk.loadRKM('Fehlberg45')
+        >>> rk.relative_accuracy_efficiency(dp5,f45)
+        1.2222911649987882
     """
 
     p=rk1.order()
@@ -2605,16 +2640,32 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
         and determining the values of the stability function of rk at the eigenvalues.
 
         Note that this analysis is not generally appropriate if L is non-normal.
+
+        **Examples**::
+
+            >>> from nodepy import rk, semidisc
+
+            4th-order Runge-Kutta scheme:
+            >>> rk44=rk.loadRKM('RK44')
+
+            Centered differences on a grid with spacing 1/100:
+            >>> L1=semidisc.centered_diffusion_matrix(100)
+            >>> L2=semidisc.centered_advection_diffusion_matrix(1.,1./500,100)
+
+            >>> rk.linearly_stable_step_size(rk44,L1,plot=0)
+            6.9580078125000116e-05
+            >>> rk.linearly_stable_step_size(rk44,L2,plot=0)
+            0.024225094627893518
     """
 
     from utils import bisect
     import matplotlib.pyplot as plt
 
     tol=1.e-14
-    p,q = rk.stability_function()
+    p,q = rk.__num__().stability_function()
     lamda = np.linalg.eigvals(L)
     hmax = 2.5*len(rk)**2 / max(abs(lamda))
-    h=bisect(0,hmax,acc,tol,is_linearly_stable, params=(p,q,lamda))
+    h=bisect(0,hmax,acc,tol,_is_linearly_stable, params=(p,q,lamda))
     if plot:
         rk.plot_stability_region()
         plt.hold(True)
@@ -2622,7 +2673,7 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
     return h
 
 
-def is_linearly_stable(h,tol,params):
+def _is_linearly_stable(h,tol,params):
     p=params[0]
     q=params[1]
     lamda=params[2]
