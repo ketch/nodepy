@@ -173,11 +173,12 @@ class LinearMultistepMethod(GeneralLinearMethod):
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
         import matplotlib.pyplot as plt
+        from utils import find_plot_bounds
         numself = self.__num__()
         rho, sigma = self.__num__().characteristic_polynomials()
         mag = lambda z : _root_condition(rho-z*sigma)
         vmag = np.vectorize(mag)
-        bounds = _find_bounds(vmag,guess=(-10,1,-5,5),N=101)
+        bounds = find_plot_bounds(vmag,guess=(-10,1,-5,5),N=101)
 
         y=np.linspace(bounds[2],bounds[3],N)
         Y=np.tile(y[:,np.newaxis],(1,N))
@@ -293,57 +294,7 @@ def _root_condition(p,tol=1.e-13):
                 return False
     return True
 
-def _find_bounds(f,guess,N=101,zmax=1000):
-    r""" N should be odd in order to catch very small stability regions."""
-    bounds = guess
-    old_bounds = []
 
-    while bounds != old_bounds:
-        old_bounds = bounds
-        y=np.linspace(bounds[2],bounds[3],N)
-
-        #Check boundaries
-        bounds = list(bounds)
-        close = False
-        while abs(bounds[0])<zmax:
-            x=np.linspace(bounds[0],bounds[1],N)
-            Z=x[0]+y*1j
-
-            left = f(Z)
-            if np.any(left):
-                bounds[0] = 2*bounds[0]
-                close = True
-            else:
-                if close == True:
-                    break
-                bounds[0] = 0.5*bounds[0]
-                if bounds[0] > -1.e-15:
-                    raise Exception('No stable region found; is this method zero-stable?')
-
-        bounds[1] = -0.1*bounds[0]
-        x=np.linspace(bounds[0],bounds[1],N) + 0.*1j
-
-        close = False
-        while abs(bounds[2])<zmax:
-            y=np.linspace(bounds[2],bounds[3],N)
-            Z=x + y[0]*1j
-
-            bottom = f(Z)
-            if np.any(bottom):
-                bounds[2] = 2*bounds[2]
-                close = True
-            else:
-                if close == True:
-                    break
-                bounds[2] = 0.5*bounds[2]
-                if bounds[2] > -1.e-15:
-                    raise Exception('No stable region found; is this method zero-stable?')
-
-        bounds[3] = -bounds[2]
-
-    return bounds
-
- 
 #======================================================
 # Families of multistep methods
 #======================================================

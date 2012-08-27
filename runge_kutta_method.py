@@ -531,8 +531,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.draw()  
 
 
-    def plot_stability_region(self,N=200,bounds=[-10,1,-5,5],
-                    color='r',filled=True,scaled=False,plotroots=True,
+    def plot_stability_region(self,N=200,
+                    color='r',filled=True,scaled=False,plotroots=False,
                     alpha=1.,scalefac=None):
         r""" 
             The region of absolute stability
@@ -548,9 +548,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
-        numself = self.__num__()
-        p,q=numself.stability_function()
+        from utils import find_plot_bounds
+
+        p,q=self.__num__().stability_function()
         m=len(p)
+
+        stable = lambda z : np.abs(p(z)/q(z))<=1.0
+        bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))

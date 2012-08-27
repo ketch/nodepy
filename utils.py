@@ -30,3 +30,67 @@ def shortstring(x):
         return '%6.3f' % x
     else: 
         return ' '+str(x)
+
+
+def find_plot_bounds(f,guess,N=101,zmax=1000):
+    r"""Find reasonable area to plot for stability regions.
+    
+    Tries to find an area that contains the entire stability region
+    but isn't too big.  Makes lots of assumptions.  Obviously can't
+    work for unbounded stability regions.
+
+    f should return True if f(z) is in the stability region.
+
+    N should be odd in order to catch very small stability regions.
+    """
+    import numpy as np
+
+    bounds = guess
+    old_bounds = []
+
+    while bounds != old_bounds:
+        old_bounds = bounds
+        y=np.linspace(bounds[2],bounds[3],N)
+
+        #Check boundaries
+        bounds = list(bounds)
+        close = False
+        while abs(bounds[0])<zmax:
+            x=np.linspace(bounds[0],bounds[1],N)
+            Z=x[0]+y*1j
+
+            left = f(Z)
+            if np.any(left):
+                bounds[0] = 1.5*bounds[0]
+                close = True
+            else:
+                if close == True:
+                    break
+                bounds[0] = bounds[0]/1.5
+                if bounds[0] > -1.e-15:
+                    raise Exception('No stable region found; is this method zero-stable?')
+
+        bounds[1] = -0.1*bounds[0]
+        x=np.linspace(bounds[0],bounds[1],N) + 0.*1j
+
+        close = False
+        while abs(bounds[2])<zmax:
+            y=np.linspace(bounds[2],bounds[3],N)
+            Z=x + y[0]*1j
+
+            bottom = f(Z)
+            if np.any(bottom):
+                bounds[2] = 1.5*bounds[2]
+                close = True
+            else:
+                if close == True:
+                    break
+                bounds[2] = bounds[2]/1.5
+                if bounds[2] > -1.e-15:
+                    raise Exception('No stable region found; is this method zero-stable?')
+
+        bounds[3] = -bounds[2]
+
+    return bounds
+
+ 
