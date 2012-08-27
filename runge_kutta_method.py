@@ -519,8 +519,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
             q1=np.poly(self.A)
         p=np.poly1d(p1[::-1])    # Numerator
         q=np.poly1d(q1[::-1])    # Denominator
-        # Fix for some explicit methods
-        while abs(p.c[0])<1.e-15: p=np.poly1d(p.c[1:])
         return p,q
 
     def plot_stability_function(self,bounds=[-20,1]):
