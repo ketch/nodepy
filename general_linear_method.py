@@ -1,5 +1,5 @@
 from ode_solver import ODESolver
-import rooted_trees as tt
+import rooted_trees as rt
 
 #=====================================================
 class GeneralLinearMethod(ODESolver):
@@ -13,11 +13,11 @@ class GeneralLinearMethod(ODESolver):
         Generate a list of order conditions up to order p 
         """
 
-        forest=tt.recursive_trees(0)
-        for i in range(1,p+1): forest+=tt.recursive_trees(i)
-        oc={tt.RootedTree(''):''}
+        forest=rt.recursive_trees(0)
+        for i in range(1,p+1): forest+=rt.recursive_trees(i)
+        oc={rt.RootedTree(''):''}
         for tree in forest[1:]:
-            oc[tree]=self.elementary_weight(tree)-tree.Emap()
+            oc[tree]=self.elementary_weight(tree)-rt.Emap(tree)
         return oc
 
     def elementary_weight(self,tree):
