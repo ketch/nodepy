@@ -91,17 +91,23 @@ class RootedTree(str):
                     - convention for ordering of subtrees?
         """
         if any([strg[i] not in '{}T^1234567890' for i in range(len(strg))]):
-            raise TreeError(strg,
-                'Not a valid rooted tree string (illegal character)')
+            raise Exception('Not a valid rooted tree string (illegal character)')
         op,cl=strg.count('{'),strg.count('}')
         if op!=cl or (op+cl>0 and (strg[0]!='{' or strg[-1]!='}')):
-            raise TreeError(strg,'Not a valid rooted tree string')
+            raise Exception('Not a valid rooted tree string')
         self=strg
 
     def order(self):
         """
         The order of a rooted tree, denoted $r(t)$, is the number of 
         vertices in the tree.
+
+        **Examples**::
+
+            >>> from nodepy import rooted_trees as rt
+            >>> tree=rt.RootedTree('{T^2{T{T}}}')
+            >>> tree.order()
+            7
         """
         if self=='T': return 1
         if self=='':  return 0
@@ -119,12 +125,19 @@ class RootedTree(str):
         The density of a rooted tree, denoted by $\\gamma(t)$,
         is the product of the orders of the subtrees.
 
+        **Examples**::
+
+            >>> from nodepy import rooted_trees as rt
+            >>> tree=rt.RootedTree('{T^2{T{T}}}')
+            >>> tree.density()
+            56
+
         **Reference**: 
 
             - [butcher2003]_ p. 127, eq. 301(c)
         """
         gamma=self.order()
-        nleaves,subtrees=self.parse_subtrees()
+        nleaves,subtrees=self._parse_subtrees()
         for tree in subtrees:
             gamma*=tree.density()
         return gamma
@@ -132,6 +145,13 @@ class RootedTree(str):
     def symmetry(self):
         r""" 
         The symmetry $\\sigma(t)$ of a rooted tree is...
+
+        **Examples**::
+
+            >>> from nodepy import rooted_trees as rt
+            >>> tree=rt.RootedTree('{T^2{T{T}}}')
+            >>> tree.symmetry()
+            2
 
         **Reference**: 
 
@@ -142,7 +162,7 @@ class RootedTree(str):
         if self[1]=='T':
             try: sigma=factorial(int(self[3]))
             except: pass
-        nleaves,subtrees=self.parse_subtrees()
+        nleaves,subtrees=self._parse_subtrees()
         while len(subtrees)>0:
             st=subtrees[0]
             nst=subtrees.count(st)
@@ -150,16 +170,6 @@ class RootedTree(str):
             while st in subtrees: subtrees.remove(st)
         return sigma
 
-    def Emap(self,a=1):
-        r""" 
-        Butcher's function `E^a(t)`.
-        This is the B-series for the exact solution advanced $a$ steps
-        in time.
-        **Reference**: 
-
-            [butcher1997]_
-        """
-        return Rational(a**self.order(),(self.density()))
 
     def Dmap(self):
         """ 
@@ -190,12 +200,19 @@ class RootedTree(str):
             The meaning of the output is that 
             $\\lambda(\\alpha,t)(\\beta)=a1*\\beta(t1)+a2*\\beta(t2)+...$ 
 
+            **Examples**::
+
+                >>> from nodepy import rt
+                >>> tree = rt.RootedTree('{T{T}}')
+                >>> tree.lamda(rt.Emap)
+                (['T', '{T}', '{{T}}', '{T}', '{T^2}', '{T{T}}'], [1/2, 1, 1, 1/2, 1, 1])
+
             **Reference**: 
                 [butcher2003]_ pp. 275-276
         """
         if self=='': return [RootedTree('')],[0]
         if self=='T': return [RootedTree('T')],[1]
-        t,u=self.factor()
+        t,u=self._factor()
         if extraargs:
             l1,f1=t.lamda(alpha,*extraargs)
             l2,f2=u.lamda(alpha,*extraargs)
@@ -224,7 +241,7 @@ class RootedTree(str):
         if not isinstance(extraargs,list): extraargs=[extraargs]
         if self=='': return [RootedTree('')],[0]
         if self=='T': return [RootedTree('T')],[1]
-        t,u=self.factor()
+        t,u=self._factor()
         if extraargs:
             l1,f1=t.lamda_str(alpha,*extraargs)
             l2,f2=u.lamda_str(alpha,*extraargs)
@@ -244,7 +261,7 @@ class RootedTree(str):
                         fprod.append(str(f1[i])+'*'+str(f2[j]))
         return tprod,fprod
 
-    def factor(self):
+    def _factor(self):
         """ 
             Returns two rooted trees, t and u, such that self=t*u.
 
@@ -256,7 +273,7 @@ class RootedTree(str):
             **Examples**::
 
                 >>> tree=RootedTree('{T^2{T}}')
-                >>> t,u=tree.factor()
+                >>> t,u=tree._factor()
                 >>> t
                 '{T{T}}'
                 >>> u
@@ -266,7 +283,7 @@ class RootedTree(str):
 
             .. note:: This function is typically only called by lamda().
         """
-        nleaves,subtrees=self.parse_subtrees()
+        nleaves,subtrees=self._parse_subtrees()
         if nleaves==0: # Root has no leaves
             t=RootedTree('{'+''.join(subtrees[1:])+'}')
             u=RootedTree(subtrees[0])
@@ -310,6 +327,13 @@ class RootedTree(str):
                 Gprod can be used to compute products of more than two
                 functions by passing Gprod itself in as beta, and providing
                 the remaining functions to be multiplied as betaargs.
+
+            **Examples**::
+
+                >>> from nodepy import rt
+                >>> tree = rt.RootedTree('{T{T}}')
+                >>> tree.Gprod(rt.Emap,Dmap)
+                1/2
 
             **Reference**: [butcher2003]_ p. 276, Thm. 386A 
         """
@@ -357,13 +381,13 @@ class RootedTree(str):
 
             The plot is created recursively by
             plotting the root, parsing the subtrees, plotting the 
-            subtrees' roots, and calling plot_subtree on each child
+            subtrees' roots, and calling _plot_subtree on each child
         """
         if iplot==1: pl.clf()
         pl.subplot(nrows,ncols,iplot)
         pl.hold(True)
         pl.scatter([0],[0])
-        if self!='T': self.plot_subtree(0,0,1.)
+        if self!='T': self._plot_subtree(0,0,1.)
 
         fs=int(np.ceil(30./nrows))
         pl.title(ttitle,{'fontsize': fs})
@@ -375,7 +399,7 @@ class RootedTree(str):
         #pl.ioff()
 
 
-    def plot_subtree(self,xroot,yroot,xwidth):
+    def _plot_subtree(self,xroot,yroot,xwidth):
         """
             Recursively plots subtrees.  Should only be called from plot().
 
@@ -386,7 +410,7 @@ class RootedTree(str):
                             to avoid possibly overlapping with others
         """
         ychild=yroot+1
-        nleaves,subtrees=self.parse_subtrees()
+        nleaves,subtrees=self._parse_subtrees()
         nchildren=nleaves+len(subtrees)
 
         dist=xwidth*(nchildren-1)/2.
@@ -395,10 +419,10 @@ class RootedTree(str):
         for i in range(nchildren):
             pl.plot([xroot,xchild[i]],[yroot,ychild],'-k')
             if i>nleaves-1:
-                subtrees[i-nleaves].plot_subtree(xchild[i],ychild,xwidth/3.)
+                subtrees[i-nleaves]._plot_subtree(xchild[i],ychild,xwidth/3.)
 
 
-    def parse_subtrees(self):
+    def _parse_subtrees(self):
         """ 
             Returns the number of leaves and a list of the subtrees,
             for a given rooted tree.
@@ -407,7 +431,7 @@ class RootedTree(str):
                 nleaves  -- number of leaves attached directly to the root
                 subtrees -- list of non-leaf subtrees attached to the root
 
-            The method can be thought of return what remains if the
+            The method can be thought of as returning what remains if the
             root of the tree is removed.  For efficiency, instead of
             returning possibly many copies of 'T', the leaves are just
             returned as a number.
@@ -430,7 +454,7 @@ class RootedTree(str):
 
         return nleaves,subtrees
 
-    def all_equivalent_trees(self):
+    def list_equivalent_trees(self):
         """ 
             Returns a list of all strings (subject to our assumptions)
             equivalent to a given tree 
@@ -445,10 +469,10 @@ class RootedTree(str):
             permutations of the (non-leaf) subtrees.
             This routine is used to test equality of trees.
         """
-        nleaves,subtrees=self.parse_subtrees()
+        nleaves,subtrees=self._parse_subtrees()
         if len(subtrees)==0: return [self]
         for i in range(len(subtrees)): subtrees[i]=str(subtrees[i])
-        treelist = [RootedTree('{'+powerString('T',nleaves,powchar='^')+
+        treelist = [RootedTree('{'+_powerString('T',nleaves,powchar='^')+
                     ''.join(sts)+'}') for sts in permutations(subtrees)]
         return treelist
 
@@ -458,7 +482,7 @@ class RootedTree(str):
             Generates all 'legal' strings equivalent to the first
             tree, and checks whether the second is in that list.
         """
-        ts=[str(t) for t in self.all_equivalent_trees()]
+        ts=[str(t) for t in self.list_equivalent_trees()]
         if str(tree2) in ts: return True
         else: return False
 
@@ -469,54 +493,14 @@ class RootedTree(str):
         """
         if self=='T': return RootedTree('{'+tree2+'}')
         if tree2=='T':  # We're just adding a leaf to self
-            nleaves,subtrees=self.parse_subtrees()
+            nleaves,subtrees=self._parse_subtrees()
             if nleaves==0: return RootedTree(self[0]+'T'+self[1:])
             if nleaves==1: return RootedTree(self[0]+'T^2'+self[2:])
             if nleaves>1:
                 return RootedTree(self[0:3]+str(int(self[3])+1)+self[4:])
         else: return RootedTree(self[:-1]+tree2+'}') # tree2 wasn't just 'T'
-
-    def elementary_weight(self,level=0):
-        """ Compute Butcher's elementary weight for a given 
-             rooted tree 
-             
-             This function is DEPRECATED.
-             Use rk.elementary_weight() instead.
-        """
-
-        if level==0: 
-            elwt='np.dot(b'
-            csym='c'
-        else: 
-            elwt='np.dot(A'
-            csym='D'
-        nleaves,subtrees=self.parse_subtrees()
-        if len(subtrees)==0: 
-            elwt+=',c'+('*c'*(nleaves-1))+')'
-            return elwt
-        elwt+=('*'+csym)*nleaves+','
-        for isubtree in range(len(subtrees)):
-            if isubtree>0: elwt+='*'
-            elwt+=subtrees[isubtree].elementary_weight(level+1)
-        return elwt+')'
 #=====================================================
 #End of RootedTree class
-#=====================================================
-
-#=====================================================
-class TreeError(Exception):
-#=====================================================
-    """
-        Exception class for rooted tree exceptions.
-    """
-    def __init__(self,tree,msg=''):
-        self.tree=tree
-        self.msg=msg
-
-    def __str__(self):
-        return self.msg+': '+self.tree
-#=====================================================
-#End of TreeException class
 #=====================================================
 
 #=====================================================
@@ -587,7 +571,7 @@ def list_trees(p,ind='all'):
     W.append([RootedTree("{{T}}")])
     for i in range(3,p):
         #Construct R[i]
-        ps=powerString("T",i-1,powchar="^")
+        ps=_powerString("T",i-1,powchar="^")
         R.append([RootedTree("{"+ps+"}")])
         for w in W[i-1]:
             R[i].append(w)
@@ -598,7 +582,7 @@ def list_trees(p,ind='all'):
             W[i].append(RootedTree("{"+r+"}"))
         for l in range(1,i-1): #level 1
             for r in R[i-l]:
-                ps=powerString("T",l,powchar="^")
+                ps=_powerString("T",l,powchar="^")
                 W[i].append(RootedTree("{"+ps+r+"}"))
         for l in range(0,i-3): #level 2
             for n in range(2,i-l-1):
@@ -607,7 +591,7 @@ def list_trees(p,ind='all'):
                     for Rm in R[m]:
                         lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
                         for Rn in R[n][lowlim:]:
-                            ps=powerString("T",l,powchar="^")
+                            ps=_powerString("T",l,powchar="^")
                             W[i].append(RootedTree("{"+ps+Rm+Rn+"}"))
         for l in range(0,i-5): #level 3
             for n in range(2,i-l-3):
@@ -619,7 +603,7 @@ def list_trees(p,ind='all'):
                             for Rn in R[n][lowlim:]:
                                 lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
                                 for Rs in R[s][lowlim2:]:
-                                    ps=powerString("T",l,powchar="^")
+                                    ps=_powerString("T",l,powchar="^")
                                     W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+"}"))
         for l in range(0,i-7): #level 4
             for n in range(2,i-l-5):
@@ -634,20 +618,21 @@ def list_trees(p,ind='all'):
                                     for Rs in R[s][lowlim2:]:
                                         lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
                                         for Rt in R[t]:
-                                            ps=powerString("T",l,powchar="^")
+                                            ps=_powerString("T",l,powchar="^")
                                             W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+Rt+"}"))
     # The recursion above generates all trees except the 'blooms'
     # Now add the blooms:
     W[0].append(RootedTree("T"))
     for i in range(1,p):
-        ps=powerString("T",i,powchar="^")
+        ps=_powerString("T",i,powchar="^")
         W[i].append(RootedTree("{"+ps+"}"))
   
     if ind=='all': return W[p-1]
     else: return W[p-1][ind]
     
 
-def powerString(s,npow,powchar="**",trailchar=''):
+def _powerString(s,npow,powchar="**",trailchar=''):
+    r"""Raise string s to power npow with additional formatting."""
     if npow==0:
         return ""
     else:
@@ -666,10 +651,17 @@ def Dprod(tree,alpha):
     Evaluate (alpha*D)(t).  Note that this is not equal to (D*alpha)(t).
     This function is necessary (rather than just using Gprod)
     in order to avoid infinite recursions.
+
+    **Examples**::
+
+        >>> from nodepy import rt
+        >>> tree = rt.RootedTree('{T{T}}')
+        >>> Dprod(tree,Emap)
+        1/2
     """
     if tree=='': return 0
     if tree=='T': return alpha(RootedTree(''))
-    nleaves,subtrees=tree.parse_subtrees()
+    nleaves,subtrees=tree._parse_subtrees()
     result=alpha(RootedTree('T'))**nleaves
     for subtree in subtrees:
         result*=alpha(subtree)
@@ -678,8 +670,8 @@ def Dprod(tree,alpha):
 def Dprod_str(tree,alpha):
     if tree=='': return '0'
     if tree=='T': return alpha(RootedTree(''))
-    nleaves,subtrees=tree.parse_subtrees()
-    result=powerString(alpha(RootedTree('T')),nleaves)
+    nleaves,subtrees=tree._parse_subtrees()
+    result=_powerString(alpha(RootedTree('T')),nleaves)
     for subtree in subtrees:
         if result!='': result+='*'
         result+=alpha(subtree)
@@ -708,6 +700,19 @@ def Emap(tree,a=1):
     Butcher's function E^a(t).
     Gives the B-series for the exact solution advanced 'a' steps
     in time.
+
+    **Examples**::
+
+        >>> from nodepy import rooted_trees as rt
+        >>> tree=rt.RootedTree('{T^2{T{T}}}')
+        >>> rt.Emap(tree)
+        1/56
+        >>> rt.Emap(tree,a=2)
+        16/7
+
+    **Reference**: 
+
+        [butcher1997]_
     """
     return Rational(a**tree.order(),(tree.density()))
 
@@ -751,11 +756,11 @@ def recursiveVectors(p,ind='all'):
      #l=0:
      W.append(R[i][:])
      for l in range(1,i-1): #level 1
-        ps=powerString("C",l,trailchar=",")
+        ps=_powerString("C",l,trailchar=",")
         for j in range(len(R[i-l])):
           W[i].append(ps+R[i-l][j])
      for l in range(0,i-3): #level 2
-        ps=powerString("C",l,trailchar=",")
+        ps=_powerString("C",l,trailchar=",")
         for n in range(2,i-l-1):
           m=i-n-l
           if m<=n: #Avoid duplicate conditions
@@ -764,7 +769,7 @@ def recursiveVectors(p,ind='all'):
                 for Rn in R[n][lowlim:]:
                   W[i].append(ps+Rm+"*"+Rn)
      for l in range(0,i-5): #level 3
-        ps=powerString("C",l,trailchar=",")
+        ps=_powerString("C",l,trailchar=",")
         for n in range(2,i-l-3):
           for m in range(2,i-l-n-1):
              s=i-m-n-l
@@ -776,7 +781,7 @@ def recursiveVectors(p,ind='all'):
                      for Rs in R[s][lowlim2:]:
                         W[i].append(ps+Rm+"*"+Rn+"*"+Rs)
      for l in range(0,i-7): #level 4
-        ps=powerString("C",l,trailchar=",")
+        ps=_powerString("C",l,trailchar=",")
         for n in range(2,i-l-5):
           for m in range(2,i-l-n-3):
              for s in range(2,i-l-n-m-1):
@@ -809,3 +814,8 @@ def py2tex(codestr):
     strout=strout.replace(".^","^")
     strout='$'+strout+'$'
     return strout
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
