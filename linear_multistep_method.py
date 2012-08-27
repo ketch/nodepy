@@ -1,21 +1,26 @@
 """
 **Examples**::
 
-    >>> import linear_multistep_method as lmm
-    >>> ab3=lmm.Adams_Bashforth(3)
+    >>> import linear_multistep_method as lm
+    >>> ab3=lm.Adams_Bashforth(3)
     >>> ab3.order()
     3
-    >>> am3=lmm.Adams_Moulton(3)
-    >>> am3.order()
-    4
-    >>> bdf2=lmm.backwards_difference(2)
+    >>> bdf2=lm.backward_difference_formula(2)
     >>> bdf2.order()
     2
-    >>> ssp32=lmm.lmm_ssp2(3)
+    >>> bdf2.is_zero_stable()
+    True
+    >>> bdf7=lm.backward_difference_formula(7)
+    >>> bdf7.is_zero_stable()
+    False
+    >>> bdf3=lm.backward_difference_formula(3)
+    >>> bdf3.A_alpha_stability()
+    172
+    >>> ssp32=lm.elm_ssp2(3)
     >>> ssp32.order()
     2
     >>> ssp32.ssp_coefficient()
-    0.5
+    1/2
 
 """
 from general_linear_method import GeneralLinearMethod
@@ -65,24 +70,45 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
         `\sigma(z) = \sum_{j=0}^k \beta_k z^k`
 
+        **Examples**::
+            
+            >>> from nodepy import lm
+            >>> ab5 = lm.Adams_Bashforth(5)
+            >>> rho,sigma = ab5.characteristic_polynomials()
+            >>> print rho
+               5     4
+            1 x - 1 x
+
+            >>> print sigma
+                  4         3         2
+            2.64 x - 3.853 x + 3.633 x - 1.769 x + 0.3486
+
         **References**:
             #. [hairer1993]_ p. 370, eq. 2.4
+
         """
         rho=np.poly1d(self.alpha[::-1])
         sigma=np.poly1d(self.beta[::-1])
         return rho, sigma
 
     def order(self,tol=1.e-10):
-        """ Return the order of a linear multistep method """
-        p=0
-        if abs(sum(self.alpha))>tol: return 0
-        ocHolds=True
-        while ocHolds:
-            p=p+1
-            ocHolds=self.satisfies_order_conditions(p,tol)
-        return p-1
+        r""" Return the order of the local truncation error of a linear multistep method.
+        
+        **Examples**::
 
-    def satisfies_order_conditions(self,p,tol):
+            >>> from nodepy import lm
+            >>> am3=lm.Adams_Moulton(3)
+            >>> am3.order()
+            4
+        """
+        p = 0
+        while True:
+            if self._satisfies_order_conditions(p+1,tol):
+                p = p + 1
+            else:
+                return p
+
+    def _satisfies_order_conditions(self,p,tol):
         """ Return True if the linear multistep method satisfies 
             the conditions of order p (only) """
         import snp
@@ -91,23 +117,44 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
     def ssp_coefficient(self):
         r""" Return the SSP coefficient of the method.
-             The SSP coefficient is given by
-            
-            `\min_{0 \le j < k} -\alpha_k/beta_k`
 
-            if `\alpha_j<0` and `\beta_j>0` for all `j`, and is equal to
-            zero otherwise
+         The SSP coefficient is given by
+        
+        `\min_{0 \le j < k} -\alpha_k/beta_k`
+
+        if `\alpha_j<0` and `\beta_j>0` for all `j`, and is equal to
+        zero otherwise.
+
+
+        **Examples**::
+
+            >>> from nodepy import lm
+            >>> ssp32=lm.elm_ssp2(3)
+            >>> ssp32.ssp_coefficient()
+            1/2
+
+            >>> bdf2=lm.backward_difference_formula(2)
+            >>> bdf2.ssp_coefficient()
+            0
         """
-        if np.any(self.alpha[:-1]>0) or np.any(self.beta<0): return 0
+        if np.any(self.alpha[:-1]>0) or np.any(self.beta<0): 
+            return 0
+
         return min([-self.alpha[j]/self.beta[j] 
                     for j in range(len(self.alpha)-1) if self.beta[j]!=0])
 
 
-    def plot_stability_region(self,N=1000,color='r'):
+    def plot_stability_region(self,N=100,N2=1000,color='r',filled=True, alpha=1.):
         r""" 
-            Plot the region of absolute stability of a linear multistep method.
+            The region of absolute stability of a linear multistep method is
+            the set
 
-            Uses the boundary locus method.  The stability boundary is
+            `\{ z \in C : \rho(\zeta) - z \sigma(zeta) \text{ satisfies the root condition} \}`
+
+            where `\rho(zeta)` and `\sigma(zeta)` are the characteristic
+            functions of the method.
+
+            Also plots the boundary locus, which is
             given by the set of points z:
 
             `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
@@ -118,37 +165,206 @@ class LinearMultistepMethod(GeneralLinearMethod):
             References:
                 [leveque2007]_ section 7.6.1
 
-            TODO: Implement something that works when the stability
-                    region boundary crosses itself.
+
+            **Input**: (all optional)
+                - N       -- Number of gridpoints to use in each direction
+                - bounds  -- limits of plotting region
+                - color   -- color to use for this plot
+                - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
-        import matplotlib.pyplot as pl
+        import matplotlib.pyplot as plt
+        numself = self.__num__()
+        rho, sigma = self.__num__().characteristic_polynomials()
+        mag = lambda z : _root_condition(rho-z*sigma)
+        vmag = np.vectorize(mag)
+        bounds = _find_bounds(vmag,guess=(-10,1,-5,5),N=101)
+
+        y=np.linspace(bounds[2],bounds[3],N)
+        Y=np.tile(y[:,np.newaxis],(1,N))
+        x=np.linspace(bounds[0],bounds[1],N)
+        X=np.tile(x,(N,1))
+        Z=X+Y*1j
+
+        R=1.5-vmag(Z)
+
+        z = self._boundary_locus()
+
+        if filled:
+            plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
+        else:
+            plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
+        plt.title('Absolute Stability Region for '+self.name)
+        plt.hold(True)
+        plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+        plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+        plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
+        plt.axis(bounds)
+        plt.hold(False)
+        plt.draw()
+
+    def plot_boundary_locus(self,N=1000):
+        r"""Plot the boundary locus, which is
+            given by the set of points
+
+            `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
+
+            where `\rho` and `\sigma` are the characteristic polynomials 
+            of the method.
+
+            References:
+                [leveque2007]_ section 7.6.1
+        """
+        import matplotlib.pyplot as plt
+
+        z = self._boundary_locus()
+
+        plt.figure()
+        plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
+        plt.axis('image')
+        plt.hold(True)
+        bounds = plt.axis()
+        plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+        plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+        plt.title('Boundary locus for '+self.name)
+        plt.hold(False)
+        plt.draw()
+
+
+    def _boundary_locus(self, N=1000):
+        r"""Compute the boundary locus, which is
+            given by the set of points
+
+            `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
+
+            where `\rho` and `\sigma` are the characteristic polynomials 
+            of the method.
+
+            References:
+                [leveque2007]_ section 7.6.1
+        """
         theta=np.linspace(0.,2*np.pi,N)
-        z=np.exp(theta*1j)
+        zeta = np.exp(theta*1j)
         rho,sigma=self.__num__().characteristic_polynomials()
-        val=rho(z)/sigma(z)
-        #clf()
-        pl.plot(np.real(val),np.imag(val),color=color,linewidth=2)
-        pl.title('Absolute Stability Region for '+self.name)
-        pl.axis('Image')
-        pl.hold(True)
-        pl.plot([0,0],[-10,10],'--k',linewidth=2)
-        pl.plot([-10,2],[0,0],'--k',linewidth=2)
-        pl.hold(False)
-        pl.draw()
+        z = rho(zeta)/sigma(zeta)
+
+        return z
+
+    def A_alpha_stability(self, N=1000, tol=1.e-14):
+        r"""Angle of `A(\alpha)`-stability.
+        
+        The result is given in degrees.  The result is only accurate to
+        about 1 degree, so we round down.
+        
+        **Examples**:
+
+            >>> from nodepy import lm
+            >>> bdf5 = lm.backward_difference_formula(5)
+            >>> bdf5.A_alpha_stability()
+            103
+        """
+        from math import atan2, floor
+
+        z = self._boundary_locus(N)
+        rad = map(atan2,np.imag(z),np.real(z))
+        rad = np.mod(np.array(rad),2*np.pi)
+
+        return int(floor(np.min(np.abs(np.where(np.real(z)<-tol,rad,1.e99)-np.pi))/np.pi*360))
 
     def is_explicit(self):
         return self.beta[-1]==0
 
+    def is_zero_stable(self,tol=1.e-13):
+        r""" True if the method is zero-stable."""
+        rho, sigma = self.characteristic_polynomials()
+        return _root_condition(rho,tol)
+
+    def __len__(self):
+        return len(self.alpha)
+#======================================================
+
+def _root_condition(p,tol=1.e-13):
+    if max(np.abs(p.r))>(1+tol):
+        return False
+
+    mod_one_roots = [r for r in p.r if abs(abs(r)-1)<tol]
+    for i,r1 in enumerate(mod_one_roots):
+        for r2 in mod_one_roots[i+1:]:
+            if abs(r1-r2)<tol:
+                return False
+    return True
+
+def _find_bounds(f,guess,N=101,zmax=1000):
+    r""" N should be odd in order to catch very small stability regions."""
+    bounds = guess
+    old_bounds = []
+
+    while bounds != old_bounds:
+        old_bounds = bounds
+        y=np.linspace(bounds[2],bounds[3],N)
+
+        #Check boundaries
+        bounds = list(bounds)
+        close = False
+        while abs(bounds[0])<zmax:
+            x=np.linspace(bounds[0],bounds[1],N)
+            Z=x[0]+y*1j
+
+            left = f(Z)
+            if np.any(left):
+                bounds[0] = 2*bounds[0]
+                close = True
+            else:
+                if close == True:
+                    break
+                bounds[0] = 0.5*bounds[0]
+                if bounds[0] > -1.e-15:
+                    raise Exception('No stable region found; is this method zero-stable?')
+
+        bounds[1] = -0.1*bounds[0]
+        x=np.linspace(bounds[0],bounds[1],N) + 0.*1j
+
+        close = False
+        while abs(bounds[2])<zmax:
+            y=np.linspace(bounds[2],bounds[3],N)
+            Z=x + y[0]*1j
+
+            bottom = f(Z)
+            if np.any(bottom):
+                bounds[2] = 2*bounds[2]
+                close = True
+            else:
+                if close == True:
+                    break
+                bounds[2] = 0.5*bounds[2]
+                if bounds[2] > -1.e-15:
+                    raise Exception('No stable region found; is this method zero-stable?')
+
+        bounds[3] = -bounds[2]
+
+    return bounds
+
+ 
+#======================================================
+# Families of multistep methods
+#======================================================
+
 def Adams_Bashforth(k):
     r""" 
-        Construct the k-step, Adams-Bashforth method.
-        The methods are explicit and have order k.
-        They have the form:
+    Construct the k-step, Adams-Bashforth method.
+    The methods are explicit and have order k.
+    They have the form:
 
-        `y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
+    `y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
 
-        They are generated using equations (1.5) and (1.7) from 
-        [hairer1993]_ III.1, along with the binomial expansion.
+    They are generated using equations (1.5) and (1.7) from 
+    [hairer1993]_ III.1, along with the binomial expansion.
+
+    **Examples**::
+
+        >>> import linear_multistep_method as lm
+        >>> ab3=lm.Adams_Bashforth(3)
+        >>> ab3.order()
+        3
 
         References:
             #. [hairer1993]_
@@ -241,7 +457,7 @@ def backward_difference_formula(k):
     name=str(k)+'-step BDF method'
     return LinearMultistepMethod(alpha,beta,name=name)
 
-def elmm_ssp2(k):
+def elm_ssp2(k):
     r"""
         Returns the optimal SSP k-step linear multistep method of order 2.
     """
@@ -279,3 +495,6 @@ def loadLMM(which='All'):
         return LM[which]
 
 
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
