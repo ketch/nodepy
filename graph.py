@@ -23,12 +23,26 @@ def rk_dependency_graph(rkm):
     G = nx.from_numpy_matrix(np.abs(K.T)>0,nx.DiGraph())
     return G
 
-def plot_dependency_graph(rkm):
+def remove_extra_edges(G):
+    lp = longest_paths(G)
+    to_remove = []
+    for edge in G.edges_iter():
+        if lp[edge[0]]<(lp[edge[1]]-1):
+            to_remove.append(edge)
+    for edge in to_remove:
+        G.remove_edge(edge[0],edge[1])
+
+def plot_dependency_graph(rkm,remove_edges=False):
     G = rk_dependency_graph(rkm)
     lp = longest_paths(G)
 
+    hpos = [0]*(max(lp)+1)
     pos = {}
     for node in G.nodes_iter():
-        pos[node] = np.array([node,lp[node]])
+        hpos[lp[node]]+=1
+        pos[node] = np.array([hpos[lp[node]],lp[node]])
+
+    if remove_edges:
+       remove_extra_edges(G)
 
     nx.draw_networkx(G,pos)
