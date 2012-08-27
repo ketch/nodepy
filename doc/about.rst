@@ -5,6 +5,13 @@ About NodePy
 NodePy is an open-source, free project.  If you find NodePy useful,
 please let me know via a short e-mail (david.ketcheson@kaust.edu.sa).
 
+NodePy is primarily developed by David Ketcheson.  The following people
+have also contributed code to NodePy (listed in alphabetical order):
+
+    * Robert Bradshaw: initial implementation of exact representation and analysis of methods
+    * Matteo Parsani: spectral difference matrices
+    * Umair bin Waheed: Implementation of GBS extrapolation methods and their embedded pairs
+
 Citing
 =======================
 

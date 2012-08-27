@@ -3,6 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+NodePy version 0.4 has just been released!  For a list of changes, see
+:ref:`the changelog <changes>`.
+
 .. contents::
 
 ================
@@ -56,6 +59,7 @@ looking into this.
           all NodePy development.  However, NodePy includes
           substantial inline documentation within the various
           modules, and you are encouraged to look there.
+
 
 Dependencies
 ================================
@@ -124,6 +128,7 @@ NodePy Manual
    solving
    stability
    rooted_trees
+   changes
    future
    about
    bib

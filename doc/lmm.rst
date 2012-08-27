@@ -26,7 +26,7 @@ common types:
   * Adams-Bashforth methods: Adams_Bashforth(k)
   * Adams-Moulton methods: Adams_Moulton(k)
   * backward_difference_formula(k)
-  * Optimal explicit SSP methods (elmm_ssp2(k))
+  * Optimal explicit SSP methods (elm_ssp2(k))
 
 In each case, the argument $k$ specifies the number of steps in the method.
 Note that it is possible to generate methods for arbitrary $k$, but currently
@@ -62,7 +62,7 @@ Backward-difference formulas
 Optimal Explicit SSP methods
 ------------------------------
 
-.. automethod:: nodepy.linear_multistep_method.elmm_ssp2
+.. automethod:: nodepy.linear_multistep_method.elm_ssp2
    :noindex:
 
 ------------------------
