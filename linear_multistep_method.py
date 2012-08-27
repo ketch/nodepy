@@ -25,6 +25,7 @@
 """
 from general_linear_method import GeneralLinearMethod
 import numpy as np
+import snp
 
 #=====================================================
 class LinearMultistepMethod(GeneralLinearMethod):
@@ -111,7 +112,6 @@ class LinearMultistepMethod(GeneralLinearMethod):
     def _satisfies_order_conditions(self,p,tol):
         """ Return True if the linear multistep method satisfies 
             the conditions of order p (only) """
-        import snp
         ii=snp.arange(len(self.alpha))
         return abs(sum(ii**p*self.alpha-p*self.beta*ii**(p-1)))<tol
 
@@ -275,7 +275,15 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return self.beta[-1]==0
 
     def is_zero_stable(self,tol=1.e-13):
-        r""" True if the method is zero-stable."""
+        r""" True if the method is zero-stable.
+
+        **Examples**::
+
+            >>> from nodepy import lm
+            >>> bdf5=lm.backward_difference_formula(5)
+            >>> bdf5.is_zero_stable()
+            True
+        """
         rho, sigma = self.characteristic_polynomials()
         return _root_condition(rho,tol)
 
@@ -284,6 +292,17 @@ class LinearMultistepMethod(GeneralLinearMethod):
 #======================================================
 
 def _root_condition(p,tol=1.e-13):
+    r""" True if the polynomial `p` has all roots inside
+    the unit circle and roots on the boundary of the unit circle
+    are simple.
+
+    **Examples**::
+
+        >>> from nodepy import lm
+        >>> p = np.poly1d((1,2.5,2,0.5))
+        >>> lm._root_condition(p)
+        False
+    """
     if max(np.abs(p.r))>(1+tol):
         return False
 
@@ -322,7 +341,6 @@ def Adams_Bashforth(k):
     """
     import sympy
     from sympy import Rational
-    import snp
 
     one = Rational(1,1)
 
@@ -354,11 +372,17 @@ def Adams_Moulton(k):
         Exercise 3 from Hairer & Wanner III.1, along with the binomial 
         expansion.
 
+        **Examples**::
+
+            >>> import linear_multistep_method as lm
+            >>> am3=lm.Adams_Moulton(3)
+            >>> am3.order()
+            4
+
         References:
             [hairer1993]_
     """
     import sympy
-    import snp
 
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
@@ -386,13 +410,19 @@ def backward_difference_formula(k):
         `\sum_{j=0}^{k} \alpha_j y_{n+k-j+1} = h \beta_j f(y_{n+1})`
 
         They are generated using equation (1.22') from Hairer & Wanner III.1,
-        along with the binomial expansion.
+            along with the binomial expansion.
+
+        **Examples**::
+
+            >>> import linear_multistep_method as lm
+            >>> bdf4=lm.backward_difference_formula(4)
+            >>> bdf4.A_alpha_stability()
+            146
 
         **References**:
             #.[hairer1993]_ pp. 364-365
     """
     import sympy
-    import snp
 
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
@@ -410,10 +440,16 @@ def backward_difference_formula(k):
 
 def elm_ssp2(k):
     r"""
-        Returns the optimal SSP k-step linear multistep method of order 2.
+    Returns the optimal SSP k-step linear multistep method of order 2.
+
+    **Examples**::
+
+        >>> import linear_multistep_method as lm
+        >>> lm10=lm.elm_ssp2(10)
+        >>> lm10.ssp_coefficient()
+        8/9
     """
     import sympy
-    import snp
 
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
@@ -424,13 +460,58 @@ def elm_ssp2(k):
     name='Optimal '+str(k)+'-step, 2nd order SSP method.'
     return LinearMultistepMethod(alpha,beta,name=name)
 
+def sand_cc(s):
+    r""" Construct Sand's circle-contractive method of order `p=2(s+1)`.
+
+    **Examples**::
+
+        >>> import linear_multistep_method as lm
+        >>> cc4 = lm.sand_cc(4)
+        >>> cc4.order()
+        10
+        >>> cc4.ssp_coefficient()
+        1/8
+
+    **References**:
+        #. [sand1986]_
+    """
+    import sympy
+
+    one  = sympy.Rational(1)
+    zero = sympy.Rational(0)
+
+    k = 2**s + 1
+    p = 2*(s+1)
+
+    Jn = [k,k-1]
+    for i in range(1,s+1):
+        Jn.append(k-1-2**i)
+
+    alpha = snp.zeros(k+1)
+    beta  = snp.zeros(k+1)
+
+    # This is inefficient
+    for j in Jn:
+        tau_product = one
+        tau_sum = zero
+        tau = [one/(j-i) for i in Jn if i!=j]
+        tau_product = np.prod(tau)
+        tau_sum = np.sum(tau)
+        beta[j] = tau_product**2
+        alpha[j] = 2*beta[j]*tau_sum
+    return LinearMultistepMethod(alpha,beta,'Sand circle-contractive')
+        
 
 def loadLMM(which='All'):
     """ 
-        Load a set of standard Runge-Kutta methods for testing.
+    Load a set of standard linear multistep methods for testing.
 
-        TODO: 
-            - Others?
+    **Examples**::
+
+        >>> from nodepy import lm
+        >>> ebdf5 = lm.loadLMM('eBDF5')
+        >>> ebdf5.is_zero_stable()
+        True
     """
     import snp
     import sympy
@@ -440,6 +521,7 @@ def loadLMM(which='All'):
     alpha=snp.array([-12,75,-200,300,-300,137])/sympy.Rational(137,1)
     beta=snp.array([60,-300,600,-600,300,0])/sympy.Rational(137,1)
     LM['eBDF5']=LinearMultistepMethod(alpha,beta,'eBDF 5')
+    #================================================
     if which=='All':
         return LM
     else:
