@@ -337,10 +337,10 @@ class RootedTree(str):
 
             **Reference**: [butcher2003]_ p. 276, Thm. 386A 
         """
-        trees,facs=self.lamda(alpha,*alphaargs)
+        trees,factors=self.lamda(alpha,*alphaargs)
         s=0
         for i in range(len(trees)):
-            s+=facs[i]*beta(trees[i],*betaargs)
+            s+=factors[i]*beta(trees[i],*betaargs)
         s+=alpha(self,*alphaargs)*beta(RootedTree(""),*betaargs)
         return s
 
