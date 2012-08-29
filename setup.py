@@ -1,14 +1,14 @@
 from distutils.core import setup
 
 setup(name='nodepy',
-      version='0.3',
+      version='0.4',
       package_dir={'nodepy': ''},
       packages=['nodepy'],
-      package_data={'' : ['examples/*.py']},
+      #package_data={'' : ['examples/*.py']},
       author=['David Ketcheson'],
       author_email=['dketch@gmail.com'],
-      url='http://web.kaust.edu.sa/faculty/davidketcheson/NodePy/',
+      url='http://numerics.kaust.edu.sa/nodepy/',
       description='Numerical ODE solvers in Python',
-      license='BSD',
-      requires=['numpy'],
+      license='modified BSD',
+      requires=['numpy','sympy'],
       )
