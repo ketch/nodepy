@@ -56,7 +56,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
     pl.legend(loc='best')
     pl.hold(False)
     pl.draw()
-    return err
+    return err, work
 
 
 def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
@@ -118,3 +118,4 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
     pl.hold(False)
     pl.draw()
     return work,err
+
