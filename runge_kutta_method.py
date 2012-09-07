@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> RK.keys()
-    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'BuRK65', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
+    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'BuRK65', 'DP8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
 
     >>> RK['Mid22']
     Midpoint Runge-Kutta
@@ -69,7 +69,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
 
     def __init__(self,A=None,b=None,alpha=None,beta=None,
-            name='Runge-Kutta Method',description='',mode='exact'):
+            name='Runge-Kutta Method',shortname='RKM',description='',mode='exact'):
         r"""
             Initialize a Runge-Kutta method.  For explicit methods,
             the class ExplicitRungeKuttaMethod should be used instead.
@@ -109,7 +109,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
         self.c=np.sum(self.A,1) # Assume stage order >= 1
 
         self.name=name
+        self.shortname=shortname
         self.info=description
+
+        if isinstance(self,ExplicitRungeKuttaPair):
+            self.mtype = 'Explicit embedded Runge-Kutta pair'
+        elif isinstance(self,ExplicitRungeKuttaMethod):
+            self.mtype = 'Explicit Runge-Kutta method'
+        elif not (self.A.T - np.triu(self.A.T)).any():
+            self.mtype = 'Diagonally implicit Runge-Kutta method'
+        else:
+            self.mtype = 'Implicit Runge-Kutta method'
 
         if not isinstance(self,ExplicitRungeKuttaMethod):
             if not np.triu(self.A).any():
@@ -1169,7 +1179,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         to achieve approximately this tolerance.
     """
     def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,
-            name='Runge-Kutta Pair',description=''):
+            name='Runge-Kutta Pair',shortname='RKM',description=''):
         r"""
             In addition to the ordinary Runge-Kutta initialization,
             here the embedded coefficients `\hat{b}_j` are set as well.
@@ -1207,6 +1217,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         self.c=np.sum(self.A,1)
         self.name=name
         self.info=description
+        self.shortname=shortname
         self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
         self.mtype = 'Explicit embedded Runge-Kutta pair'
 
@@ -1380,7 +1391,7 @@ def elementary_weight(tree):
         **References**:
             [butcher2003]_
     """
-    raise Exception('This function does not work correctly; use the _str version')
+    #raise Exception('This function does not work correctly; use the _str version')
     import rooted_trees as rt
     from sympy import symbols
     b=symbols('b',commutative=False)
@@ -1412,12 +1423,13 @@ def elementary_weight_str(tree,style='python'):
     return ewstr
 
 def RKeta(tree):
-    raise Exception('This function does not work correctly; use the _str version')
+    from sympy.physics.quantum import TensorProduct
+    #raise Exception('This function does not work correctly; use the _str version')
     from rooted_trees import Dprod
     from sympy import symbols
     if tree=='':  return symbols('e',commutative=False)
     if tree=='T': return symbols('c',commutative=False)
-    return symbols('A',commutative=False)*Dprod(tree,RKeta)
+    return TensorProduct(symbols('A',commutative=False),Dprod(tree,RKeta))
 
 def RKeta_str(tree):
     """
@@ -1553,49 +1565,49 @@ def loadRKM(which='All'):
     #================================================
     A=np.array([one])
     b=np.array([one])
-    RK['BE']=RungeKuttaMethod(A,b,name='Implicit Euler')
+    RK['BE']=RungeKuttaMethod(A,b,name='Implicit Euler',shortname='BE')
 
     #================================================
     A=np.array([zero])
     b=np.array([one])
-    RK['FE']=ExplicitRungeKuttaMethod(A,b,name='Forward Euler')
+    RK['FE']=ExplicitRungeKuttaMethod(A,b,name='Forward Euler',shortname='FE')
 
     #================================================
     alpha=np.array([[0,0],[1.,0],[0.261583187659478,0.738416812340522]])
     beta=np.array([[0,0],[0.822875655532364,0],[-0.215250437021539,0.607625218510713]])
     RK['SSP22star']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name='SSPRK22star',
                 description=
-                "The underlying method of the optimal 2-stage, 2nd order downwind SSP Runge-Kutta method with one star")
+                "The underlying method of the optimal 2-stage, 2nd order downwind SSP Runge-Kutta method with one star",shortname='SSP22star')
 
     #================================================
     A=np.array([[one,-sqrt(5),sqrt(5),-one],[one,3*one,(10-7*sqrt(5))/5,sqrt(5)/5],[one,(10+7*sqrt(5))/5,3*one,-sqrt(5)/5],[one,5*one,5*one,one]])/12
     b=np.array([one,5*one,5*one,one])/12
     RK['LobattoIIIC4']=RungeKuttaMethod(A,b,name='LobattoIIIC4',
-                description="The LobattoIIIC method with 4 stages")
+                description="The LobattoIIIC method with 4 stages",shortname='LobattoIIIC4')
 
     #================================================
     A=np.array([[one/6,-one/3,one/6],[one/6,5*one/12,-one/12],[one/6,2*one/3,one/6]])
     b=np.array([one/6,2*one/3,one/6])
     RK['LobattoIIIC3']=RungeKuttaMethod(A,b,name='LobattoIIIC3',
-                description="The LobattoIIIC method with 3 stages")
+                description="The LobattoIIIC method with 3 stages",shortname='LobattoIIC3')
 
     #================================================
     A=np.array([[half,-half],[half,half]])
     b=np.array([half,half])
     RK['LobattoIIIC2']=RungeKuttaMethod(A,b,name='LobattoIIIC2',
-                description="The LobattoIIIC method with 2 stages")
+                description="The LobattoIIIC method with 2 stages",shortname='LobattoIIIC2')
 
     #================================================
     A=np.array([[0,0],[half,half]])
     b=np.array([half,half])
     RK['LobattoIIIA2']=RungeKuttaMethod(A,b,name='LobattoIIIA2',
-                description="The LobattoIIIA method with 2 stages")
+                description="The LobattoIIIA method with 2 stages",shortname='LobattoIIIA2')
 
     #================================================
     A=np.array([[5*one/12,-1*one/12],[3*one/4,1*one/4]])
     b=np.array([3*one/4,1*one/4])
     RK['RadauIIA2']=RungeKuttaMethod(A,b,name='RadauIIA2',
-                description="The RadauIIA method with 2 stages")
+                description="The RadauIIA method with 2 stages",shortname='RadauIIA2')
 
     #================================================
     A=np.array([[(88-7*sqrt(6))/360,(296-169*sqrt(6))/1800,(-2+3*sqrt(6))/225],
@@ -1603,39 +1615,39 @@ def loadRKM(which='All'):
                 [(16-sqrt(6))/36,(16+sqrt(6))/36,one/9]])
     b=np.array([(16-sqrt(6))/36,(16+sqrt(6))/36,one/9])
     RK['RadauIIA3']=RungeKuttaMethod(A,b,name='RadauIIA3',
-                description="The RadauIIA method with 3 stages")
+                description="The RadauIIA method with 3 stages",shortname='RadauIIA3')
 
     #================================================
     A=np.array([[0,0],[one,0]])
     b=np.array([half,half])
     RK['SSP22']=ExplicitRungeKuttaMethod(A,b,name='SSPRK22',
                 description=
-                "The optimal 2-stage, 2nd order SSP Runge-Kutta method")
+                "The optimal 2-stage, 2nd order SSP Runge-Kutta method",shortname='SSPRK22')
 
     #================================================
     A=np.array([[0,0,0],[one,0,0],[one/4,one/4,0]])
     b=np.array([one/6,one/6,2*one/3])
     RK['SSP33']=ExplicitRungeKuttaMethod(A,b,name='SSPRK33',
                 description=
-                "The optimal 3-stage, 3rd order SSP Runge-Kutta method")
+                "The optimal 3-stage, 3rd order SSP Runge-Kutta method",shortname='SSPRK33')
 
     #================================================
     A=np.array([[0,0,0],[one/3,0,0],[0.,2*one/3,0]])
     b=np.array([one/4,0,3*one/4])
     RK['Heun33']=ExplicitRungeKuttaMethod(A,b,name='Heun33',
-                description= "Heun's 3-stage, 3rd order")
+                description= "Heun's 3-stage, 3rd order",shortname='Heun33')
 
     #================================================
     A=np.array([[0,0,0],[one/3,0,0],[0,one,0]])
     b=np.array([one/2,0,one/2])
     RK['NSSP32']=ExplicitRungeKuttaMethod(A,b,name='NSSPRK32',
-                description= "Wang and Spiteri NSSP32")
+                description= "Wang and Spiteri NSSP32",shortname='NSSPRK32')
 
     #================================================
     A=np.array([[0,0,0],[-4*one/9,0,0],[7*one/6,-one/2,0]])
     b=np.array([one/4,0.,3*one/4])
     RK['NSSP33']=ExplicitRungeKuttaMethod(A,b,name='NSSPRK33',
-                description= "Wang and Spiteri NSSP33")
+                description= "Wang and Spiteri NSSP33",shortname='NSSPRK33')
 
     #================================================
     m=10
@@ -1647,8 +1659,8 @@ def loadRKM(which='All'):
     alpha=alpha[:,:m]
     beta=alpha/r
     RK['SSP104']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
-                    name='SSPRK10,4',description=
-                    "The optimal ten-stage, fourth order Runge-Kutta method")
+                    name='SSPRK(10,4)',description=
+                    "The optimal ten-stage, fourth order SSP Runge-Kutta method",shortname='SSPRK(10,4)')
     #================================================
     alpha=snp.zeros([7,6])
     beta=snp.zeros([7,6])
@@ -1665,40 +1677,41 @@ def loadRKM(which='All'):
     beta[5,0:5]=[2276219*one/40320000,407023*one/672000,1511*one/2800,-261*one/140,8*one/7]
     beta[6,:]  =[zero,-8*one/45,zero,2*one/3,zero,7*one/90]
     RK['Lambert65']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
-                        name='Lambert65',description='From Shu-Osher paper')
+                        name='Lambert65',description='From Shu-Osher paper',shortname='Lambert65')
     #================================================
     A=np.array([[0,0],[2*one/3,0]])
     b=np.array([1*one/4,3*one/4])
-    RK['MTE22']=ExplicitRungeKuttaMethod(A,b,name='Minimal Truncation Error 22')
+    RK['MTE22']=ExplicitRungeKuttaMethod(A,b,name='Minimal Truncation Error 22',shortname='MTE22')
 
     #================================================
     A=np.array([[0,0],[1*one/2,0]])
     b=np.array([0,one])
-    RK['Mid22']=ExplicitRungeKuttaMethod(A,b,name='Midpoint Runge-Kutta')
+    RK['Mid22']=ExplicitRungeKuttaMethod(A,b,name='Midpoint Runge-Kutta',shortname='Mid22')
 
     #================================================
     A=snp.array([[0,0,0,0],[half,0,0,0],[0,half,0,0],[0,0,one,0]])
     b=snp.array([one/6,one/3,one/3,one/6])
-    RK['RK44']=ExplicitRungeKuttaMethod(A,b,name='Classical RK4')
+    description='The original four-stage, fourth-order method of Kutta'
+    RK['RK44']=ExplicitRungeKuttaMethod(A,b,name='Classical RK4',shortname='RK44',description=description)
 
     #================================================
     A=np.array([[0,0,0,0,0,0],[one/4,0,0,0,0,0],[one/8,one/8,0,0,0,0],
          [0,0,half,0,0,0],[3*one/16,-3*one/8,3*one/8,9*one/16,0,0],
          [-3*one/7,8*one/7,6*one/7,-12*one/7,8*one/7,0]])
     b=np.array([7*one/90,0,16*one/45,2*one/15,16*one/45,7*one/90])
-    RK['BuRK65']=ExplicitRungeKuttaMethod(A,b,name="Butcher's RK65")
+    RK['BuRK65']=ExplicitRungeKuttaMethod(A,b,name="Butcher's RK65",shortname='BuRK65')
 
     #================================================
     A=np.array([[one/4,one/4-sqrt(3)/6],[one/4+sqrt(3)/6,one/4]])
     b=np.array([half,half])
-    RK['GL2']=RungeKuttaMethod(A,b,name="Gauss-Legendre RK24")
+    RK['GL2']=RungeKuttaMethod(A,b,name="Gauss-Legendre RK24",shortname='GL2')
 
     #================================================
     A=np.array([[5*one/36,(80-24*sqrt(15))/360,(50-12*sqrt(15))/360],
          [(50+15*sqrt(15))/360,2*one/9,(50-15*sqrt(15))/360],
          [(50+12*sqrt(15))/360,(80+24*sqrt(15))/360,5*one/36]])
     b=np.array([5*one/18,4*one/9,5*one/18])
-    RK['GL3']=RungeKuttaMethod(A,b,name="Gauss-Legendre RK36")
+    RK['GL3']=RungeKuttaMethod(A,b,name="Gauss-Legendre RK36",shortname='GL3')
     #================================================
     A=np.array([[0,0,0,0,0,0],[one/4,0,0,0,0,0],[3*one/32,9*one/32,0,0,0,0],
         [1932*one/2197,-7200*one/2197,7296*one/2197,0,0,0],
@@ -1706,7 +1719,7 @@ def loadRKM(which='All'):
         [-8*one/27,2,-3544*one/2565,1859*one/4104,-11*one/40,zero]])
     b=np.array([16*one/135,zero,6656*one/12825,28561*one/56430,-9*one/50,2*one/55])
     bhat=np.array([25*one/216,0,1408*one/2565,2197*one/4104,-1*one/5,zero])
-    RK['Fehlberg45']=ExplicitRungeKuttaPair(A,b,bhat,name='Fehlberg RK5(4)6')
+    RK['Fehlberg45']=ExplicitRungeKuttaPair(A,b,bhat,name='Fehlberg RK5(4)6',shortname='Fehlberg45')
     #================================================
     A=np.array([[0,0,0,0,0,0,0],[one/5,0,0,0,0,0,0],[3*one/40,9*one/40,0,0,0,0,0],
         [44*one/45,-56*one/15,32*one/9,0,0,0,0],
@@ -1715,7 +1728,7 @@ def loadRKM(which='All'):
         [35*one/384,0*one,500*one/1113,125*one/192,-2187*one/6784,11*one/84,0]])
     b=np.array([35*one/384,0*one,500*one/1113,125*one/192,-2187*one/6784,11*one/84,0])
     bhat=np.array([5179*one/57600,0*one,7571*one/16695,393*one/640,-92097*one/339200,187*one/2100,1*one/40])
-    RK['DP5']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince RK5(4)7')
+    RK['DP5']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince RK5(4)7',shortname='DP5')
     #================================================
     A=np.array([[0,0,0,0,0,0,0,0],[one/6,0,0,0,0,0,0,0],[2*one/27,4*one/27,0,0,0,0,0,0],
         [183*one/1372,-162*one/343,1053*one/1372,0,0,0,0,0],
@@ -1725,13 +1738,12 @@ def loadRKM(which='All'):
         [587*one/8064,0,4440339*one/15491840,24353*one/124800,387*one/44800,2152*one/5985,7267*one/94080,0]])
     b=A[-1,:]
     bhat=np.array([2479*one/34992,0*one,123*one/416,612941*one/3411720,43*one/1440,2272*one/6561,79937*one/1113912,3293*one/556956])
-    RK['BS5']=ExplicitRungeKuttaPair(A,b,bhat,name='Bogacki-Shampine RK5(4)8')
+    RK['BS5']=ExplicitRungeKuttaPair(A,b,bhat,name='Bogacki-Shampine RK5(4)8',shortname='BS5')
      #================================================
     A=np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0],[1./18,0,0,0,0,0,0,0,0,0,0,0,0],[1./48,1./16,0,0,0,0,0,0,0,0,0,0,0],
         [1./32,0,3./32,0,0,0,0,0,0,0,0,0,0],[5./16,0,-75./64,75./64,0,0,0,0,0,0,0,0,0],[3./80,0,0,3./16,3./20,0,0,0,0,0,0,0,0],[29443841./614563906,0,0,77736538./692538347,-28693883./1125000000,23124283./1800000000,0,0,0,0,0,0,0],[16016141./946692911,0,0,61564180./158732637,22789713./633445777,545815736./2771057229,-180193667./1043307555,0,0,0,0,0,0],[39632708./573591083,0,0,-433636366./683701615,-421739975./2616292301,100302831./723423059,790204164./839813087,800635310./3783071287,0,0,0,0,0],[246121993./1340847787,0,0,-37695042795./15268766246,-309121744./1061227803,-12992083./490766935,6005943493./2108947869,393006217./1396673457,123872331./1001029789,0,0,0,0],[-1028468189./846180014,0,0,8478235783./508512852,1311729495./1432422823,-10304129995./1701304382,-48777925059./3047939560,15336726248./1032824649,-45442868181./3398467696,3065993473./597172653,0,0,0],[185892177./718116043,0,0,-3185094517./667107341,-477755414./1098053517,-703635378./230739211,5731566787./1027545527,5232866602./850066563,-4093664535./808688257,3962137247./1805957418,65686358./487910083,0,0],[403863854./491063109,0,0,-5068492393./434740067,-411421997./543043805,652783627./914296604,11173962825./925320556,-13158990841./6184727034,3936647629./1978049680,-160528059./685178525,248638103./1413531060,0,0]])
     b=np.array([14005451./335480064,0.,0.,0.,0.,-59238493./1068277825,181606767./758867731,561292985./797845732,-1041891430./1371343529,760417239./1151165299,118820643./751138087,-528747749./2220607170,1./4])
     bhat=np.array([13451932./455176623,0.,0.,0.,0.,-808719846./976000145,1757004468./5645159321,656045339./265891186,-3867574721./1518517206,465885868./322736535,53011238./667516719,2./45,0.])
-   
     RK['DP8']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince RK8(7)13')
     #================================================
     A=np.array([[0,0,0,0,0,0,0], [0.392382208054010,0,0,0,0,0,0],
@@ -1740,7 +1752,7 @@ def loadRKM(which='All'):
                 [0.135252145083336 ,0.207274083097540 ,-0.180995372278096 ,0.326486467604174 ,0.348595427190109 ,0,0],
                 [0.082675687408986 ,0.146472328858960 ,-0.160507707995237 ,0.161924299217425 ,0.028864227879979 ,0.070259587451358 ,0]])
     b=np.array([0.110184169931401 ,0.122082833871843 ,-0.117309105328437 ,0.169714358772186, 0.143346980044187, 0.348926696469455, 0.223054066239366])
-    RK['SSP75']=ExplicitRungeKuttaMethod(A,b,name='SSP75',description='From Ruuth-Spiteri paper')
+    RK['SSP75']=ExplicitRungeKuttaMethod(A,b,name='SSP75',description='From Ruuth-Spiteri paper',shortname='SSP75')
     #================================================
     A=np.array([[0,0,0,0,0,0,0,0],[0.276409720937984 ,0,0,0,0,0,0,0],[0.149896412080489 ,0.289119929124728 ,0,0,0,0,0,0],
                 [0.057048148321026 ,0.110034365535150 ,0.202903911101136 ,0,0,0,0,0],
@@ -1749,7 +1761,7 @@ def loadRKM(which='All'):
                 [0.111048724765050 ,0.214190579933444 ,0.116299126401843 ,0.223170535417453 ,-0.037093067908355 ,0.228338214162494 ,0,0],
                 [0.071096701602448 ,0.137131189752988 ,0.154859800527808 ,0.043090968302309 ,-0.163751550364691 ,0.044088771531945 ,0.102941265156393 ,0]])
     b=np.array([0.107263534301213 ,0.148908166410810 ,0.105268730914375 ,0.124847526215373 ,-0.068303238298102 ,0.127738462988848 ,0.298251879839231 ,0.156024937628252 ])
-    RK['SSP85']=ExplicitRungeKuttaMethod(A,b,name='SSP85',description='From Ruuth-Spiteri paper')
+    RK['SSP85']=ExplicitRungeKuttaMethod(A,b,name='SSP85',description='From Ruuth-Spiteri paper',shortname='SSP85')
     #================================================
     A=np.array([[0,0,0,0,0,0,0,0,0],[0.234806766829933 ,0,0,0,0,0,0,0,0],
                 [0.110753442788106 ,0.174968893063956 ,0,0,0,0,0,0,0],
@@ -1760,7 +1772,7 @@ def loadRKM(which='All'):
                 [0.114111232336224 ,0.180273547308430 ,0.132484700103381 ,0.107410821979346 ,-0.129172321959971 ,0.133393675559324 ,0.175516798122502 ,0,0],
                 [0.096188287148324 ,0.151958780732981 ,0.111675915818310 ,0.090540280530361 ,-0.108883798219725 ,0.112442122530629 ,0.147949153045843 ,0.312685695043563 ,0]])
     b=np.array([0.088934582057735 ,0.102812792947845 ,0.111137942621198 ,0.158704526123705 ,-0.060510182639384 ,0.197095410661808 ,0.071489672566698 ,0.151091084299943 ,0.179244171360452 ])
-    RK['SSP95']=ExplicitRungeKuttaMethod(A,b,name='SSP95',description='From Ruuth-Spiteri paper')
+    RK['SSP95']=ExplicitRungeKuttaMethod(A,b,name='SSP95',description='From Ruuth-Spiteri paper',shortname='SSP95')
 
     if which=='All':
         return RK
@@ -1841,14 +1853,14 @@ def SSPRK2(m):
             Load the 4-stage method:
             >>> SSP42=SSPRK2(4)
             >>> SSP42
-            SSPRK42
+            SSPRK(4,2)
             <BLANKLINE>
-             0     |
-             0.333 |  0.333
-             0.667 |  0.333  0.333
-             1.000 |  0.333  0.333  0.333
-            _______|____________________________
-                   |  0.250  0.250  0.250  0.250
+             0   |
+             1/3 |  1/3
+             2/3 |  1/3  1/3
+             1   |  1/3  1/3  1/3
+            _____|____________________
+                 |  1/4  1/4  1/4  1/4
 
             >>> SSP42.absolute_monotonicity_radius()
             2.999999999974534
@@ -1856,12 +1868,14 @@ def SSPRK2(m):
         **References**: 
             #. [ketcheson2008]_
     """
+    from sympy import Rational
     assert m>=2, "SSPRKm2 methods must have m>=2"
-    r=m-1.
-    alpha=np.vstack([np.zeros(m),np.eye(m)])
-    alpha[m,m-1]=(m-1.)/m
+    one = Rational(1)
+    r=m-one
+    alpha=np.vstack([snp.zeros(m),snp.eye(m)])
+    alpha[m,m-1]=(m-one)/m
     beta=alpha/r
-    alpha[m,0]=1./m
+    alpha[m,0]=one/m
     name='SSPRK('+str(m)+',2)'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
