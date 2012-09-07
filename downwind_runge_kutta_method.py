@@ -13,6 +13,7 @@ from general_linear_method import GeneralLinearMethod
 import runge_kutta_method as rk
 import utils
 import numpy as np
+import snp
 
 #=====================================================
 class DownwindRungeKuttaMethod(GeneralLinearMethod):
@@ -31,6 +32,8 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
             \\end{align*}
 
         """
+        A,b,alpha,beta=snp.normalize(A,b,alpha,beta)
+
         butchform=[x is not None for x in [A,At,b,bt]]
         SOform=[x is not None for x in [alpha,alphat,beta,betat]]
         if not ( ( all(butchform) and not (True in SOform) ) or
@@ -56,8 +59,8 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
           self.A=A
           self.At=At
         else: 
-          self.A =np.array([A ]) #Fix for 1-stage methods
-          self.At=np.array([At])
+          self.A =snp.array([A ]) #Fix for 1-stage methods
+          self.At=snp.array([At])
         self.b=b;
         self.bt=bt
         self.c=np.sum(self.A,1)-np.sum(self.At,1)
@@ -73,22 +76,40 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         ___________
           | b | bt
         """
+        from utils import shortstring
+        c = [shortstring(ci) for ci in self.c]
+        clenmax = max([len(ci) for ci in c])
+        A = [shortstring(ai) for ai in self.A.reshape(-1)]
+        alenmax = max([len(ai) for ai in A])
+        b = [shortstring(bi) for bi in self.b]
+        blenmax = max([len(bi) for bi in b])
+        At = [shortstring(ai) for ai in self.At.reshape(-1)]
+        atlenmax = max([len(ai) for ai in At])
+        bt = [shortstring(bi) for bi in self.bt]
+        btlenmax = max([len(bi) for bi in bt])
+        colmax=max(alenmax,blenmax)
+        colmax2 = max(atlenmax, btlenmax)
+        colmax = max(colmax,colmax2)
+
+
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
-            s+='%6.3f |' % self.c[i]
+            s+=c[i]+' '*(clenmax-len(c[i])+1)+'| '
             for j in range(len(self)):
-                s+=' %6.3f' % self.A[i,j]
+                ss=shortstring(self.A[i,j])
+                s+=ss.ljust(colmax+1)
             s+=' | '    
-            for jj in range(len(self)):
-                s+=' %6.3f' % self.At[i,jj]    
+            for j in range(len(self)):
+                ss=shortstring(self.At[i,j])
+                s+=ss.ljust(colmax+1)
             s+='\n'
-        s+='_______|'+('_______'*2*len(self))+('_____')+'\n'
-        s+= '       |'
+        s+='_'*(clenmax+1)+'|'+('_______'*2*len(self))+('_____')+'\n'
+        s+= ' '*(clenmax+1)+'|'
         for j in range(len(self)):
-            s+=' %6.3f' % self.b[j]
+            s+=' '*(colmax-len(b[j])+1)+b[j]
         s+=' | '
-        for jj in range(len(self)):
-            s+=' %6.3f' % self.bt[jj]
+        for j in range(len(self)):
+            s+=' '*(colmax-len(bt[j])+1)+bt[j]
         return s
  
     def __len__(self):
@@ -156,10 +177,10 @@ def loadDWRK(which='All'):
 
 def opt_dwrk(r):
     #a11=(r**2-2*r-2)/(2.*r)
-    at12=(r**2-4*r+2)/(2.*r)
+    at12=(r**2-4*r+2)/(2*r)
     #a21=(r-2.)/2.
-    alpha=np.array([[2./r,0],[1.,0],[0,1]])
-    alphat=np.array([[0.,(r**2-4*r+2)/(r**2-2*r)],[0,0],[0,0]])
+    alpha=np.array([[2/r,0],[1,0],[0,1]])
+    alphat=np.array([[0,(r**2-4*r+2)/(r**2-2*r)],[0,0],[0,0]])
     beta=alpha/r
     betat=alphat/r
     return DownwindRungeKuttaMethod(alpha=alpha,beta=beta,alphat=alphat,betat=betat)
@@ -183,9 +204,9 @@ def downwind_shu_osher_to_butcher(alpha,alphat,beta,betat):
                     np.size(beta,1)]==[m+1,m+1,m]):
         raise RungeKuttaError(
              'Inconsistent dimensions of Shu-Osher arrays')
-    X=np.eye(m)-alpha[0:m,:]-alphat[0:m,:]
-    A=np.linalg.solve(X,beta[0:m,:])
-    At=np.linalg.solve(X,betat[0:m,:])
+    X=snp.eye(m)-alpha[0:m,:]-alphat[0:m,:]
+    A =snp.solve(X, beta[0:m,:])
+    At=snp.solve(X,betat[0:m,:])
     b=beta[m,:]+np.dot(alpha[m,:]+alphat[m,:],A)
     bt=betat[m,:]+np.dot(alpha[m,:]+alphat[m,:],At)
     return A,At,b,bt
