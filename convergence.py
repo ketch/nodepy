@@ -59,7 +59,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
     return err, work
 
 
-def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
+def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0):
     """
         Runs a performance test, integrating a set of problems with a set
         of methods using a sequence of error tolerances.  Creates a plot 
