@@ -5,7 +5,7 @@ import matplotlib.pyplot as pl
 import numpy as np
 from nodepy import runge_kutta_method as rk
 
-def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
+def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
     """
         Runs a convergence test, integrating a single initial value problem
         using a sequence of fixed step sizes and a set of methods.
@@ -38,12 +38,12 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640]):
     except:
         bs5=rk.loadRKM('BS5')
         bigN=grids[-1]*4
-        print 'solving on fine grid with '+str(bigN)+' points'
+        if verbosity>0: print 'solving on fine grid with '+str(bigN)+' points'
         t,u=bs5(ivp,N=bigN)
-        print 'done'
-        exsol = u[-1].copy()
+        if verbosity>0: print 'done'
+        exsol = u[-1] + 0.
     for method in methods:
-        print "solving with %s" % method.name
+        if verbosity>0: print "solving with %s" % method.name
         err0=[]
         for i,N in enumerate(grids):
             t,u=method(ivp,N=N)
@@ -88,22 +88,22 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6]):
     err=np.ones([len(methods),len(tols)])
     work=np.zeros([len(methods),len(tols)])
     for ivp in ivps:
-        print "solving problem %s" % ivp
+        if verbosity>0: print "solving problem %s" % ivp
         try:
             exsol = ivp.exact(ivp.T)
         except:
             bs5=rk.loadRKM('BS5')   #Use Bogacki-Shampine RK for fine solution
             lowtol=min(tols)/100.
-            print 'solving for "exact" solution with tol= '+str(lowtol)
+            if verbosity>0: print 'solving for "exact" solution with tol= '+str(lowtol)
             t,u=bs5(ivp,errtol=lowtol,dt=ivp.dt0)
-            print 'done'
-            exsol = u[-1].copy()
+            if verbosity>0: print 'done'
+            exsol = u[-1] + 0.
         for imeth,method in enumerate(methods):
-            print 'Solving with method '+method.name
+            if verbosity>0: print 'Solving with method '+method.name
             workperstep = len(method)-method.is_FSAL()
             for jtol,tol in enumerate(tols):
                 t,u,rej,dt=method(ivp,errtol=tol,dt=ivp.dt0,diagnostics=True,controllertype='P')
-                print str(rej)+' rejected steps'
+                if verbosity>1: print str(rej)+' rejected steps'
                 err[imeth,jtol]*= np.max(np.abs(u[-1]-exsol))
                 #FSAL methods save on accepted steps, but not on rejected:
                 work[imeth,jtol]+= len(t)*workperstep+rej*len(method)
