@@ -132,6 +132,30 @@ class RungeKuttaMethod(GeneralLinearMethod):
             numself.c=np.array(self.c,dtype=np.float64)
         return numself
 
+    def latex(self):
+        """A laTeX representation of the Butcher arrays."""
+        from sympy.printing import latex
+        s= r'\begin{align}'
+        s+='\n'
+        s+=r'  \begin{array}{c|'
+        s+='c'*len(self)
+        s+='}\n'
+        for i in range(len(self)):
+            s+=latex(self.c[i])
+            for j in range(len(self)):
+                s+=' & '+latex(self.A[i,j])
+            s+=r'\\'
+            s+='\n'
+        s+=r'\hline'
+        s+='\n'
+        for j in range(len(self)):
+            s+=' & '+latex(self.b[j])
+        s+='\n'
+        s+=r'\end{array}'
+        s+=r'\end{align}'
+        s=s.replace('- -','')
+        return s
+
     def __repr__(self): 
         """
         Pretty-prints the Butcher array in the form:
@@ -402,10 +426,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.order()
                 4
+
+            TODO: Fix this for sympy coefficients
         """
+        from sympy import simplify
         p=0
         while True:
             z=self.order_conditions(p+1)
+            z = snp.array([simplify(zz) for zz in z])
             if np.any(abs(z)>tol): return p
             p=p+1
 
@@ -468,11 +496,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 #. Dekker and Verwer
                 #. [butcher2003]_
         """
+        from sympy import simplify
+        simp_array = np.vectorize(sympy.simplify)
         k,B,C=0,0.,0.
         while np.all(abs(B)<tol) and np.all(abs(C)<tol):
             k=k+1
-            B=np.dot(self.b,self.c**(k-1))-1./k
-            C=np.dot(self.A,self.c**(k-1))-self.c**k/k
+            B=simplify(np.dot(self.b,self.c**(k-1)))-1./k
+            C=simp_array(np.dot(self.A,self.c**(k-1))-self.c**k/k)
         return k-1
 
 
@@ -529,9 +559,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.draw()  
 
 
-    def plot_stability_region(self,N=200,
-                    color='r',filled=True,scaled=False,plotroots=False,
-                    alpha=1.,scalefac=None):
+    def plot_stability_region(self,N=200,color='r',filled=True,scaled=False,
+                              plotroots=False,alpha=1.,scalefac=None,to_file=False,
+                              longtitle=True):
         r""" 
             The region of absolute stability
             of a Runge-Kutta method, is the set
@@ -567,7 +597,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
             pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
         else:
             pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
-        pl.title('Absolute Stability Region for '+self.name)
+        if longtitle:
+            pl.title('Absolute Stability Region for '+self.name)
+        else:
+            pl.title('Stability region')
         pl.hold(True)
         if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
         if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
@@ -575,7 +608,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         pl.axis('Image')
         pl.hold(False)
-        pl.draw()
+        if to_file:
+            pl.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
+        else:
+            pl.draw()
 
     def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
                     color='r',filled=True,plotaxes=True):
@@ -1172,6 +1208,24 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         self.name=name
         self.info=description
         self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
+        self.mtype = 'Explicit embedded Runge-Kutta pair'
+
+
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        import copy
+        numself = copy.deepcopy(self)
+        if self.A.dtype==object:
+            numself.A=np.array(self.A,dtype=np.float64)
+            numself.b=np.array(self.b,dtype=np.float64)
+            numself.c=np.array(self.c,dtype=np.float64)
+            numself.bhat=np.array(self.bhat,dtype=np.float64)
+        return numself
+
 
     def __repr__(self): 
         """
@@ -1808,7 +1862,7 @@ def SSPRK2(m):
     alpha[m,m-1]=(m-1.)/m
     beta=alpha/r
     alpha[m,0]=1./m
-    name='SSPRK'+str(m)+'2'
+    name='SSPRK('+str(m)+',2)'
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
 
 
