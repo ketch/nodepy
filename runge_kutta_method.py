@@ -68,7 +68,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     # Private functions
     #============================================================
 
-    def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,
+    def __init__(self,A=None,b=None,alpha=None,beta=None,
             name='Runge-Kutta Method',shortname='RKM',description='',mode='exact'):
         r"""
             Initialize a Runge-Kutta method.  For explicit methods,
@@ -112,15 +112,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         self.shortname=shortname
         self.info=description
 
-        if bhat is not None:
-            self.bhat = bhat
-            if self._is_explicit:
-                self.embedded_method = ExplicitRungeKuttaMethod(A,bhat)
-                self.mtype = 'Explicit embedded Runge-Kutta pair'
-            else:
-                self.embedded_method = RungeKuttaMethod(A,bhat)
-                self.mtype = 'Embedded Runge-Kutta pair'
-        elif isinstance(self,ExplicitRungeKuttaMethod):
+        if isinstance(self,ExplicitRungeKuttaMethod):
             self.mtype = 'Explicit Runge-Kutta method'
         elif not (self.A.T - np.triu(self.A.T)).any():
             self.mtype = 'Diagonally implicit Runge-Kutta method'
@@ -145,8 +137,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
             numself.A=np.array(self.A,dtype=np.float64)
             numself.b=np.array(self.b,dtype=np.float64)
             numself.c=np.array(self.c,dtype=np.float64)
-            if hasattr(self,'bhat'):
-                numself.bhat=np.array(self.bhat,dtype=np.float64)
         return numself
 
     def latex(self):
@@ -206,11 +196,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
         s+= ' '*(clenmax+1)+'|'
         for j in range(len(self)):
             s+=' '*(colmax-len(b[j])+1)+b[j]
-        if hasattr(self,'bhat'):
-            s+= '\n'+' '*(clenmax+1)+'|'
-            for j in range(len(self)):
-                s+=' '*(colmax-len(bhat[j])+1)+bhat[j]
-
         return s
 
     def __eq__(self,rkm):
@@ -431,38 +416,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
         A_qp2_max=max([abs(tau) for tau in tau_2])
 
-        if not hasattr(self,'bhat'):
-            D=max(np.max(np.abs(self.A)),np.max(np.abs(self.b)),np.max(np.abs(self.c)))
-            return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
-        else:
-            p=self.embedded_method.order(1.e-13)
-
-            tau_pp2=self.error_coeffs(p+2)
-
-            tau_pp1_hat=self.embedded_method.error_coeffs(p+1)
-            tau_pp2_hat=self.embedded_method.error_coeffs(p+2)
-
-            A_pp1_hat=np.sqrt(float(np.sum(np.array(tau_pp1_hat)**2)))
-            A_pp1_hat_max=max([abs(tau) for tau in tau_pp1_hat])
-
-            A_pp2=    np.sqrt(float(np.sum(np.array(tau_pp2)**2)))
-            A_pp2_hat=np.sqrt(float(np.sum(np.array(tau_pp2_hat)**2)))
-            A_pp2_max=    max([abs(tau) for tau in tau_pp2])
-            A_pp2_hat_max=max([abs(tau) for tau in tau_pp2_hat])
-
-            B_pp2=    A_pp2_hat    /A_pp1_hat
-            B_pp2_max=A_pp2_hat_max/A_pp1_hat_max
-
-            tau2diff=np.array(tau_pp2_hat)-np.array(tau_pp2)
-            C_pp2=    np.sqrt(float(np.sum(tau2diff**2)))/A_pp1_hat
-            C_pp2_max=max([abs(tau) for tau in tau2diff])/A_pp1_hat_max
-
-            D=max(np.max(np.abs(self.A)),np.max(np.abs(self.b)),np.max(np.abs(self.bhat)),np.max(np.abs(self.c)))
-
-            E_pp2=    A_pp2    /A_pp1_hat
-            E_pp2_max=A_pp2_max/A_pp1_hat_max
-
-            return A_qp1, A_qp1_max, A_qp2, A_qp2_max, A_pp1_hat, A_pp1_hat_max, B_pp2, B_pp2_max, C_pp2, C_pp2_max, D, E_pp2, E_pp2_max
+        D=max(np.max(np.abs(self.A)),np.max(np.abs(self.b)),np.max(np.abs(self.c)))
+        return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
 
     def principal_error_norm(self,tol=1.e-13):
@@ -917,7 +872,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         gamma=np.dot(M,d)
         alphatilde=np.dot(M,P_minus)
 
-        if self._is_explicit():
+        if self.is_explicit():
             # Assuming gamma is positive, we can redistribute it
             # But this may not be the optimal way
             alpha[1:,0]+=gamma[1:]/2.
@@ -983,13 +938,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return G,Xinv
 
 
-    def _is_explicit(self):
+    def is_explicit(self):
         return False
 
     def is_FSAL(self):
         """True if method is "First Same As Last"."""
         if np.all(self.A[-1,:]==self.b): return True
-        elif np.all(self.A[-1,:]==self.bhat): return True
         else: return False
 
 #=====================================================
@@ -1062,10 +1016,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
         else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
         unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
-        if errest:
-            uhat=u[-1]+sum([self.bhat[j]*dt*fy[j] for j in range(m)])
-            return unew, np.max(np.abs(unew-uhat))
-        else: return unew
+        return unew
 
     def imaginary_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
         r"""
@@ -1144,7 +1095,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
         return r
 
-    def _is_explicit(self):
+    def is_explicit(self):
         return True
 
     def work_per_step(self):
@@ -1191,6 +1142,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 n = max(n, n_s[i]+1)
         return n
 
+
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
 #=====================================================
@@ -1231,6 +1183,123 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         error tolerance.  The step size will be adjusted automatically
         to achieve approximately this tolerance.
     """
+    def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,
+            name='Runge-Kutta Pair',shortname='RKM',description=''):
+        r"""
+            In addition to the ordinary Runge-Kutta initialization,
+            here the embedded coefficients `\hat{b}_j` are set as well.
+        """
+        super(ExplicitRungeKuttaPair,self).__init__(A,b,alpha,beta,name,shortname,description)
+        self.bhat=bhat
+        self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
+        self.mtype = 'Explicit embedded Runge-Kutta pair'
+
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        numself = super(ExplicitRungeKuttaPair,self).__num__()
+        if self.A.dtype==object:
+            numself.bhat=np.array(self.bhat,dtype=np.float64)
+        return numself
+
+    def __repr__(self): 
+        """
+        Pretty-prints the Butcher array in the form:
+          |
+        c | A
+        ________
+          | b
+          | bhat
+        """
+        s = super(ExplicitRungeKuttaPair,self).__repr__()
+        from utils import shortstring
+
+        bhat = [shortstring(bi) for bi in self.bhat]
+        s+= '\n'+' '*(clenmax+1)+'|'
+        for j in range(len(self)):
+            s+=' '*(colmax-len(bhat[j])+1)+bhat[j]
+        return s
+
+
+    def __step__(self,f,t,u,dt,x=None,errest=False):
+        """
+            Take a time step on the ODE u'=f(t,u).
+            Just like the corresponding method for RKMs, but
+            for RK pairs also computes an error estimate using
+            the embedded method.
+
+            **Input**:
+                - f  -- function being integrated
+                - t  -- array of previous solution times
+                - u  -- array of previous solution steps (u[i] is the solution at time t[i])
+                - dt -- length of time step to take
+
+            **Output**:
+                - unew -- approximate solution at time t[-1]+dt
+
+            The implementation here is wasteful in terms of storage.
+        """
+        m=len(self)
+        y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
+        if x is not None: fy=[f(t[-1],y[0],x)]
+        else: fy=[f(t[-1],y[0])]
+        for i in range(1,m):
+            y.append(u[-1]+0)
+            for j in range(i):
+                y[i]+=self.A[i,j]*dt*fy[j]
+            if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
+            else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
+        if m==1: i=0 #fix just for one-stage methods
+        if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
+        else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
+        unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
+        if errest:
+            uhat=u[-1]+sum([self.bhat[j]*dt*fy[j] for j in range(m)])
+            return unew, np.max(np.abs(unew-uhat))
+        else: return unew
+
+
+    def error_metrics(self):
+        r"""Return full set of error metrics
+            See [kennedy2000]_ p. 181"""
+        A_qp1, A_qp1_max, A_qp2, A_qp2_max, D = super(ExplicitRungeKuttaPair).error_metrics()
+
+        p=self.embedded_method.order(1.e-13)
+        tau_pp2=self.error_coeffs(p+2)
+
+        tau_pp1_hat=self.embedded_method.error_coeffs(p+1)
+        tau_pp2_hat=self.embedded_method.error_coeffs(p+2)
+
+        A_pp1_hat=np.sqrt(float(np.sum(np.array(tau_pp1_hat)**2)))
+        A_pp1_hat_max=max([abs(tau) for tau in tau_pp1_hat])
+
+        A_pp2=    np.sqrt(float(np.sum(np.array(tau_pp2)**2)))
+        A_pp2_hat=np.sqrt(float(np.sum(np.array(tau_pp2_hat)**2)))
+        A_pp2_max=    max([abs(tau) for tau in tau_pp2])
+        A_pp2_hat_max=max([abs(tau) for tau in tau_pp2_hat])
+
+        B_pp2=    A_pp2_hat    /A_pp1_hat
+        B_pp2_max=A_pp2_hat_max/A_pp1_hat_max
+
+        tau2diff=np.array(tau_pp2_hat)-np.array(tau_pp2)
+        C_pp2=    np.sqrt(float(np.sum(tau2diff**2)))/A_pp1_hat
+        C_pp2_max=max([abs(tau) for tau in tau2diff])/A_pp1_hat_max
+
+        D=max(np.max(self.A),np.max(self.b),np.max(self.bhat),np.max(self.c))
+
+        E_pp2=    A_pp2    /A_pp1_hat
+        E_pp2_max=A_pp2_max/A_pp1_hat_max
+
+        return A_qp1, A_qp1_max, A_qp2, A_qp2_max, A_pp1_hat, A_pp1_hat_max, B_pp2, B_pp2_max, C_pp2, C_pp2_max, D, E_pp2, E_pp2_max
+
+
+    def is_FSAL(self):
+        if np.all(self.A[-1,:]==self.b): return True
+        elif np.all(self.A[-1,:]==self.bhat): return True
+        else: return False
 #=====================================================
 #End of ExplicitRungeKuttaPair class
 #=====================================================
@@ -2488,7 +2557,7 @@ def compose(RK1,RK2,h1=1,h2=1):
     np.hstack([RK2.A*f2,np.zeros([np.size(RK2.A,0),np.size(RK1.A,1)])]),
         np.hstack([np.tile(RK2.b*f2,(len(RK1),1)),RK1.A*f1])]).squeeze()
     b=np.hstack([RK2.b*f2,RK1.b*f1]).squeeze()
-    if RK1._is_explicit() and RK2._is_explicit():
+    if RK1.is_explicit() and RK2.is_explicit():
         return ExplicitRungeKuttaMethod(A,b)
     else:
         return RungeKuttaMethod(A,b)
