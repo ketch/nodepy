@@ -24,7 +24,7 @@ This module implements the initial value problem as a class.
 """
 import numpy as np
 
-class IVP:
+class IVP(object):
     """
         In NodePy, an initial value problem is an object with the following
         properties:

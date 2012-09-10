@@ -1,5 +1,5 @@
 #=====================================================
-class ODESolver:
+class ODESolver(object):
 #=====================================================
     """ Top-level class for numerical ODE solvers """
     def __init__(self):
