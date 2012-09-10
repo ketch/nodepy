@@ -1,5 +1,19 @@
 """
 Functions for running convergence and performance tests.
+
+**Examples**::
+
+    >>> from nodepy import rk, convergence, ivp
+
+    # Load some methods:
+    >>> rk4=rk.loadRKM('RK44')
+    >>> SSP2=rk.loadRKM('SSP22')
+    >>> SSP104=rk.loadRKM('SSP104')
+
+    # Define an initial value problem:
+    >>> myivp=ivp.load_ivp('test')
+
+    >>> work, error = convergence.ctest([rk4,SSP2,SSP104],myivp)
 """
 import matplotlib.pyplot as pl
 import numpy as np
@@ -19,11 +33,11 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
 
         **Example**::
 
-            import runge_kutta_method as rk
-            from ivp import *
-            rk44=rk.loadRKM('RK44')
-            myivp=load_ivp('nlsin')
-            err=ctest(rk44,myivp)
+            >>> import runge_kutta_method as rk
+            >>> from ivp import load_ivp
+            >>> rk44=rk.loadRKM('RK44')
+            >>> myivp=load_ivp('nlsin')
+            >>> work, err=ctest(rk44,myivp)
 
         TODO: 
             - Option to plot versus f-evals or dt
@@ -56,7 +70,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
     pl.legend(loc='best')
     pl.hold(False)
     pl.draw()
-    return err, work
+    return work, err
 
 
 def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0):
@@ -74,11 +88,11 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0):
 
         **Example**::
 
-            import runge_kutta_method as rk
-            from ivp import *
-            bs5=rk.loadRKM('BS5')
-            myivp=load_ivp('nlsin')
-            work,err=ptest(bs5,myivp)
+            >>> import runge_kutta_method as rk
+            >>> from ivp import load_ivp
+            >>> bs5=rk.loadRKM('BS5')
+            >>> myivp=load_ivp('nlsin')
+            >>> work,err=ptest(bs5,myivp)
 
     """
     pl.clf(); pl.draw(); pl.hold(True)
@@ -119,3 +133,8 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0):
     pl.draw()
     return work,err
 
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

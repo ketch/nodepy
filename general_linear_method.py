@@ -4,7 +4,11 @@ import rooted_trees as rt
 #=====================================================
 class GeneralLinearMethod(ODESolver):
 #=====================================================
-    """ General class for multstage, multistep methods """
+    """ General class for multstage, multistep methods.
+    
+        This is a pure virtual class; only its child classes
+        should be instantiated.
+    """
     def __init__(self):
         self.data=None
 
@@ -21,5 +25,4 @@ class GeneralLinearMethod(ODESolver):
         return oc
 
     def elementary_weight(self,tree):
-        print 'Not implemented yet!'
-        sys.exit(1)
+        raise NotImplementedError
