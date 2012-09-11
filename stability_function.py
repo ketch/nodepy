@@ -27,14 +27,15 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
     """
     from utils import find_plot_bounds
     m,n = p.order,q.order
-    if (m > n) or ((m == n) and (abs(p[m])<abs(q[n]))):
+    if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
         print 'The stability region is unbounded'
         bounds = (-10*m,m,-5*m,5*m)
-    elif (m == n) and (abs(p[m])==abs(q[n])):
-        print 'The stability region may be unbounded'
     else:
         stable = lambda z : np.abs(p(z)/q(z))<=1.0
         bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+
+    if (m == n) and (abs(p[m])==abs(q[n])):
+        print 'The stability region may be unbounded'
 
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
