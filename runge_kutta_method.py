@@ -572,9 +572,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.draw()  
 
 
-    def plot_stability_region(self,N=200,color='r',filled=True,scaled=False,
-                              plotroots=False,alpha=1.,scalefac=None,to_file=False,
-                              longtitle=True):
+    def plot_stability_region(self,N=200,color='r',filled=True,
+                              plotroots=False,alpha=1.,scalefac=1.,to_file=False,
+                              longtitle=True,fignum=None):
         r""" 
             The region of absolute stability
             of a Runge-Kutta method, is the set
@@ -589,42 +589,24 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
-        from utils import find_plot_bounds
+        import stability_function 
+        import matplotlib.pyplot as plt
 
         p,q=self.__num__().stability_function()
-        m=len(p)
 
-        stable = lambda z : np.abs(p(z)/q(z))<=1.0
-        bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+        fig = stability_function.plot_stability_region(p,q,N,color,filled,plotroots,
+                alpha,scalefac)
 
-        x=np.linspace(bounds[0],bounds[1],N)
-        y=np.linspace(bounds[2],bounds[3],N)
-        X=np.tile(x,(N,1))
-        Y=np.tile(y[:,np.newaxis],(1,N))
-        Z=X+Y*1j
-        if scaled: 
-            if scalefac==None: scalefac=m
-        else: scalefac=1.
-        R=np.abs(p(Z*scalefac)/q(Z*scalefac))
-        if filled:
-            pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
-        else:
-            pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
+        ax = fig.get_axes()
         if longtitle:
-            pl.title('Absolute Stability Region for '+self.name)
+            plt.setp(ax,title='Absolute Stability Region for '+self.name)
         else:
-            pl.title('Stability region')
-        pl.hold(True)
-        if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
-        if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
-        pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-        pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
-        pl.axis('Image')
-        pl.hold(False)
+            plt.setp(ax,title='Stability region')
         if to_file:
-            pl.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
+            plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
         else:
-            pl.draw()
+            plt.draw()
+        return fig
 
     def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
                     color='r',filled=True,plotaxes=True):
@@ -1300,6 +1282,35 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         if np.all(self.A[-1,:]==self.b): return True
         elif np.all(self.A[-1,:]==self.bhat): return True
         else: return False
+
+    def plot_stability_region(self,N=200,color='r',filled=True,
+                              plotroots=False,alpha=1.,scalefac=1.,to_file=False,
+                              longtitle=True):
+        import stability_function 
+        import matplotlib.pyplot as plt
+
+        p,q=self.__num__().stability_function()
+
+        fig = stability_function.plot_stability_region(p,q,N,color,filled,plotroots,
+                alpha,scalefac)
+
+        plt.hold(True)
+        p,q = self.embedded_method.__num__().stability_function()
+        stability_function.plot_stability_region(p,q,N,color='k',filled=False,
+                plotroots=plotroots,alpha=alpha,scalefac=scalefac,fignum=fig.number)
+
+        ax = fig.get_axes()
+        if longtitle:
+            plt.setp(ax,title='Absolute Stability Region for '+self.name)
+        else:
+            plt.setp(ax,title='Stability region')
+        if to_file:
+            plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
+        else:
+            plt.draw()
+        return fig
+
+
 #=====================================================
 #End of ExplicitRungeKuttaPair class
 #=====================================================

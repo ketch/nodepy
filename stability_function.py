@@ -1,45 +1,61 @@
 import numpy as np
 import matplotlib.pyplot as pl
 
-def plot_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
-                color='r',filled=True,scaled=False,plotroots=True,
-                alpha=1.,scalefac=None):
+def plot_stability_region(p,q,N=200,color='r',filled=True,
+                          plotroots=False,alpha=1.,scalefac=1.,fignum=None):
     r""" 
-        The region of absolute stability
-        of a rational function; i.e. the set
+        Plot the region of absolute stability of a rational function; i.e. the set
 
         `\{ z \in C : |\phi (z)|\le 1 \}`
 
-        **Input**: (all optional)
+        The plot bounds are determined automatically, attempting to
+        include the entire region.  A check is performed beforehand for
+        methods with unbounded stability regions.
+        Note that this function is not responsible for actually drawing the 
+        figure to the screen (or saving it to file).
+
+        **Inputs**: 
+            - p, q  -- Numerator and denominator of the stability function 
             - N       -- Number of gridpoints to use in each direction
-            - bounds  -- limits of plotting region
             - color   -- color to use for this plot
             - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+            - plotroots -- if True, plot the roots and poles of the function
+            - alpha -- transparency of contour plot
+            - scalefac -- factor by which to scale region (often used to normalize for stage number)
+            - fignum -- number of existing figure to use for plot
+
     """
-    m=len(p)
+    from utils import find_plot_bounds
+    m,n = p.order,q.order
+    if (m > n) or ((m == n) and (abs(p[m])<abs(q[n]))):
+        print 'The stability region is unbounded'
+        bounds = (-10*m,m,-5*m,5*m)
+    elif (m == n) and (abs(p[m])==abs(q[n])):
+        print 'The stability region may be unbounded'
+    else:
+        stable = lambda z : np.abs(p(z)/q(z))<=1.0
+        bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
     X=np.tile(x,(N,1))
     Y=np.tile(y[:,np.newaxis],(1,N))
     Z=X+Y*1j
-    if scaled: 
-        if scalefac==None: scalefac=m
-    else: scalefac=1.
     R=np.abs(p(Z*scalefac)/q(Z*scalefac))
-    #pl.clf()
+    h = pl.figure(fignum)
+    pl.hold(True)
     if filled:
         pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
     else:
-        pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
-    pl.title('Absolute Stability Region')
-    pl.hold(True)
+        pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha,linewidths=3)
     if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
     if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
     pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
     pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
     pl.axis('Image')
     pl.hold(False)
-    pl.draw()
+    return h
+
 
 def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
                 color=('w','b'),filled=True,subplot=None):
@@ -101,47 +117,3 @@ def taylor(p):
     coeffs=1./factorial(np.arange(p+1))
 
     return np.poly1d(coeffs[::-1])
-
-def plot_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
-                color='r',filled=True,scaled=False,plotroots=True,
-                alpha=1.,scalefac=None):
-    r""" 
-        The region of absolute stability
-        of a Runge-Kutta method, is the set
-
-        `\{ z \in C : |\phi (z)|\le 1 \}`
-
-        where $\phi(z)$ is the stability function of the method.
-
-        **Input**: (all optional)
-            - N       -- Number of gridpoints to use in each direction
-            - bounds  -- limits of plotting region
-            - color   -- color to use for this plot
-            - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
-    """
-    m=len(p)
-    x=np.linspace(bounds[0],bounds[1],N)
-    y=np.linspace(bounds[2],bounds[3],N)
-    X=np.tile(x,(N,1))
-    Y=np.tile(y[:,np.newaxis],(1,N))
-    Z=X+Y*1j
-    if scaled: 
-        if scalefac==None: scalefac=m
-    else: scalefac=1.
-    R=np.abs(p(Z*scalefac)/q(Z*scalefac))
-    pl.clf()
-    if filled:
-        pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
-    else:
-        pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
-    pl.title('Absolute Stability Region')
-    pl.hold(True)
-    if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
-    if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
-    pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-    pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
-    pl.axis('Image')
-    pl.hold(False)
-    pl.draw()
-
-
