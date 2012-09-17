@@ -38,7 +38,7 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         SOform=[x is not None for x in [alpha,alphat,beta,betat]]
         if not ( ( all(butchform) and not (True in SOform) ) or
                     ( (not (True in butchform)) and all(SOform) ) ):
-            raise rk.RungeKuttaError("""To initialize a Runge-Kutta method,
+            raise Exception("""To initialize a Runge-Kutta method,
                 you must provide either Butcher arrays or Shu-Osher arrays,
                 but not both.""")
         if A is not None: #Initialize with Butcher arrays
@@ -46,12 +46,10 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
             m=np.size(A,0) # Number of stages
             if m>1:
                 if not np.all([np.size(A,1),np.size(b)]==[m,m]):
-                   raise rk.RungeKuttaError(
-                    'Inconsistent dimensions of Butcher arrays')
+                   raise Exception('Inconsistent dimensions of Butcher arrays')
             else:
                 if not np.size(b)==1:
-                    raise rk.RungeKuttaError(
-                     'Inconsistent dimensions of Butcher arrays')
+                    raise Exception('Inconsistent dimensions of Butcher arrays')
         elif alpha is not None: #Initialize with Shu-Osher arrays
             A,At,b,bt=downwind_shu_osher_to_butcher(alpha,alphat,beta,betat)
         # Set Butcher arrays
@@ -202,8 +200,7 @@ def downwind_shu_osher_to_butcher(alpha,alphat,beta,betat):
     m=np.size(alpha,1)
     if not np.all([np.size(alpha,0),np.size(beta,0),
                     np.size(beta,1)]==[m+1,m+1,m]):
-        raise RungeKuttaError(
-             'Inconsistent dimensions of Shu-Osher arrays')
+        raise Exception('Inconsistent dimensions of Shu-Osher arrays')
     X=snp.eye(m)-alpha[0:m,:]-alphat[0:m,:]
     A =snp.solve(X, beta[0:m,:])
     At=snp.solve(X,betat[0:m,:])
