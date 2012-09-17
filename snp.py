@@ -37,6 +37,9 @@ def solve(A,b):
     if A.dtype==object:
         Asym=sympy.matrices.Matrix(A)
         bsym=sympy.matrices.Matrix(b)
+        # Silly sympy makes row vectors when we want a column vector:
+        if bsym.shape[0]==1:
+            bsym = bsym.T
         xsym = Asym.LUsolve(bsym)
         xsym = np.array(list(xsym),dtype=object)
         if len(b.shape)>1:
