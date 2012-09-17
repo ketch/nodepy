@@ -173,17 +173,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         from utils import shortstring
 
-        c = [shortstring(ci) for ci in self.c]
-        clenmax = max([len(ci) for ci in c])
         A = [shortstring(ai) for ai in self.A.reshape(-1)]
-        alenmax = max([len(ai) for ai in A])
         b = [shortstring(bi) for bi in self.b]
-        blenmax = max([len(bi) for bi in b])
+        c = [shortstring(ci) for ci in self.c]
         bhatlenmax = 0
-        if hasattr(self,'bhat'):
-            bhat = [shortstring(bi) for bi in self.bhat]
-            bhatlenmax = max([len(bi) for bi in bhat])
-        colmax=max(alenmax,blenmax,bhatlenmax)
+        #if hasattr(self,'bhat'):
+        #    bhat = [shortstring(bi) for bi in self.bhat]
+        #    bhatlenmax = max([len(bi) for bi in bhat])
+        lenmax, colmax = _get_column_widths([A,b,c])
+        alenmax, blenmax, clenmax = lenmax
 
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
@@ -653,7 +651,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         from utils import bisect
 
         tol=1.e-14
-        r=bisect(0,rmax,acc,tol,self.is_circle_contractive)
+        r=bisect(0,rmax,acc,tol,self.__num__().is_circle_contractive)
         return r
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
@@ -813,8 +811,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if r is None: r=self.absolute_monotonicity_radius()
         K=np.vstack([self.A,self.b])
         K=np.hstack([K,np.zeros([m+1,1])])
-        X=np.eye(m+1)+r*K
-        beta=np.linalg.solve(X,K)
+        X=snp.eye(m+1)+r*K
+        beta=snp.solve(X,K)
         beta=beta[:,:-1]
         alpha=r*beta
         for i in range(1,len(self)+1):
@@ -828,8 +826,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         s=len(self)
         K=np.vstack([self.A,self.b])
         K=np.hstack([K,np.zeros([s+1,1])])
-        I=np.eye(s+1)
-        P=np.dot(r*np.linalg.inv(I+r*K),K)
+        I=snp.eye(s+1)
+        P=r*snp.solve(I+r*K,K)
         d=(I-P).sum(1)
         return d,P
 
@@ -837,16 +835,51 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #The next three functions are experimental!
     #==========================================
 
+    def ssplit(self,r,P_signs=None,delta=None):
+        """Sympy exact version of split()
+        
+        If P_signs is passed, use that as the sign pattern of the P matrix.
+        This is useful if r is symbolic (since then in general the signs of
+        elemnts of P are unknown).
+        """
+        import numpy as np
+        s=len(self)
+        I=snp.eye(s+1)
+        d,P=self.canonical_shu_osher_form(r)
+
+        # Split P into positive and negative parts
+        if P_signs is None:
+            P_signs = (P>0).astype(int)
+
+        if delta is None:
+            delta = np.zeros(P.shape)
+
+        P_plus=P*P_signs + delta
+        P_minus=-P*(1-P_signs) + delta
+
+        # Form new coefficients
+        M=I+2*P_minus
+        alpha=snp.solve(M,P_plus)
+        gamma=snp.solve(M,d)
+        alphatilde=snp.solve(M,P_minus)
+
+        if self.is_explicit():
+            # Assuming gamma is positive, we can redistribute it
+            alpha[1:,0]+=gamma[1:]/2
+            alphatilde[1:,0]+=gamma[1:]/2
+            gamma[1:]=0
+
+        return gamma, alpha, alphatilde
+
     def split(self,r,tol=1.e-15):
         import numpy as np
         s=len(self)
         I=np.eye(s+1)
         d,P=self.canonical_shu_osher_form(r)
-        P=P.astype(np.float64) # To avoid object * bool
 
         # Split P into positive and negative parts
-        P_plus=P*(P>0)
-        P_minus=-P*(P<0)
+        P_plus=P*(P>0).astype(int)
+        P_minus=-P*(P<0).astype(int)
 
         # Form new coefficients
         M=np.linalg.inv(I+2*P_minus)
@@ -856,7 +889,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         if self.is_explicit():
             # Assuming gamma is positive, we can redistribute it
-            # But this may not be the optimal way
             alpha[1:,0]+=gamma[1:]/2.
             alphatilde[1:,0]+=gamma[1:]/2.
             gamma[1:]=0.
@@ -1199,7 +1231,12 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         s = super(ExplicitRungeKuttaPair,self).__repr__()
         from utils import shortstring
 
+        A = [shortstring(ai) for ai in self.A.reshape(-1)]
+        b = [shortstring(bi) for bi in self.b]
         bhat = [shortstring(bi) for bi in self.bhat]
+        c = [shortstring(ci) for ci in self.c]
+        lenmax, colmax = _get_column_widths([A,b,c])
+        alenmax, blenmax, clenmax = lenmax
         s+= '\n'+' '*(clenmax+1)+'|'
         for j in range(len(self)):
             s+=' '*(colmax-len(bhat[j])+1)+bhat[j]
@@ -2714,6 +2751,13 @@ def _is_linearly_stable(h,tol,params):
     else:
         return 1
 
+def _get_column_widths(coefflists):
+    lenmax = []
+    for coefflist in coefflists:
+        lenmax.append(max([len(ai) for ai in coefflist]))
+    colmax=max(lenmax)
+    return lenmax, colmax
+ 
 
 if __name__ == "__main__":
     import doctest
