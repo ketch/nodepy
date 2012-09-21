@@ -262,6 +262,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
                     Nset.remove(j)
                     continue
             if Nset==Nsetold: return Nset
+        if hasattr(self,'embedded_method'):
+            Nset2 = self.embedded_method._dj_reducible_stages(tol)
+            Nset = [x for x in Nset if x in Nset2]
         return Nset
 
     def dj_reduce(self,tol=1.e-13):
@@ -289,10 +292,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
                  0 |
                 ___|___
                    |  1
-
-            Warning::
-
-                Right now this is not correct for embedded pairs!
         """
         reducible=True
         while(reducible):
@@ -337,6 +336,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
         self.A=A
         self.b=b
         self.c=c
+        if hasattr(self,'bhat'):
+            bhat=np.delete(self.bhat,stage)
+            self.bhat=bhat
 
     #============================================================
     # Accuracy
@@ -1211,8 +1213,11 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         if bhat.shape != self.b.shape: 
             raise Exception("Dimensions of embedded method don't agree with those of principal method")
         self.bhat=bhat
-        self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
         self.mtype = 'Explicit embedded Runge-Kutta pair'
+
+    @property
+    def embedded_method(self):
+        return ExplicitRungeKuttaMethod(self.A,self.bhat)
 
     def __num__(self):
         """
@@ -2471,8 +2476,8 @@ def extrap_gbs_pair(s, seq='harmonic'):
     alpha1, beta1 = extrap_gbs(s, shuosher=True)
     alpha2, beta2 = extrap_gbs(s,embedded=True, shuosher=True)
 
-    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1).dj_reduce()
-    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2).dj_reduce()
+    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
+    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
     bhat = np.resize(rk2.b,rk1.b.shape)
 
     name='GBS extrapolation pair of order '+str(2*s)+'('+str(2*s-2)+')'
