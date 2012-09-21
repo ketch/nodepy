@@ -289,6 +289,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
                  0 |
                 ___|___
                    |  1
+
+            Warning::
+
+                Right now this is not correct for embedded pairs!
         """
         reducible=True
         while(reducible):
@@ -1029,7 +1033,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         if m==1: i=0 #fix just for one-stage methods
         if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
         else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
-        unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
+        unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])
         return unew
 
     def imaginary_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
@@ -1204,6 +1208,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             here the embedded coefficients `\hat{b}_j` are set as well.
         """
         super(ExplicitRungeKuttaPair,self).__init__(A,b,alpha,beta,name,shortname,description)
+        if bhat.shape != self.b.shape: 
+            raise Exception("Dimensions of embedded method don't agree with those of principal method")
         self.bhat=bhat
         self.embedded_method=ExplicitRungeKuttaMethod(A,bhat)
         self.mtype = 'Explicit embedded Runge-Kutta pair'
@@ -1274,9 +1280,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         if m==1: i=0 #fix just for one-stage methods
         if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
         else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
-        unew=u[-1]+sum([self.b[j]*dt*fy[j] for j in range(m)])
+        unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])
         if errest:
-            uhat=u[-1]+sum([self.bhat[j]*dt*fy[j] for j in range(m)])
+            uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
             return unew, np.max(np.abs(unew-uhat))
         else: return unew
 
@@ -2446,7 +2452,7 @@ def extrap_gbs(s,embedded=False, shuosher=False):
             alpha[nsd+ind,nsd-(s-k)+ind] = 1+1/((N[j]/N[j-k])**2-1)
             alpha[nsd+ind,nsd-(s-k)+ind-1] = -1/((N[j]/N[j-k])**2-1)
         nsd += s-k
-    name='GBS extrapolation method of order '+str(s)
+    name='GBS extrapolation method of order '+str(2*s)
     if shuosher:
         return alpha, beta
     else:
@@ -2465,11 +2471,11 @@ def extrap_gbs_pair(s, seq='harmonic'):
     alpha1, beta1 = extrap_gbs(s, shuosher=True)
     alpha2, beta2 = extrap_gbs(s,embedded=True, shuosher=True)
 
-    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
-    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
+    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1).dj_reduce()
+    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2).dj_reduce()
     bhat = np.resize(rk2.b,rk1.b.shape)
 
-    name='GBS extrapolation pair of order '+str(s)+'('+str(s-2)+')'
+    name='GBS extrapolation pair of order '+str(2*s)+'('+str(2*s-2)+')'
     return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name).dj_reduce()
 
 
