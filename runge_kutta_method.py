@@ -1126,7 +1126,6 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
     def num_seq_dep_stages(self):
         r"""Number of sequentially dependent stages.
 
-        If the method is parallelized, this is the minimum number
         of sequential function evaluations that must be made.
 
             **Examples**::
@@ -2243,6 +2242,15 @@ def dcweights(x):
 
     return w
 
+def DC_pair(s):
+
+    if s<2:
+        raise Exception('s must be equal to or greater than 2')
+    dc = DC(s)
+    name='Deferred Correction pair of order '+str(s+1)+'('+str(s)+')'
+    return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[-1],name=name).dj_reduce()
+
+
 def DC(s,theta=0.,grid='eq'):
     """ Spectral deferred correction methods.
         For now, based on explicit Euler and equispaced points.
@@ -2301,7 +2309,7 @@ def DC(s,theta=0.,grid='eq'):
                     beta[s*k+m+1,s*(k-1)+i]-=theta
 
     name='DC'+str(s)*2
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
 
 #============================================================
