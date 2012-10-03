@@ -19,7 +19,7 @@ import matplotlib.pyplot as pl
 import numpy as np
 from nodepy import runge_kutta_method as rk
 
-def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
+def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
     """
         Runs a convergence test, integrating a single initial value problem
         using a sequence of fixed step sizes and a set of methods.
@@ -30,6 +30,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
             - ivp     -- an IVP instance
             - grids   -- a list of grid sizes for integration.
                       optional; defaults to [20,40,80,160,320,640]
+            - parallel -- to exploit possible parallelization (optional)
 
         **Example**::
 
@@ -63,8 +64,11 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
             t,u=method(ivp,N=N)
             err0.append(np.linalg.norm(u[-1]-exsol))
         err.append(err0)
-        work=[grid*len(method) for grid in grids]
-        pl.loglog(work,err0,label=method.name,linewidth=3)
+        work=np.array([grid*len(method) for grid in grids])
+	if parallel:
+		speedup = len(method)/float(method.num_seq_dep_stages())
+		work = work/speedup
+	pl.loglog(work,err0,label=method.name,linewidth=3)
     pl.xlabel('Function evaluations')
     pl.ylabel('Error at $t_{final}$')
     pl.legend(loc='best')
@@ -73,7 +77,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0):
     return work, err
 
 
-def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0):
+def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False):
     """
         Runs a performance test, integrating a set of problems with a set
         of methods using a sequence of error tolerances.  Creates a plot 
@@ -85,6 +89,7 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0):
                       Note that all methods must have error estimators.
             * ivps    -- a list of IVP instances
             * tols    -- a specified list of error tolerances (optional)
+            * parallel -- to exploit possible parallelization (optional)
 
         **Example**::
 
@@ -121,6 +126,9 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0):
                 err[imeth,jtol]*= np.max(np.abs(u[-1]-exsol))
                 #FSAL methods save on accepted steps, but not on rejected:
                 work[imeth,jtol]+= len(t)*workperstep+rej*len(method)
+        if parallel:
+		speedup = len(method)/float(method.num_seq_dep_stages())
+		work = work/speedup
     for imeth,method in enumerate(methods):
         for jtol,tol in enumerate(tols):
             err[imeth,jtol]=err[imeth,jtol]**(1./len(ivps))
