@@ -118,6 +118,7 @@ def detest(testkey):
             * D1-D5 -- Orbit equations with varying eccentricities
             * E1-E5 -- Second order equations
             * F1-F5 -- Problems with discontinuities
+	    * SB1-SB3 -- Periodic Orbit problem from Shampine Baca paper pg.11,13
 
         .. note::
             Although this set of problems was not intended to become a
@@ -290,6 +291,27 @@ def detest(testkey):
         ivp.rhs = _F5rhs
         ivp.T=20.
         ivp.dt0 = 1.e-2
+    elif testkey=='SB1':
+        mu=0.01212856276531231
+        mudash = 1.0-mu
+        ivp.u0= np.array([1.2,0.,0.,-1.049357509830319])
+        ivp.T=6.192169331319639
+        ivp.rhs = lambda t,u: np.array([u[2],u[3],u[0]+2.*u[3]-mudash*(u[0]+mu)/((u[0]+mu)**2+u[1]**2)**1.5-mu*(u[0]-mudash)/((u[0]-mudash)**2+u[1]**2)**1.5,u[1]-2.*u[2]-mudash*(u[1])/((u[0]+mu)**2+u[1]**2)**1.5-mu*(u[1])/((u[0]-mudash)**2+u[1]**2)**1.5])
+        ivp.dt0 = 1.e-1
+    elif testkey=='SB2':
+        mu=0.012277471
+        mudash = 1.0-mu
+        ivp.u0= np.array([0.994,0,0,-2.0317326955734])
+        ivp.T=11.1243403372661
+        ivp.rhs = lambda t,u: np.array([u[2],u[3],u[0]+2.*u[3]-mudash*(u[0]+mu)/((u[0]+mu)**2+u[1]**2)**1.5-mu*(u[0]-mudash)/((u[0]-mudash)**2+u[1]**2)**1.5,u[1]-2.*u[2]-mudash*(u[1])/((u[0]+mu)**2+u[1]**2)**1.5-mu*(u[1])/((u[0]-mudash)**2+u[1]**2)**1.5])
+        ivp.dt0 = 1.e-1
+    elif testkey=='SB3':
+        mu=0.012277471
+        mudash = 1.0-mu
+        ivp.u0 = np.array([0.994,0.,0.,-2.11389879669450])
+        ivp.T=5.43679543926019
+        ivp.rhs = lambda t,u: np.array([u[2],u[3],u[0]+2.*u[3]-mudash*(u[0]+mu)/((u[0]+mu)**2+u[1]**2)**1.5-mu*(u[0]-mudash)/((u[0]-mudash)**2+u[1]**2)**1.5,u[1]-2.*u[2]-mudash*(u[1])/((u[0]+mu)**2+u[1]**2)**1.5-mu*(u[1])/((u[0]-mudash)**2+u[1]**2)**1.5])
+        ivp.dt0 = 1.e-1
 
     else: raise Exception('Unknown Detest problem')
     ivp.name=testkey
