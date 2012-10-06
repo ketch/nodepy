@@ -1141,7 +1141,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 So are deferred correction methods:
                 >>> dc4 = rk.DC(4)
                 >>> len(dc4)
-                20
+                17
                 >>> dc4.num_seq_dep_stages()
                 8
 
@@ -1174,9 +1174,17 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> theta = rk4.internal_stability_polynomials()
-                >>> print theta
-                         4          3       2
-                0.04167 x + 0.1667 x + 0.5 x + 1 x + 1
+                >>> for p in theta:
+                ...     print p
+                         4           3          2
+                0.04167 x + 0.08333 x + 0.1667 x + 0.1667 x
+                         3          2
+                0.08333 x + 0.1667 x + 0.3333 x
+                        2
+                0.1667 x + 0.3333 x
+                <BLANKLINE>
+                0.1667 x
+
 
         """
         import sympy
@@ -1190,6 +1198,17 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         return theta
 
     def internal_stability_plot(self):
+        r"""Plot internal stability regions.
+        
+            Plots the curve `|\theta(z)|=1`.  We should
+            think of a better way to plot, since we really only
+            care if `|\theta(z)|\gg 1/\epsilon_{machine}`
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.internal_stability_plot()
+        """
         import stability_function
         import matplotlib.pyplot as plt
 
