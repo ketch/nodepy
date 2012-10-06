@@ -26,6 +26,12 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
 
     """
     from utils import find_plot_bounds
+
+    # Convert coefficients to floats for speed
+    if p.coeffs.dtype=='object':
+        p = np.poly1d([float(c) for c in p.coeffs])
+    print p.coeffs.dtype
+
     m,n = p.order,q.order
     if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
         print 'The stability region is unbounded'

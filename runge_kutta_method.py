@@ -1161,6 +1161,47 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 n = max(n, n_s[i]+1)
         return n
 
+    def internal_stability_polynomials(self):
+        r""" 
+            The internal stability polynomials of a Runge-Kutta method are
+            `z b^T(I-zA)^{-1}`.
+
+            **Output**:
+                - numpy array of internal stability polynomials
+
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> theta = rk4.internal_stability_polynomials()
+                >>> print theta
+                         4          3       2
+                0.04167 x + 0.1667 x + 0.5 x + 1 x + 1
+
+        """
+        import sympy
+
+        Asym=sympy.matrices.Matrix(self.A)
+        bsym=sympy.matrices.Matrix(self.b)
+        Isym=sympy.matrices.eye(len(self))
+        z=sympy.var('z')
+        thet = z*bsym*( (Isym - z*Asym).inv() )
+        theta = [np.poly1d(p.as_poly().coeffs()) for p in thet]
+        return theta
+
+    def internal_stability_plot(self):
+        import stability_function
+        import matplotlib.pyplot as plt
+
+        fig=self.plot_stability_region()
+        plt.hold(True)
+        theta = self.internal_stability_polynomials()
+        q = np.poly1d([1.])
+
+        for p in theta:
+            stability_function.plot_stability_region(p,q,color='k',filled=False,fignum=fig.number)
+            plt.hold(True)
+        plt.hold(False)
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
