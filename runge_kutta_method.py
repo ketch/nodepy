@@ -1186,7 +1186,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         Isym=sympy.matrices.eye(len(self))
         z=sympy.var('z')
         thet = z*bsym*( (Isym - z*Asym).inv() )
-        theta = [np.poly1d(p.as_poly().coeffs()) for p in thet]
+        theta = [np.poly1d(p.as_poly().all_coeffs()) for p in thet]
         return theta
 
     def internal_stability_plot(self):
