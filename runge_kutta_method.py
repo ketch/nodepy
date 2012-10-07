@@ -1207,11 +1207,11 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         z=sympy.var('z')
         
         Azpow = sympy.matrices.eye(len(self))
-        Azsum = sympy.matrices.zeros((len(self),len(self)))
+        Azsum = sympy.matrices.eye(len(self))
         m = self.num_seq_dep_stages()
         for i in range(m-1):
             Azpow = z*Asym*Azpow
-            Azsum = (Azsum + Azpow)
+            Azsum = Azsum + Azpow
         thet = (z*bsym*Azsum).applyfunc(sympy.expand)
 
         theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if theta_j!=0]
