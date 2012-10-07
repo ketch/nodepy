@@ -31,6 +31,7 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
     if p.coeffs.dtype=='object':
         p = np.poly1d([float(c) for c in p.coeffs])
 
+    # Check if the stability region is bounded or not
     m,n = p.order,q.order
     if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
         print 'The stability region is unbounded'

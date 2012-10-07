@@ -566,6 +566,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
             q1=np.poly(self.A)
         p=np.poly1d(p1[::-1])    # Numerator
         q=np.poly1d(q1[::-1])    # Denominator
+
+        # Remove leading "zeros" that are not numerically zero:
+        maxdeg = self.num_seq_dep_stages()
+        if maxdeg < p.order:
+            c = p.coeffs[-(maxdeg+1):]
+            p = np.poly1d(c)
         return p,q
 
     def plot_stability_function(self,bounds=[-20,1]):
@@ -1166,6 +1172,13 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             The internal stability polynomials of a Runge-Kutta method are
             `z b^T(I-zA)^{-1}`.
 
+           This routine has been significantly modified for efficiency
+           relative to particular classes of methods.  We use a power
+           series for the matrix inverse (since `A` is strictly lower
+           triangular, hence nilpotent).  Furthermore, the degree of nilpotency
+           of `A` is just the number of sequentially dependent stages minus one,
+           so we take advantage of that fact.
+
             **Output**:
                 - numpy array of internal stability polynomials
 
@@ -1191,10 +1204,17 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         Asym=sympy.matrices.Matrix(self.A)
         bsym=sympy.matrices.Matrix(self.b)
-        Isym=sympy.matrices.eye(len(self))
         z=sympy.var('z')
-        thet = z*bsym*( (Isym - z*Asym).inv() )
-        theta = [np.poly1d(p.as_poly().all_coeffs()) for p in thet]
+        
+        Azpow = sympy.matrices.eye(len(self))
+        Azsum = sympy.matrices.zeros((len(self),len(self)))
+        m = self.num_seq_dep_stages()
+        for i in range(m-1):
+            Azpow = z*Asym*Azpow
+            Azsum = (Azsum + Azpow)
+        thet = (z*bsym*Azsum).applyfunc(sympy.expand)
+
+        theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if theta_j!=0]
         return theta
 
     def internal_stability_plot(self):
@@ -1221,6 +1241,52 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             stability_function.plot_stability_region(p,q,color='k',filled=False,fignum=fig.number)
             plt.hold(True)
         plt.hold(False)
+
+    def maximum_internal_amplification(self,N=200):
+        r"""The maximum amount by which any stage error is amplified,
+            assuming the step size is taken so that the method is absolutely
+            stable:
+
+            `\max_{z \in S,j} |\theta_j(z)|`
+
+            where `S = \{z \in C : |R(z)|\le 1.`
+
+            Here `R(z)` is the stability function and `\theta_j(z)`
+            are the internal stability functions.
+        """
+        from utils import find_plot_bounds
+
+        p,q = self.stability_function()
+        # Convert coefficients to floats for speed
+        if p.coeffs.dtype=='object':
+            p = np.poly1d([float(c) for c in p.coeffs])
+            q = np.poly1d([float(c) for c in q.coeffs])
+
+        stable = lambda z : np.abs(p(z)/q(z))<=1.0
+        bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+
+        # Evaluate the stability function over a grid
+        x=np.linspace(bounds[0],bounds[1],N)
+        y=np.linspace(bounds[2],bounds[3],N)
+        X=np.tile(x,(N,1))
+        Y=np.tile(y[:,np.newaxis],(1,N))
+        Z=X+Y*1j
+        R=np.abs(p(Z)/q(Z))
+
+        # Select just the absolutely stable points
+        ij_stable = np.where(R<=1.)
+        Z_stable = Z[ij_stable]
+
+        # Evaluate the internal stability polynomials over the stable region
+        theta = self.internal_stability_polynomials()
+        maxamp = 0.
+        for thetaj in theta:
+            thetaj = np.poly1d([float(c) for c in thetaj.coeffs])
+            maxamp = max(maxamp, np.max(np.abs(thetaj(Z_stable))))
+            
+        return maxamp
+
+
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
