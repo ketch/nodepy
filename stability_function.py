@@ -43,12 +43,15 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
     if (m == n) and (abs(p[m])==abs(q[n])):
         print 'The stability region may be unbounded'
 
+    # Evaluate the stability function over a grid
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
     X=np.tile(x,(N,1))
     Y=np.tile(y[:,np.newaxis],(1,N))
     Z=X+Y*1j
     R=np.abs(p(Z*scalefac)/q(Z*scalefac))
+
+    # Plot
     h = pl.figure(fignum)
     pl.hold(True)
     if filled:
