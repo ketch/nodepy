@@ -2868,6 +2868,35 @@ def relative_accuracy_efficiency(rk1,rk2):
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
 
+def accuracy_efficiency(rk1,parallel=False):
+    r"""
+    Compute the accuracy efficiency of method rk1.
+
+    The accuracy efficiency is
+
+    `\eta = \frac{1}{s_1} \left(\frac{1}{A_1}\right)^{1/p+1}`
+
+    where `s_1` are the number of stages of the the method and
+    `A_1` is its principal error norms.
+
+    **Examples**::
+
+        Compare Fehlberg's method with Dormand-Prince
+        >>> from nodepy import rk
+        >>> dp5 = rk.loadRKM('DP5')
+        >>> rk.accuracy_efficiency(dp5)
+        0.52649219441213957
+    """
+    
+    p=rk1.order()
+    A1=rk1.principal_error_norm()
+    if parallel:
+        # If we consider parallelization then we divide by number of parallel stages
+        return 1.0/rk1.num_seq_dep_stages() * (1.0/A1)**(1./(p+1))
+    else:
+        # If we DO NOT consider parallelization then we divide by total number of stages
+        return 1.0/len(rk1) * (1.0/A1)**(1./(p+1))
+
 def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
     r"""
         Determine the maximum linearly stable step size for Runge-Kutta method
