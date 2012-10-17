@@ -126,9 +126,9 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
                 err[imeth,jtol]*= np.max(np.abs(u[-1]-exsol))
                 #FSAL methods save on accepted steps, but not on rejected:
                 work[imeth,jtol]+= len(t)*workperstep+rej*len(method)
-        if parallel:
-		speedup = len(method)/float(method.num_seq_dep_stages())
-		work = work/speedup
+    if parallel:
+	speedup = len(method)/float(method.num_seq_dep_stages())
+	work = work/speedup
     for imeth,method in enumerate(methods):
         for jtol,tol in enumerate(tols):
             err[imeth,jtol]=err[imeth,jtol]**(1./len(ivps))
