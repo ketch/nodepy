@@ -2524,6 +2524,25 @@ def extrap(p,seq='harmonic'):
     name='extrap'+str(p)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
+def extrap_pair(p, seq='harmonic'):
+    """ 
+        Returns an embedded RK pair.  The prinicpal method has
+        order p and the embedded method has order p-1.
+        Both methods are constructed based on FE extrapolation.
+    """
+    if p<2:
+        raise Exception('Embedded pair must have order > 0')
+
+    alpha1, beta1 = extrap(p, shuosher=True)
+    alpha2, beta2 = extrap(p,embedded=True, shuosher=True)
+
+    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
+    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
+    bhat = np.resize(rk2.b,rk1.b.shape)
+
+    name='FE extrapolation pair of order '+str(p)+'('+str(p-1)+')'
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name).dj_reduce()
+
 def extrap_gbs(p,embedded=False, shuosher=False):
     """ Construct extrapolation methods based on GBS.
 
