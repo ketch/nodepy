@@ -2441,7 +2441,7 @@ def DC(s,theta=0.,grid='eq'):
 #============================================================
 # Extrapolation methods
 #============================================================
-def extrap(p,seq='harmonic'):
+def extrap(p,seq='harmonic',embedded=False, shuosher=False):
     """ Construct extrapolation methods.
         For now, based on explicit Euler, but allowing arbitrary sequences.
 
@@ -2484,13 +2484,17 @@ def extrap(p,seq='harmonic'):
         N=snp.arange(p)+1;  N=2**(N-1)
 
     J=np.cumsum(N)+1
-    
+    order_reducer=0
+    if embedded:
+        if p>1:
+            order_reducer=1
+ 	else:
+	    raise Exception('Embedded pair must have order>0')
     # Number of real stages:
     nrs = J[-1]
-
     # Shu-Osher arrays
-    alpha=snp.zeros([nrs+p*(p-1)/2,nrs+p*(p-1)/2-1])
-    beta=snp.zeros([nrs+p*(p-1)/2,nrs+p*(p-1)/2-1])
+    alpha=snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
+    beta=snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
 
     # T_11
     alpha[1,0]=1
@@ -2507,22 +2511,26 @@ def extrap(p,seq='harmonic'):
     
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
-    for j in range(1,p):
-        #form T_{j+1,2}:
-        alpha[nrs-1+j,J[j]-1]=1+1/(N[j]/N[j-1]-1)
-        alpha[nrs-1+j,J[j-1]-1]=-1/(N[j]/N[j-1]-1)
-
+    if (embedded and p>2) or not embedded:
+        for j in range(1,p):
+            #form T_{j+1,2}:
+            alpha[nrs-1+j,J[j]-1]=1+1/(N[j]/N[j-1]-1)
+            alpha[nrs-1+j,J[j-1]-1]=-1/(N[j]/N[j-1]-1)
+    
     #Now form all the rest, up to T_ss:
     nsd = nrs-1+p # Number of stages done
-    for k in range(2,p):
+    for k in range(2,p-order_reducer):
         for ind,j in enumerate(range(k,p)):
             #form T_{j+1,k+1}:
             alpha[nsd+ind,nsd-(p-k)+ind] = 1+1/(N[j]/N[j-k]-1)
             alpha[nsd+ind,nsd-(p-k)+ind-1] = -1/(N[j]/N[j-k]-1)
         nsd += p-k
-
+      
     name='extrap'+str(p)
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
+    if shuosher:
+        return alpha, beta
+    else:
+        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
 def extrap_pair(p, seq='harmonic'):
     """ 
