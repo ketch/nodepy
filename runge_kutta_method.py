@@ -2620,23 +2620,23 @@ def extrap_gbs(p,embedded=False, shuosher=False):
         return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
    
 
-def extrap_gbs_pair(s, seq='harmonic'):
+def extrap_gbs_pair(p, seq='harmonic'):
     """ 
         Returns an embedded RK pair.  The prinicpal method has
-        order 2s and the embedded method has order 2(s-1).
+        order 2p and the embedded method has order 2(p-1).
         Both methods are constructed based on GBS extrapolation.
     """
-    if s<2:
+    if p<2:
         raise Exception('Embedded pair must have order > 0')
 
-    alpha1, beta1 = extrap_gbs(s, shuosher=True)
-    alpha2, beta2 = extrap_gbs(s,embedded=True, shuosher=True)
+    alpha1, beta1 = extrap_gbs(p, shuosher=True)
+    alpha2, beta2 = extrap_gbs(p,embedded=True, shuosher=True)
 
     rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
     rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
     bhat = np.resize(rk2.b,rk1.b.shape)
 
-    name='GBS extrapolation pair of order '+str(2*s)+'('+str(2*s-2)+')'
+    name='GBS extrapolation pair of order '+str(2*p)+'('+str(2*p-2)+')'
     return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name).dj_reduce()
 
 
