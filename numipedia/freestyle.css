@@ -1,0 +1,108 @@
+/*
+Original design: Freestyle (v1.0 - August 22nd, 2012) - A free xhtml/css website template by Andreas Viklund.
+For more information, see http://andreasviklund.com/templates/freestyle/
+*/
+
+*{margin:0; padding:0;}
+
+/* General styles */
+body {background:#0a0a0a url(images/background.jpg) top center no-repeat; color:#ccc; font:110% 'Economica',Tahoma,sans-serif; line-height:1.3em;}
+a {color:#d06060; text-decoration:none; font-weight:400;}
+a:hover {text-decoration:underline;}
+p,ul,ol,dl {margin:0 0 15px 0; line-height:1.5em;}
+h1 {color:#888; font-size:3.6em; margin-bottom:0;}
+h1 a {text-transform:none; font-weight:400;}
+h1 a:hover {text-decoration:none; color:#eee;}
+h2 {font-size:2.2em; color:#333; margin:0 0 5px;}
+h3 {font-size:1.6em; margin:0 0 5px 0;}
+h1,h2,h3 {color:#d06060; font-weight:400; line-height:1.2em; font-family:'Economica', sans-serif;}
+
+/* Main layout container */
+#layout {margin:40px auto 0; width:960px;}
+body.wider #layout {margin:40px auto 0; width:1200px;}
+
+/* Footer */
+#footer {background:#0a0a0a url(images/insidebg.jpg) top center no-repeat;}
+#footer .col {color:#555; border-top:1px dotted #1a1a1a; padding:20px 0;}
+#footer p {text-align:center;}
+#footer a {color:#555; font-weight:400; text-decoration:none; border-bottom:1px dotted #333;}
+#footer a:hover {color:#aaa; text-decoration:none; border-bottom:1px dotted #888;}
+
+/* Grid classes, fixed width, 960px with 12 columns */
+.col {float:left; margin:0 10px; overflow:hidden; float:left; display:inline;}
+.col img {max-width:100%;}
+.row {width:960px; margin:20px auto 0; overflow:hidden;}
+.row .row {margin:0 -10px; width:auto;	display:inline-block;}
+.c1 {width:60px;}
+.c2 {width:140px;}
+.c3 {width:220px;}
+.c4 {width:300px;}
+.c5 {width:380px;}
+.c6 {width:460px;}
+.c7 {width:540px;}
+.c8 {width:620px;}
+.c9 {width:700px;}
+.c10 {width:780px;}
+.c11 {width:860px;}
+.c12 {width:940px;}
+
+/* Grid classes, fixed width, 1200px with 12 columns - add class="wider" to the <body> element to use this */
+body.wider .row {width:1200px;}
+body.wider .c1 {width:80px;}
+body.wider .c2 {width:180px;}
+body.wider .c3 {width:280px;}
+body.wider .c4 {width:380px;}
+body.wider .c5 {width:480px;}
+body.wider .c6 {width:580px;}
+body.wider .c7 {width:680px;}
+body.wider .c8 {width:780px;}
+body.wider .c9 {width:880px;}
+body.wider .c10 {width:980px;}
+body.wider .c11 {width:1080px;}
+body.wider .c12 {width:1180px;}
+
+/* Menu list styles */
+ul.menu {list-style:none; margin:0; padding:10px 0; border-top:1px solid #333;}
+ul.menu li {list-style:none; text-align:center; font-size:1.2em; margin:0 0 10px; padding:0 0 8px 0; color:#888; border-bottom:1px solid #333;}
+ul.menu li a {font-size:1.2em; font-weight:400;}
+ul.menu li a:hover {color:#eee; text-decoration:none;}
+
+/* Additional text classes */
+.slogan {color:#bbb; font-size:1.2em;}
+.alignleft {text-align:left;}
+.alignright {text-align:right;}
+.aligncenter {text-align:center;}
+.alignjustify {text-align:justify;}
+.nomargin {margin:0; padding:0;}
+.separator {height:100px; margin:0; padding:0; background: #0a0a0a url(images/insidebg2.jpg) bottom center no-repeat; border-bottom:1px dotted #1a1a1a;}
+.larger {font-size:1.2em;}
+.smaller {font-size:0.9em;}
+.spacer {margin:0 20px;}
+.clear {clear:both;}
+.hide {display:none;}
+
+/* Light styles, apply by using class="light" on the body HTML element */
+body.light {background:#f5f5f5 url(images/background-light.jpg) top center no-repeat; color:#555;}
+body.light a {color:#d06060;}
+body.light a:hover {color:#555;}
+body.light h1 {color:#888; font-size:3.6em; margin-bottom:0;}
+body.light h1 a:hover {color:#303030;}
+body.light h2 {color:#555;}
+body.light h1, body.light h2, body.light h3 {color:#d06060;}
+body.light ul.menu {border-top:1px solid #ddd;}
+body.light ul.menu li {border-bottom:1px solid #ddd;}
+body.light ul.menu li a:hover {color:#333;}
+body.light .separator {background: #f5f5f5 url(images/insidebg2-light.jpg) bottom center no-repeat; border-bottom:1px dotted #ccc;}
+body.light .slogan {color:#888;}
+body.light #footer {background:#f5f5f5 url(images/insidebg-light.jpg) top center no-repeat;}
+body.light #footer .col {color:#555; border-top:1px dotted #ccc;}
+body.light #footer a {color:#555; border-bottom:1px dotted #ddd;}
+body.light #footer a:hover {color:#444; border-bottom:1px dotted #eee;}
+
+/* Alternate colors, apply by adding class="blue" (or any of the other available colors) to the body HTML element */
+body.blue a {color:#3288a8;}
+body.blue h1, body.blue h2, body.blue h3 {color:#3288a8;}
+body.pink a {color:#f06ba0;}
+body.pink h1, body.pink h2, body.pink h3 {color:#f06ba0;}
+body.orange a {color:#e58c24;}
+body.orange h1, body.orange h2, body.orange h3 {color:#e58c24;}
