@@ -1,10 +1,20 @@
 def collect_powers(s,v):
     import re
     m=s.count(v)
-    for i in range(m,0,-1):
+    for i in range(m,1,-1):
         pattern=re.compile(v+'(\*'+v+'){'+str(i)+'}')
         s=pattern.sub(v+'**'+str(i+1),s)
     return s
+
+def getint(string):
+    n = int(string[0])
+    i = 1
+    while True:
+        try:
+            n = int(string[0:i+1])
+        except:
+            return n
+        i = i + 1
 
 def collect_sums(s,v):
     import re

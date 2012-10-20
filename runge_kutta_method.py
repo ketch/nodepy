@@ -434,7 +434,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             errs.append(self.error_coefficient(tree))
         return np.sqrt(float(np.sum(np.array(errs)**2)))
 
-    def order(self,tol=1.e-14):
+    def order(self,tol=1.e-14,method='hard-coded',extremely_high_order=False):
         """ The order of a Runge-Kutta method.
 
             **Examples**::
@@ -444,38 +444,43 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4.order()
                 4
 
-            TODO: Fix this for sympy coefficients
+            method=='hard-coded': 
+                Use hard-coded Butcher conditions in oc_butcher.py (those were
+                auto-generated previously).  
+                This is the fastest, evaluated using floating-point coefficients.
+
+            method=='generation-albrecht': 
+                Use Albrecht's recursion to generate the order conditions.  
+                Evaluated symbolically.
+
+            method=='generation-trees':
+                Use Butcher's recursive product on trees.
+                Advantages: Most satisfying, no maximum order
+                Disadvantages: way too slow for high order
         """
-        from sympy import simplify
-        p=0
-        while True:
-            z=self.order_conditions(p+1)
-            z = snp.array([simplify(zz) for zz in z])
-            if np.any(abs(z)>tol): return p
-            p=p+1
+        if method=='hard-coded':
+            if not extremely_high_order:
+                import oc_butcher
+                return oc_butcher.order(self.__num__(),tol)
+            else:
+                import oc_butcher_high_order
+                return oc_butcher_high_order.order(self.__num__(),tol)
+        elif method=='generation-albrecht':
+            from sympy import simplify
+            p=0
+            while True:
+                z=self.order_conditions(p+1)
+                z = snp.array([simplify(zz) for zz in z])
+                if np.any(abs(z)>tol): return p
+                p=p+1
+        elif method=='generation-trees':
+            raise NotImplementedError
 
     def order_conditions(self,p):
         """
             Generates and evaluates code to test whether a method
             satisfies the order conditions of order p (only).
 
-            Currently uses Albrecht's recursion to generate the
-            order conditions.  This is fast and requires less code
-            than if they were hard-coded up to some high order,
-            although it still only works up to some fixed order
-            (need more recursion loops to go higher).
-
-            Other possibilities, already in place, are:
-                #. Use hard code, generated once and for all
-                   by Albrecht's recursion or another method.
-                   Advantages: fastest
-                   Disadvantages: Less satisfying
-
-                #. Use Butcher's recursive product on trees.
-                   Advantages: Most satisfying, no maximum order
-                   Disadvantages: way too slow for high order
-
-            TODO: Implement the different approaches through optional keyword
         """
         from sympy import factorial,Rational
         A,b,c=self.A,self.b,self.c
@@ -1540,7 +1545,6 @@ def elementary_weight_str(tree,style='python'):
     from rooted_trees import Dmap_str
     ewstr='dot(b,'+tree.Gprod_str(RKeta_str,Dmap_str)+')'
     ewstr=ewstr.replace('1*','')
-    ewstr=collect_powers(ewstr,'c')
     ewstr=mysimp(ewstr)
     if style=='matlab': ewstr=python_to_matlab(ewstr)
     return ewstr
@@ -2881,7 +2885,7 @@ def accuracy_efficiency(rk1,parallel=False):
 
     **Examples**::
 
-        Compare Fehlberg's method with Dormand-Prince
+        Accuracy efficiency of Dormand-Prince
         >>> from nodepy import rk
         >>> dp5 = rk.loadRKM('DP5')
         >>> rk.accuracy_efficiency(dp5)

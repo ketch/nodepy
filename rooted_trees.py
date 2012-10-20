@@ -109,6 +109,7 @@ class RootedTree(str):
             >>> tree.order()
             7
         """
+        from strmanip import getint
         if self=='T': return 1
         if self=='':  return 0
         r=self.count('{')
@@ -116,7 +117,7 @@ class RootedTree(str):
         while pos!=-1:
             pos=self.find('T',pos+1)
             if pos!=-1:
-                try: r+=int(self[pos+2])
+                try: r+=getint(self[pos+2:])
                 except: r+=1
         return r
 
@@ -157,10 +158,11 @@ class RootedTree(str):
 
             - [butcher2003]_ p. 127, eq. 301(b)
         """
+        from strmanip import getint
         if self=='T': return 1
         sigma=1
         if self[1]=='T':
-            try: sigma=factorial(int(self[3]))
+            try: sigma=factorial(getint(self[3:]))
             except: pass
         nleaves,subtrees=self._parse_subtrees()
         while len(subtrees)>0:
@@ -293,8 +295,11 @@ class RootedTree(str):
         if nleaves==2:
             t=RootedTree(self[0:2]+self[4:])
             u=RootedTree('T')
-        if nleaves>2:
+        if nleaves>2 and nleaves<10:
             t=RootedTree(self[0:3]+str(int(self[3])-1)+self[4:])
+            u=RootedTree('T')
+        if nleaves>=10:
+            t=RootedTree(self[0:3]+str(int(self[3:5])-1)+self[5:])
             u=RootedTree('T')
         if t=='{}': t=RootedTree('T')
         return t,u
@@ -436,12 +441,13 @@ class RootedTree(str):
             returning possibly many copies of 'T', the leaves are just
             returned as a number.
         """
-        from strmanip import get_substring, open_to_close
+        from strmanip import get_substring, open_to_close, getint
         if str(self)=='T' or str(self)=='': return 0,[]
         pos=0
         #Count leaves at current level
         if self[1]=='T':    
-            if self[2]=='^': nleaves=int(self[3])
+            if self[2]=='^': 
+                nleaves=getint(self[3:])
             else: nleaves=1
         else: nleaves=0
 
@@ -491,13 +497,15 @@ class RootedTree(str):
             Returns Butcher's product: t*u is the tree obtained by
             attaching the root of u as a child to the root of t. 
         """
+        from strmanip import getint
         if self=='T': return RootedTree('{'+tree2+'}')
         if tree2=='T':  # We're just adding a leaf to self
             nleaves,subtrees=self._parse_subtrees()
             if nleaves==0: return RootedTree(self[0]+'T'+self[1:])
             if nleaves==1: return RootedTree(self[0]+'T^2'+self[2:])
             if nleaves>1:
-                return RootedTree(self[0:3]+str(int(self[3])+1)+self[4:])
+                n = getint(self[3:])
+                return RootedTree(self[0:3]+str(n+1)+self[(3+len(str(n))):])
         else: return RootedTree(self[:-1]+tree2+'}') # tree2 wasn't just 'T'
 #=====================================================
 #End of RootedTree class
@@ -518,6 +526,7 @@ def plot_all_trees(p,title='str'):
         tree.plot(nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
     fig=pl.figure(1)
     pl.setp(fig,facecolor='white')
+    return fig
 
 #=====================================================
 def list_trees(p,ind='all'):
@@ -739,10 +748,10 @@ def recursiveVectors(p,ind='all'):
 
     .. warning::
 
-        This code is complete only up to order 10.  We need to extend it 
-        by adding more subloops for p>10.
+        This code is complete only up to order 12.  We need to extend it 
+        by adding more subloops for p>12.
   """
-  if p>10: print 'recursiveVectors is not complete for orders p>10.'
+  if p>12: print 'recursiveVectors is not complete for orders p>12.'
   W=[[],[]]
   R=[[],[]]
   R.append(["tau[2]"])
@@ -795,6 +804,24 @@ def recursiveVectors(p,ind='all'):
                           lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
                           for Rt in R[t]:
                              W[i].append(ps+Rm+"*"+Rn+"*"+Rs+"*"+Rt)
+     for l in range(0,i-9): # level 5
+        ps=_powerString("C",l,trailchar=",")
+        for n in range(2,i-l-7):
+          for m in range(2,i-l-n-5):
+             for s in range(2,i-l-n-m-3):
+                 for t in range(2,i-l-n-m-s-1):
+                    u=i-t-s-m-n-l
+                    if m<=n<=s<=t<=u: #Avoid duplicate conditions
+                      for Rm in R[m]:
+                         lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+                         for Rn in R[n][lowlim:]:
+                            lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+                            for Rs in R[s][lowlim2:]:
+                              lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
+                              for Rt in R[t]:
+                                  lowlim4=(t<u and [0] or [R[t].index(Rt)])[0]
+                                  for Ru in R[u]:
+                                     W[i].append(ps+Rm+"*"+Rn+"*"+Rs+"*"+Rt+"*"+Ru)
 
   if ind=='all': return W[p-1]
   else: return W[p-1][ind]
