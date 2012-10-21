@@ -17,7 +17,7 @@ Functions for running convergence and performance tests.
 """
 import matplotlib.pyplot as pl
 import numpy as np
-from nodepy import runge_kutta_method as rk
+import runge_kutta_method as rk
 
 def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
     """
