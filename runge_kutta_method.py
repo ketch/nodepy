@@ -1547,6 +1547,7 @@ def elementary_weight_str(tree,style='python'):
     ewstr=ewstr.replace('1*','')
     ewstr=mysimp(ewstr)
     if style=='matlab': ewstr=python_to_matlab(ewstr)
+    if style=='fortran': ewstr=python_to_fortran(ewstr)
     return ewstr
 
 def RKeta(tree):
@@ -2820,6 +2821,10 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
     pl.axis('Image')
     pl.hold(False)
     pl.show()
+
+def python_to_fortran(code):
+    code = code.replace("dot(b","dot_product(b")
+    return code.replace("dot(","matmul(")
 
 def python_to_matlab(code):
     r"""
