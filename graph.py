@@ -6,6 +6,7 @@ For traditional methods, this is not very interesting, but for special classes
 of methods this reveals the potential for parallelism.
 
 **Examples**::
+
     >>> from nodepy import rk
     >>> ex4 = rk.extrap(4)
     >>> plot_dependency_graph(ex4)

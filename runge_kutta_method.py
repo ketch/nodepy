@@ -1540,8 +1540,12 @@ def elementary_weight_str(tree,style='python'):
 
             >>> rk.elementary_weight_str(tree,style='matlab')
             "b'*((A*c.^3))"
+            >>> rk.elementary_weight_str(rt.RootedTree('{T^10}'))
+            'dot(b,c**10)'
+            >>> rk.elementary_weight_str(rt.RootedTree('{{T^11}T}'))
+            'dot(b,dot(A,c**11))'
     """
-    from strmanip import collect_powers, mysimp
+    from strmanip import mysimp
     from rooted_trees import Dmap_str
     ewstr='dot(b,'+tree.Gprod_str(RKeta_str,Dmap_str)+')'
     ewstr=ewstr.replace('1*','')

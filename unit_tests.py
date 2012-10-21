@@ -22,7 +22,7 @@ class LMMOrderTest(LinearMultistepTestCase):
 class LMMSSPCoeffTest(LinearMultistepTestCase):
     def runTest(self):
         for k in range(2,100):
-            ssp2=lmm.elmm_ssp2(k)
+            ssp2=lmm.elm_ssp2(k)
             self.assertAlmostEqual(ssp2.ssp_coefficient(),(k-2.)/(k-1.),10)
 
 class RungeKuttaTestCase(ut.TestCase):

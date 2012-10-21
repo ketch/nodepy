@@ -66,6 +66,7 @@ Dependencies
   * Python 2.7
   * Numpy, Matplotlib
   * SymPy (note: NodePy is now compatible with SymPy 0.7.1)
+  * Optional: networkx (for some Runge-Kutta stage dependency graphing)
 
 Classes of Numerical ODE Solvers
 ================================

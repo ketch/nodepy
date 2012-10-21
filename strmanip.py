@@ -1,7 +1,20 @@
 def collect_powers(s,v):
+    """
+        Collect repeated multiplications of string v in s and replace them by exponentiation.
+
+        **Examples**::
+
+            >>> collect_powers('c*c','c')
+            'c**2'
+            >>> collect_powers('c*c*c*c*c*c*c*c*c*c','c')
+            'c**10'
+            >>> collect_powers('d*c*c','c')
+            'd*c**2'
+    """
+
     import re
     m=s.count(v)
-    for i in range(m,1,-1):
+    for i in range(m,0,-1):
         pattern=re.compile(v+'(\*'+v+'){'+str(i)+'}')
         s=pattern.sub(v+'**'+str(i+1),s)
     return s
@@ -27,7 +40,7 @@ def collect_sums(s,v):
 def mysimp(s):
     from sympy import sympify
     s=s.replace('1*','')
-    s=s.replace('*1','')
+    s=s.replace('*1)',')')
     s=s.replace('--','')
     s=s.replace('+-','-')
     s=collect_powers(s,'c')
