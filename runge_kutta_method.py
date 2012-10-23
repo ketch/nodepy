@@ -1194,7 +1194,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             If not, the Butcher coefficients are used.
 
             The formula for the polynomials is:
-            Modified Shu-Osher form: `(I-alphastar-z betastar)
+            Modified Shu-Osher form: `(alphastarmp1+z betastarmp1)(I-alphastar-z betastar)^{-1}`
             Butcher array: `z b^T(I-zA)^{-1}`
 
             This routine has been significantly modified for efficiency
@@ -1260,6 +1260,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         # The 'if' here is to cover a bug in sympy:
         # it doesn't want to interpret a scalar as a polynomial
         theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if (theta_j!=0 and theta_j!=1)]
+        print thet
         return theta
 
     def internal_stability_plot(self):
