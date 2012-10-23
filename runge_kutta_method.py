@@ -1179,15 +1179,22 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
     def internal_stability_polynomials(self):
         r""" 
-            The internal stability polynomials of a Runge-Kutta method are
-            `z b^T(I-zA)^{-1}`.
+            The internal stability polynomials of a Runge-Kutta method can be
+            computed using either the Butcher's array or the modified Shu-Osher
+            form. The two approaches lead to different internal stability 
+            polynomials.
+            Butcher array: `z b^T(I-zA)^{-1}`
+            Modified Shu-Osher form: `(I-alphastar-z betastar)
 
-           This routine has been significantly modified for efficiency
-           relative to particular classes of methods.  We use a power
-           series for the matrix inverse (since `A` is strictly lower
-           triangular, hence nilpotent).  Furthermore, the degree of nilpotency
-           of `A` is just the number of sequentially dependent stages minus one,
-           so we take advantage of that fact.
+            If the matrices that define the modified Shu-Osher form are not
+            available, the Butcher's array is used.
+            
+            This routine has been significantly modified for efficiency
+            relative to particular classes of methods.  We use a power
+            series for the matrix inverse (since `A` or `(alphastar-z betastar)`is 
+            strictly lower triangular, hence nilpotent).  Furthermore, the degree 
+            of nilpotency of the matrix is just the number of sequentially dependent 
+            stages minus one, so we take advantage of that fact.
 
             **Output**:
                 - numpy array of internal stability polynomials
@@ -1215,19 +1222,43 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         import sympy
 
-        Asym=sympy.matrices.Matrix(self.A)
-        bsym=sympy.matrices.Matrix(self.b)
-        z=sympy.var('z')
-        
-        Azpow = sympy.matrices.eye(len(self))
-        Azsum = sympy.matrices.eye(len(self))
+        # Degree of nilpotency
         m = self.num_seq_dep_stages()
-        for i in range(m-1):
-            Azpow = z*Asym*Azpow
-            Azsum = Azsum + Azpow
-        thet = (z*bsym*Azsum).applyfunc(sympy.expand)
 
-        theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if theta_j!=0]
+        # Symbolic matrices used to construct the power series
+        matpow = sympy.matrices.eye(len(self))
+        matsum = sympy.matrices.eye(len(self))
+
+        # Symbolic independent variable
+        z = sympy.var('z')
+
+        if (self.alpha==None and self.beta==None):
+            print "\nButcher's array is used to construct the internal stability polynomials\n"
+            
+            Asym = sympy.matrices.Matrix(self.A)
+            bsym = sympy.matrices.Matrix(self.b)
+        
+            for i in range(m-1):
+                matpow = z*Asym*matpow
+                matsum = matsum + matpow
+            thet = (z*bsym*matsum).applyfunc(sympy.expand)
+        else:
+            print "\nModified Shu-Osher form is used to construct the internal stability polynomials\n"
+            
+            # Matrices coefficient of the first m stages
+            alphastar = self.alpha[0:len(self),:]
+            betastar = self.beta[0:len(self),:]
+ 
+            alphastarsym = sympy.matrices.Matrix(alphastar)
+            betastarsym = sympy.matrices.Matrix(betastar)     
+            matsym = alphastarsym + betastarsym*z
+
+            for i in range(m-1):
+                matpow = matsym*matpow
+                matsum = matsum + matpow
+            thet = matsum.applyfunc(sympy.expand)
+ 
+        theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if (theta_j!=0 and theta_j!=1)]
         return theta
 
     def internal_stability_plot(self):
@@ -1245,7 +1276,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         import stability_function
         import matplotlib.pyplot as plt
 
-        fig=self.plot_stability_region()
+        fig = self.plot_stability_region()
         plt.hold(True)
         theta = self.internal_stability_polynomials()
         q = np.poly1d([1.])
@@ -1253,7 +1284,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         for p in theta:
             stability_function.plot_stability_region(p,q,color='k',filled=False,fignum=fig.number)
             plt.hold(True)
-        plt.hold(False)
+        plt.hold(False) 
 
     def maximum_internal_amplification(self,N=200):
         r"""The maximum amount by which any stage error is amplified,
