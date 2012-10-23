@@ -1,4 +1,4 @@
-def order(rk,tol=1.e-13):
+def order(rk,tol=1.e-13): # pragma: no cover
     from numpy import dot,zeros,all,sum,abs
     coneq = zeros((40000))
     A=rk.A
