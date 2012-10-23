@@ -36,9 +36,9 @@
     #. [hairer1993]_
 """
 from __future__ import division
-from general_linear_method import GeneralLinearMethod
+from nodepy.general_linear_method import GeneralLinearMethod
 import numpy as np
-import snp
+from nodepy import snp
 import matplotlib.pyplot as pl
 import sympy
 
@@ -69,7 +69,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
 
     def __init__(self,A=None,b=None,alpha=None,beta=None,
-            name='Runge-Kutta Method',shortname='RKM',description='',mode='exact'):
+                 name='Runge-Kutta Method',shortname='RKM',
+                 description='',mode='exact'):
         r"""
             Initialize a Runge-Kutta method.  For explicit methods,
             the class ExplicitRungeKuttaMethod should be used instead.
@@ -425,12 +426,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
         A_qp2_max=max([abs(tau) for tau in tau_2])
 
-        D=max(np.max(np.abs(self.A)),np.max(np.abs(self.b)),np.max(np.abs(self.c)))
+        D=max(np.max(np.abs(self.A)),
+                np.max(np.abs(self.b)),np.max(np.abs(self.c)))
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
 
     def principal_error_norm(self,tol=1.e-13):
-        r""" Returns the 2-norm of the vector of leading order error coefficients."""
+        r"""The 2-norm of the vector of leading order error coefficients."""
         import rooted_trees as rt
         p=self.order(tol)
         forest=rt.list_trees(p+1)
@@ -593,8 +595,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
 
     def plot_stability_region(self,N=200,color='r',filled=True,
-                              plotroots=False,alpha=1.,scalefac=1.,to_file=False,
-                              longtitle=True,fignum=None):
+                              plotroots=False,alpha=1.,scalefac=1.,
+                              to_file=False, longtitle=True,fignum=None):
         r""" 
             The region of absolute stability
             of a Runge-Kutta method, is the set
@@ -614,8 +616,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         p,q=self.__num__().stability_function()
 
-        fig = stability_function.plot_stability_region(p,q,N,color,filled,plotroots,
-                alpha,scalefac)
+        fig = stability_function.plot_stability_region(p,q,N,color,filled,
+                    plotroots,alpha,scalefac)
 
         ax = fig.get_axes()
         if longtitle:
@@ -714,7 +716,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if phip(0)<0: return 0
         if len(zeroes)>0:
             for i in range(len(zeroes)):
-                if p(zeroes[i])/q(zeroes[i])<p(xmax)/q(xmax) and zeroes[i]>xmax:  xmax=zeroes[i]
+                if p(zeroes[i])/q(zeroes[i])<p(xmax)/q(xmax) and zeroes[i]>xmax:
+                    xmax=zeroes[i]
             zmax=max(abs(phi(zeroes)))
             rlo=max(zeroes)
             if p.order==q.order: 
@@ -920,8 +923,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def is_splittable(self,r,tol=1.e-15):
         d,alpha,alphatilde=self.split(r,tol=tol)
-        if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: return True
-        else: return False
+        if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: 
+            return True
+        else: 
+            return False
 
     def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13):
         r"""
@@ -969,7 +974,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         X=np.kron(I,I2)-np.dot(np.kron(self.A,I2),Z)
         Xinv=np.linalg.inv(X)
         e=np.kron(np.ones(nstage)[:,np.newaxis],I2)
-        G=I2 + np.dot(np.kron(self.b[:,np.newaxis],I2).T,np.dot(Z,np.dot(Xinv,e)))
+        G=I2 + np.dot(np.kron(self.b[:,np.newaxis],I2).T,
+                      np.dot(Z,np.dot(Xinv,e)))
 
         return G,Xinv
 
@@ -1126,7 +1132,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         from utils import bisect
         p,q=self.stability_function()
         if q.order!=0 or q[0]!=1:
-            raise NotImplementedError('Not yet implemented for rational functions')
+            raise NotImplementedError(
+                    'Not yet implemented for rational functions')
         else:
             r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
         return r
@@ -1179,19 +1186,20 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
     def internal_stability_polynomials(self):
         r""" 
-            The internal stability polynomials of a Runge-Kutta method can be
-            computed using either the Butcher's array or the modified Shu-Osher
-            form. The two approaches lead to different internal stability 
-            polynomials.
-            Butcher array: `z b^T(I-zA)^{-1}`
-            Modified Shu-Osher form: `(I-alphastar-z betastar)
+            The internal stability polynomials of a Runge-Kutta method 
+            depend on the implementation and must therefore be constructed
+            base on the Shu-Osher form used for the implementation.
+            In this routine,
+            if Shu-Osher coefficients are available, they are used.
+            If not, the Butcher coefficients are used.
 
-            If the matrices that define the modified Shu-Osher form are not
-            available, the Butcher's array is used.
-            
+            The formula for the polynomials is:
+            Modified Shu-Osher form: `(I-alphastar-z betastar)
+            Butcher array: `z b^T(I-zA)^{-1}`
+
             This routine has been significantly modified for efficiency
             relative to particular classes of methods.  We use a power
-            series for the matrix inverse (since `A` or `(alphastar-z betastar)`is 
+            series for the matrix inverse (since `A, \alpha`, and `\beta` are
             strictly lower triangular, hence nilpotent).  Furthermore, the degree 
             of nilpotency of the matrix is just the number of sequentially dependent 
             stages minus one, so we take advantage of that fact.
@@ -1225,39 +1233,32 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         # Degree of nilpotency
         m = self.num_seq_dep_stages()
 
-        # Symbolic matrices used to construct the power series
         matpow = sympy.matrices.eye(len(self))
         matsum = sympy.matrices.eye(len(self))
-
-        # Symbolic independent variable
         z = sympy.var('z')
 
         if (self.alpha==None and self.beta==None):
-            print "\nButcher's array is used to construct the internal stability polynomials\n"
+            # Use Butcher form to construct the internal stability polynomials
             
-            Asym = sympy.matrices.Matrix(self.A)
-            bsym = sympy.matrices.Matrix(self.b)
+            matsym = z*sympy.matrices.Matrix(self.A)
+            vecsym = z*sympy.matrices.Matrix(self.b)
         
-            for i in range(m-1):
-                matpow = z*Asym*matpow
-                matsum = matsum + matpow
-            thet = (z*bsym*matsum).applyfunc(sympy.expand)
         else:
-            print "\nModified Shu-Osher form is used to construct the internal stability polynomials\n"
+            # Use modified Shu-Osher form to construct the internal stability polynomials
             
-            # Matrices coefficient of the first m stages
-            alphastar = self.alpha[0:len(self),:]
-            betastar = self.beta[0:len(self),:]
+            alphastarsym = sympy.matrices.Matrix(self.alpha[0:-1,:])
+            betastarsym  = sympy.matrices.Matrix(self.beta[0:-1,:])
  
-            alphastarsym = sympy.matrices.Matrix(alphastar)
-            betastarsym = sympy.matrices.Matrix(betastar)     
             matsym = alphastarsym + betastarsym*z
+            vecsym = sympy.matrices.Matrix(self.alpha[-1,:]+z*self.beta[-1,:])
 
-            for i in range(m-1):
-                matpow = matsym*matpow
-                matsum = matsum + matpow
-            thet = matsum.applyfunc(sympy.expand)
- 
+        for i in range(m-1):
+            matpow = matsym*matpow
+            matsum = matsum + matpow
+        thet = (vecsym*matsum).applyfunc(sympy.expand)
+
+        # The 'if' here is to cover a bug in sympy:
+        # it doesn't want to interpret a scalar as a polynomial
         theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if (theta_j!=0 and theta_j!=1)]
         return theta
 
@@ -1378,7 +1379,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             In addition to the ordinary Runge-Kutta initialization,
             here the embedded coefficients `\hat{b}_j` are set as well.
         """
-        super(ExplicitRungeKuttaPair,self).__init__(A,b,alpha,beta,name,shortname,description)
+        super(ExplicitRungeKuttaPair,self).__init__(
+                        A,b,alpha,beta,name,shortname,description)
         if bhat.shape != self.b.shape: 
             raise Exception("Dimensions of embedded method don't agree with those of principal method")
         self.bhat=bhat
@@ -2545,8 +2547,8 @@ def extrap(p,seq='harmonic',embedded=False, shuosher=False):
     if embedded:
         if p>1:
             order_reducer=1
- 	else:
-	    raise Exception('Embedded pair must have order>0')
+        else:
+            raise Exception('Embedded pair must have order>0')
     # Number of real stages:
     nrs = J[-1]
     # Shu-Osher arrays
