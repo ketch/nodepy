@@ -1260,7 +1260,6 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         # The 'if' here is to cover a bug in sympy:
         # it doesn't want to interpret a scalar as a polynomial
         theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if (theta_j!=0 and theta_j!=1)]
-        print thet
         return theta
 
     def internal_stability_plot(self):
