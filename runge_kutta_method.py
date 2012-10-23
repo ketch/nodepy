@@ -75,6 +75,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
             the class ExplicitRungeKuttaMethod should be used instead.
 
             TODO: make A a property and update c when it is changed
+
+            Now that we store (alpha,beta) as auxiliary data,
+            maybe it's okay to specify both `(A,b)` and `(\alpha,\beta)`.
         """
         A,b,alpha,beta=snp.normalize(A,b,alpha,beta)
         # Here there is a danger that one could change A
@@ -86,6 +89,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
             raise Exception("""To initialize a Runge-Kutta method,
                 you must provide either Butcher arrays or Shu-Osher arrays,
                 but not both.""")
+
+        self.alpha=alpha
+        self.beta=beta
+
         if butcher:
             # Check that number of stages is consistent
             m=np.size(A,0) # Number of stages
@@ -98,8 +105,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
                     raise Exception(
                      'Inconsistent dimensions of Butcher arrays')
         elif shu_osher:
-            self.alpha=alpha
-            self.beta=beta
             A,b=shu_osher_to_butcher(alpha,beta)
         # Set Butcher arrays
         if len(np.shape(A))==2: self.A=A
@@ -1205,6 +1210,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
 
         """
+        if not self.is_explicit():
+            raise Exception('Internal stability functions work only for explicit methods')
+
         import sympy
 
         Asym=sympy.matrices.Matrix(self.A)
@@ -1513,8 +1521,17 @@ def elementary_weight(tree):
             * Two different types of multiplication; or
             * Full tensor expressions
 
-        The latter is now available in Sympy, but I haven't
-        tried to use it here.
+        The latter is now available in Sympy, and I've started a 
+        test implementation.  The main issue now is that things like
+
+        AxA**2
+
+        don't get parentheses when they really mean
+
+        (AxA)**2.
+
+        It's not really a bug since Ax(A**2) does show parentheses,
+        but it will make it harder to parse into code.
 
         **References**:
             [butcher2003]_
