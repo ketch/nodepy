@@ -40,8 +40,18 @@ def solve(A,b):
         # Silly sympy makes row vectors when we want a column vector:
         if bsym.shape[0]==1:
             bsym = bsym.T
-        xsym = Asym.LUsolve(bsym)
-        xsym = np.array(list(xsym),dtype=object)
+        elif Asym.is_lower(): # Take advantage of structure to solve quickly
+            xsym=sympy.matrices.zeros(b.shape)
+            if len(b.shape)==1:
+                xsym = Asym.lower_triangular_solve(bsym)
+            else:
+                for i in range(bsym.shape[1]):
+                    xsym[:,i] = Asym.lower_triangular_solve(bsym[:,i])
+        else:
+            # This is slower:
+            xsym = Asym.LUsolve(bsym)
+
+        xsym = sympy.matrix2numpy(xsym)
         if len(b.shape)>1:
             shape = [A.shape[1],b.shape[0]]
         else:

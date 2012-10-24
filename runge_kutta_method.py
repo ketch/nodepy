@@ -1732,14 +1732,18 @@ def shu_osher_to_butcher(alpha,beta):
         **References**:  
              #. [gottlieb2009]_
     """
+    if np.triu(alpha).any(): # Check that alpha is lower-triangular
+        raise NotImplementedError('This routine is only written for explicit methods so far.')
+
     m=np.size(alpha,1)
     if not np.all([np.size(alpha,0),np.size(beta,0),
                     np.size(beta,1)]==[m+1,m+1,m]):
-        raise Exception(
-             'Inconsistent dimensions of Shu-Osher arrays')
+        raise Exception('Inconsistent dimensions of Shu-Osher arrays')
+
     X=snp.eye(m)-alpha[0:m,:]
     A=snp.solve(X,beta[0:m,:])
     b=beta[m,:]+np.dot(alpha[m,:],A)
+
     A = snp.simplify(A)
     b = snp.simplify(b)
     return A,b
