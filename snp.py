@@ -45,10 +45,9 @@ def solve(A,b):
             if len(b.shape)==1:
                 xsym = Asym.lower_triangular_solve(bsym)
             else:
-                for i in range(bsym.shape[1]):
+                for i in range(bsym.shape[1]): # Have to do 1 column at a time
                     xsym[:,i] = Asym.lower_triangular_solve(bsym[:,i])
-        else:
-            # This is slower:
+        else: # This is slower:
             xsym = Asym.LUsolve(bsym)
 
         xsym = sympy.matrix2numpy(xsym)
