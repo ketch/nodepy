@@ -1199,14 +1199,14 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 n = max(n, n_s[i]+1)
         return n
 
-    def internal_stability_polynomials(self,useButcher=False):
+    def internal_stability_polynomials(self,use_butcher=False):
         r""" 
             The internal stability polynomials of a Runge-Kutta method 
             depend on the implementation and must therefore be constructed
             base on the Shu-Osher form used for the implementation.
-            An option can be used to specify if the Shu-Osher coefficients or 
-            the Butcher coefficients must be used. By default the Shu-Osher
-            coefficients are used.
+            By default the Shu-Osher coefficients are used.  The
+            Butcher coefficients are used if use_butcher=True or
+            if Shu-Osher coefficients are not defined.
 
             The formula for the polynomials is:
             Modified Shu-Osher form: `(alphastarmp1+z betastarmp1)(I-alphastar-z betastar)^{-1}`
@@ -1225,7 +1225,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             stages minus one, so we take advantage of that fact.
 
             **Options**
-                - useButcher
+                - use_butcher
 
             **Output**:
                 - numpy array of internal stability polynomials
@@ -1261,18 +1261,15 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         matsum = sympy.matrices.eye(len(self))
         z = sympy.var('z')
 
-        if useButcher==True:
+        if (alpha==None and beta==None): use_butcher = True
+
+        if use_butcher==True:
             # Use Butcher form to construct the internal stability polynomials
-
-            if (self.A==None and self.b==None):
-                A,b = shu_osher_to_butcher(alpha,beta)
-
             matsym = z*sympy.matrices.Matrix(self.A)
             vecsym = z*sympy.matrices.Matrix(self.b)
 
         else:
             # Use modified Shu-Osher form to construct the internal stability polynomials
-
             alphastarsym = sympy.matrices.Matrix(self.alpha[0:-1,:])
             betastarsym  = sympy.matrices.Matrix(self.beta[0:-1,:])
  
@@ -1284,8 +1281,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             matsum = matsum + matpow
         thet = (vecsym*matsum).applyfunc(sympy.expand)
 
-        # Since the method is explicit, the first stage is not affected  
-        # perturbations. Therefore, we set to 0 the first internal polynomial
+        # Since the method is explicit, the first stage does not include
+        # perturbations. Therefore, we set the first internal polynomial to 0.
         thet[0] = 0
 
         # The 'if' here is to cover a bug in sympy:
@@ -1293,16 +1290,16 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if (theta_j!=0 and theta_j!=1)]
         return theta
 
-    def internal_stability_plot(self,useButcher=False):
+    def internal_stability_plot(self,use_butcher=False):
         r"""Plot internal stability regions.
         
             Plots the curve `|\theta(z)|=1`.  We should
             think of a better way to plot, since we really only
             care if `|\theta(z)|\gg 1/\epsilon_{machine}`
 
-            An option can be used to specify if the Shu-Osher coefficients or 
-            the Butcher coefficients must be used. By default the Shu-Osher
-            coefficients are used.
+            By default the Shu-Osher coefficients are used.  The
+            Butcher coefficients are used if use_butcher=True or
+            if Shu-Osher coefficients are not defined.
 
             **Examples**::
 
@@ -1315,7 +1312,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         fig = self.plot_stability_region()
         plt.hold(True)
-        theta = self.internal_stability_polynomials(useButcher)
+        theta = self.internal_stability_polynomials(use_butcher)
         q = np.poly1d([1.])
 
         for p in theta:
@@ -1323,7 +1320,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             plt.hold(True)
         plt.hold(False) 
 
-    def maximum_internal_amplification(self,N=200,useButcher=False):
+    def maximum_internal_amplification(self,N=200,use_butcher=False):
         r"""The maximum amount by which any stage error is amplified,
             assuming the step size is taken so that the method is absolutely
             stable:
@@ -1335,9 +1332,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             Here `R(z)` is the stability function and `\theta_j(z)`
             are the internal stability functions.
 
-            An option can be used to specify if the Shu-Osher coefficients or 
-            the Butcher coefficients must be used. By default the Shu-Osher
-            coefficients are used.
+            By default the Shu-Osher coefficients are used.  The
+            Butcher coefficients are used if use_butcher=True or
+            if Shu-Osher coefficients are not defined.
         """
         from utils import find_plot_bounds
 
@@ -1363,7 +1360,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         Z_stable = Z[ij_stable]
 
         # Evaluate the internal stability polynomials over the stable region
-        theta = self.internal_stability_polynomials(useButcher)
+        theta = self.internal_stability_polynomials(use_butcher)
         maxamp = 0.
         for thetaj in theta:
             thetaj = np.poly1d([float(c) for c in thetaj.coeffs])
