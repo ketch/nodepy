@@ -1197,6 +1197,11 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             Modified Shu-Osher form: `(alphastarmp1+z betastarmp1)(I-alphastar-z betastar)^{-1}`
             Butcher array: `z b^T(I-zA)^{-1}`
 
+            Note that in the first stage no perturbation is introduced because
+            for an explicit method the first stage is equal to the solution at
+            the current time level. Therefore, the first internal polynomial is
+            set to zero.
+
             This routine has been significantly modified for efficiency
             relative to particular classes of methods.  We use a power
             series for the matrix inverse (since `A, \alpha`, and `\beta` are
@@ -1228,6 +1233,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         if not self.is_explicit():
             raise Exception('Internal stability functions work only for explicit methods')
 
+
         import sympy
 
         # Degree of nilpotency
@@ -1239,13 +1245,13 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         if (self.alpha==None and self.beta==None):
             # Use Butcher form to construct the internal stability polynomials
-            
+
             matsym = z*sympy.matrices.Matrix(self.A)
             vecsym = z*sympy.matrices.Matrix(self.b)
-        
+
         else:
             # Use modified Shu-Osher form to construct the internal stability polynomials
-            
+
             alphastarsym = sympy.matrices.Matrix(self.alpha[0:-1,:])
             betastarsym  = sympy.matrices.Matrix(self.beta[0:-1,:])
  
@@ -1256,6 +1262,10 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             matpow = matsym*matpow
             matsum = matsum + matpow
         thet = (vecsym*matsum).applyfunc(sympy.expand)
+
+        # Since the method is explicit, the first stage is not affected  
+        # perturbations. Therefore, we set to 0 the first internal polynomial
+        thet[0] = 0
 
         # The 'if' here is to cover a bug in sympy:
         # it doesn't want to interpret a scalar as a polynomial
