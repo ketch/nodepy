@@ -306,13 +306,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 ___|___
                    |  1
         """
-        reducible=True
-        while(reducible):
-            djs = self._dj_reducible_stages(tol=tol)
-            if len(djs)>0: 
-                reducible = True
-                self._remove_stage(djs[0])
-            else: reducible = False
+        djs = self._dj_reducible_stages(tol=tol)
+        if len(djs)>0:
+            for stage in djs[::-1]:
+                self._remove_stage(stage)
         return self
 
 
@@ -354,8 +351,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
             bhat=np.delete(self.bhat,stage)
             self.bhat=bhat
         if self.alpha is not None:
-            for j in range(s+1):
-                self.alpha,self.beta = shu_osher_zero_alpha_ij(self.alpha,self.beta,j,stage)
+            for i in range(s+1):
+                if self.alpha[i,stage] != 0: # Just for speed
+                    self.alpha,self.beta = shu_osher_zero_alpha_ij(self.alpha,self.beta,i,stage)
             alpha=np.delete(np.delete(self.alpha,stage,1),stage,0)
             self.alpha = alpha
             beta=np.delete(np.delete(self.beta,stage,1),stage,0)
@@ -1695,12 +1693,10 @@ def shu_osher_change_alpha_ij(alpha,beta,i,j,val):
 
         **Output**: Shu-Osher arrays alph, bet with alph[i,j]=alpha[i,j]+val.
     """
-    alph=alpha.copy()
-    bet=beta.copy()
-    alph[i,j] = alph[i,j]+val
-    alph[i,0:] -= val*alph[j,0:]
-    bet[i,0:]  -= val* bet[j,0:]
-    return alph,bet
+    alpha[i,j] = alpha[i,j]+val
+    alpha[i,:] -= val*alpha[j,:]
+    beta[i,:]  -= val* beta[j,:]
+    return alpha,beta
 
 def shu_osher_zero_alpha_ij(alpha,beta,i,j):
     """
