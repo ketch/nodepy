@@ -1259,7 +1259,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         matsum = sympy.matrices.eye(len(self))
         z = sympy.var('z')
 
-        if (alpha==None and beta==None): use_butcher = True
+        if (self.alpha==None and self.beta==None): use_butcher = True
 
         if use_butcher==True:
             # Use Butcher form to construct the internal stability polynomials
