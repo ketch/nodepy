@@ -239,6 +239,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         return compose(self,RK2,1,1)
 
+    def _check_consistency(self,tol=1.e-13):
+        import numpy as np
+        assert np.max(np.abs(self.A.sum(1)-self.c))<tol,'Abscissae are inconsistent with A.'
+        if self.alpha is not None:
+            A, b = shu_osher_to_butcher(self.alpha,self.beta)
+            assert np.max(np.abs(self.A-A))<tol and np.max(np.abs(self.b-b))<tol, 'Shu-Osher coefficients are not consistent with Butcher coefficients'
+
     #============================================================
     # Reducibility
     #============================================================
