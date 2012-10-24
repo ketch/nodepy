@@ -1194,7 +1194,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             If not, the Butcher coefficients are used.
 
             The formula for the polynomials is:
-            Modified Shu-Osher form: `(I-alphastar-z betastar)
+            Modified Shu-Osher form: `(alphastarmp1+z betastarmp1)(I-alphastar-z betastar)^{-1}`
             Butcher array: `z b^T(I-zA)^{-1}`
 
             This routine has been significantly modified for efficiency
