@@ -343,6 +343,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Note that stages in the NumPy arrays are indexed from zero,
             so to remove stage j use _remove_stage(j-1).
         """
+        s = len(self)
         A=np.delete(np.delete(self.A,stage,1),stage,0)
         b=np.delete(self.b,stage)
         c=np.delete(self.c,stage)
@@ -352,6 +353,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if hasattr(self,'bhat'):
             bhat=np.delete(self.bhat,stage)
             self.bhat=bhat
+        if self.alpha is not None:
+            for j in range(s+1):
+                self.alpha,self.beta = shu_osher_zero_alpha_ij(self.alpha,self.beta,j,stage)
+            alpha=np.delete(np.delete(self.alpha,stage,1),stage,0)
+            self.alpha = alpha
+            beta=np.delete(np.delete(self.beta,stage,1),stage,0)
+            self.beta = beta
 
     #============================================================
     # Accuracy
@@ -1690,11 +1698,11 @@ def shu_osher_change_alpha_ij(alpha,beta,i,j,val):
 
         **Output**: Shu-Osher arrays alph, bet with alph[i,j]=alpha[i,j]+val.
     """
-    alph=alpha+0.
-    bet=beta+0.
-    alph[i,j]=alph[i,j]+val
-    alph[i,0:]-=val*alph[j,0:]
-    bet[i,0:] -=val* bet[j,0:]
+    alph=alpha.copy()
+    bet=beta.copy()
+    alph[i,j] = alph[i,j]+val
+    alph[i,0:] -= val*alph[j,0:]
+    bet[i,0:]  -= val* bet[j,0:]
     return alph,bet
 
 def shu_osher_zero_alpha_ij(alpha,beta,i,j):
