@@ -581,11 +581,24 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         if self.A.dtype==object:
             Asym=sympy.matrices.Matrix(self.A)
-            bsym=sympy.matrices.Matrix(np.tile(self.b,(len(self),1)))
-            xsym=Asym-bsym
-            x=sympy.var('x')
-            p1=xsym.charpoly(x).coeffs()
-            q1=Asym.charpoly(x).coeffs()
+            z=sympy.var('z')
+            if self.is_explicit():
+                bsym=sympy.matrices.Matrix(self.b)
+                I = sympy.matrices.eye(len(self))
+                e = sympy.matrices.ones((len(self),1))
+                p1=z*bsym*(I-z*Asym).lower_triangular_solve(e)
+                p1=p1[0].expand()+1
+                if p1.is_Number:
+                    p1 = [p1]
+                else:
+                    p1=p1.as_poly().all_coeffs()
+                    p1=p1[::-1]
+                q1=[sympy.Rational(1)]
+            else:
+                bsym=sympy.matrices.Matrix(np.tile(self.b,(len(self),1)))
+                xsym=Asym-bsym
+                p1=xsym.charpoly(z).coeffs()
+                q1=Asym.charpoly(z).coeffs()
         else:
             p1=np.poly(self.A-np.tile(self.b,(len(self),1)))
             q1=np.poly(self.A)
@@ -1252,6 +1265,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         matpow = sympy.matrices.eye(len(self))
         matsum = sympy.matrices.eye(len(self))
+        I = sympy.matrices.eye(len(self))
         z = sympy.var('z')
 
         if (self.alpha==None and self.beta==None): use_butcher = True
@@ -1269,10 +1283,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             matsym = alphastarsym + betastarsym*z
             vecsym = sympy.matrices.Matrix(self.alpha[-1,:]+z*self.beta[-1,:])
 
-        for i in range(m-1):
-            matpow = matsym*matpow
-            matsum = matsum + matpow
-        thet = (vecsym*matsum).applyfunc(sympy.expand)
+        thet = (I-matsym).T.upper_triangular_solve(vecsym.T).applyfunc(sympy.expand)
 
         # Since the method is explicit, the first stage does not include
         # perturbations. Therefore, we set the first internal polynomial to 0.
