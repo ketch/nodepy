@@ -1235,20 +1235,15 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> theta = rk4.internal_stability_polynomials()
                 >>> for p in theta:
                 ...     print p
-                         4           3          2
-                0.04167 x + 0.08333 x + 0.1667 x + 0.1667 x
                          3          2
                 0.08333 x + 0.1667 x + 0.3333 x
                         2
                 0.1667 x + 0.3333 x
                 <BLANKLINE>
                 0.1667 x
-
-
         """
         if not self.is_explicit():
             raise Exception('Internal stability functions work only for explicit methods')
-
 
         import sympy
 

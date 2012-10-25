@@ -40,7 +40,7 @@ def solve(A,b):
         # Silly sympy makes row vectors when we want a column vector:
         if bsym.shape[0]==1:
             bsym = bsym.T
-        elif Asym.is_lower(): # Take advantage of structure to solve quickly
+        if Asym.is_lower(): # Take advantage of structure to solve quickly
             xsym=sympy.matrices.zeros(b.shape)
             if len(b.shape)==1:
                 xsym = Asym.lower_triangular_solve(bsym)
