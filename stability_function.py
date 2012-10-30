@@ -39,6 +39,8 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
     else:
         stable = lambda z : np.abs(p(z)/q(z))<=1.0
         bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+        if np.min(np.abs(np.array(bounds)))<1.e-14:
+            print 'No stable region found; is this method zero-stable?'
 
     if (m == n) and (abs(p[m])==abs(q[n])):
         print 'The stability region may be unbounded'

@@ -1356,7 +1356,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             import sympy
             z = sympy.var('z')
             I = sympy.matrices.eye(len(self))
-            if (self.alpha is None and self.beta is None): use_butcher = True
+            if (self.alpha is None or self.beta is None): use_butcher = True
 
             if use_butcher:
                 matsym = z*sympy.matrices.Matrix(self.A)
@@ -1390,7 +1390,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         theta = [np.poly1d(theta_j.as_poly(z).all_coeffs()) for theta_j in thet[1:]]
         return theta
 
-    def internal_stability_plot(self,use_butcher=False):
+    def internal_stability_plot(self,use_butcher=False,formula='lts'):
         r"""Plot internal stability regions.
         
             Plots the curve `|\theta(z)|=1`.  We should
@@ -1412,7 +1412,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         fig = self.plot_stability_region()
         plt.hold(True)
-        theta = self.internal_stability_polynomials(use_butcher)
+        theta = self.internal_stability_polynomials(use_butcher,formula=formula)
         q = np.poly1d([1.])
 
         for p in theta:
@@ -1446,6 +1446,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 2.0370511185806568
         """
         from utils import find_plot_bounds
+
+        if (self.alpha is None or self.beta is None): use_butcher = True
 
         p,q = self.stability_function(use_butcher=use_butcher,formula=formula)
         # Convert coefficients to floats for speed

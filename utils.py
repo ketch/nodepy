@@ -68,7 +68,7 @@ def find_plot_bounds(f,guess,N=101,zmax=1000):
                     break
                 bounds[0] = bounds[0]/1.5
                 if bounds[0] > -1.e-15:
-                    raise Exception('No stable region found; is this method zero-stable?')
+                    return bounds
 
         bounds[1] = -0.1*bounds[0]
         x=np.linspace(bounds[0],bounds[1],N) + 0.*1j
@@ -87,7 +87,7 @@ def find_plot_bounds(f,guess,N=101,zmax=1000):
                     break
                 bounds[2] = bounds[2]/1.5
                 if bounds[2] > -1.e-15:
-                    raise Exception('No stable region found; is this method zero-stable?')
+                    return bounds
 
         bounds[3] = -bounds[2]
 
