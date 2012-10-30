@@ -85,5 +85,23 @@ class linAmradTest(RungeKuttaTestCase):
         for method, R in self.knownValues:
             self.assertAlmostEqual(self.RKs[method].linear_absolute_monotonicity_radius(),R,2)
 
+class RKstabfuntest(RungeKuttaTestCase):
+    import sympy
+    one = sympy.Rational(1)
+    knownValues = ( ('RK44',[one/24,one/6,one/2,one,one]), )
+
+    def runTest(self):
+        for method, polycoeffs in self.knownValues:
+            for formula in ['det','lts','pow']:
+                p,q = self.RKs[method].stability_function(formula=formula)
+                assert(all(p.coeffs==polycoeffs))
+        ssp2 = rk.SSPRK2(3)
+        one = self.one
+        for formula in ['lts','pow']:
+                p,q = ssp2.stability_function(formula=formula,use_butcher=False)
+                assert(all(p.coeffs==[one/12,one/2,one,one]))
+
+
+
 if __name__== "__main__":
     ut.main()
