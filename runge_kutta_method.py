@@ -653,7 +653,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             elif formula == 'pow': # Power series
                 s = self.num_seq_dep_stages()
-                print s
                 I = sympy.matrices.eye(len(self))
                 if use_butcher:
                     Asym=sympy.matrices.Matrix(self.A)
@@ -1303,7 +1302,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 n = max(n, n_s[i]+1)
         return n
 
-    def internal_stability_polynomials(self,use_butcher=False):
+    def internal_stability_polynomials(self,mode='exact',use_butcher=False,formula='lts'):
         r""" 
             The internal stability polynomials of a Runge-Kutta method 
             depend on the implementation and must therefore be constructed
@@ -1321,12 +1320,13 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             the current time level. Therefore, the first internal polynomial is
             set to zero.
 
-            This routine has been significantly modified for efficiency
-            relative to particular classes of methods.  We use a power
-            series for the matrix inverse (since `A, \alpha`, and `\beta` are
-            strictly lower triangular, hence nilpotent).  Furthermore, the degree 
-            of nilpotency of the matrix is just the number of sequentially dependent 
-            stages minus one, so we take advantage of that fact.
+            For symbolic computation, 
+            this routine has been significantly modified for efficiency
+            relative to particular classes of methods.  Two formulas are
+            implemented, one based on SymPy's Matrix.lower_triangular_solve()
+            and the other using a power series for the inverse.  Different
+            choices of these two are more efficient for different classes of
+            methods (this only matters for methods with very many stages).
 
             **Options**
                 - use_butcher
@@ -1348,43 +1348,46 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 <BLANKLINE>
                 0.1667 x
         """
-        if not self.is_explicit():
-            raise Exception('Internal stability functions work only for explicit methods')
-
-        import sympy
-
-        # Degree of nilpotency
-        m = self.num_seq_dep_stages()
-
-        matpow = sympy.matrices.eye(len(self))
-        matsum = sympy.matrices.eye(len(self))
-        I = sympy.matrices.eye(len(self))
-        z = sympy.var('z')
-
-        if (self.alpha==None and self.beta==None): use_butcher = True
-
-        if use_butcher==True:
-            # Use Butcher form to construct the internal stability polynomials
-            matsym = z*sympy.matrices.Matrix(self.A)
-            vecsym = z*sympy.matrices.Matrix(self.b)
-
+        if mode=='float' or self.A.dtype != object:
+            # Floating-point calculation
+            raise NotImplementedError
         else:
-            # Use modified Shu-Osher form to construct the internal stability polynomials
-            alphastarsym = sympy.matrices.Matrix(self.alpha[0:-1,:])
-            betastarsym  = sympy.matrices.Matrix(self.beta[0:-1,:])
+            # Symbolic calculation
+            import sympy
+            z = sympy.var('z')
+            I = sympy.matrices.eye(len(self))
+            if (self.alpha is None and self.beta is None): use_butcher = True
+
+            if use_butcher:
+                matsym = z*sympy.matrices.Matrix(self.A)
+                vecsym = z*sympy.matrices.Matrix(self.b)
+
+            else:
+                alphastarsym = sympy.matrices.Matrix(self.alpha[0:-1,:])
+                betastarsym  = sympy.matrices.Matrix(self.beta[0:-1,:])
  
-            matsym = alphastarsym + betastarsym*z
-            vecsym = sympy.matrices.Matrix(self.alpha[-1,:]+z*self.beta[-1,:])
+                matsym = alphastarsym + betastarsym*z
+                vecsym = sympy.matrices.Matrix(self.alpha[-1,:]+z*self.beta[-1,:])
 
-        thet = (I-matsym).T.upper_triangular_solve(vecsym.T).applyfunc(sympy.expand)
+            if formula == 'pow':
+                # Degree of nilpotency
+                m = self.num_seq_dep_stages()
 
-        # Since the method is explicit, the first stage does not include
-        # perturbations. Therefore, we set the first internal polynomial to 0.
-        thet[0] = 0
+                matpow = sympy.matrices.eye(len(self))
+                matsum = sympy.matrices.eye(len(self))
 
-        # The 'if' here is to cover a bug in sympy:
-        # it doesn't want to interpret a scalar as a polynomial
-        theta = [np.poly1d(theta_j.as_poly().all_coeffs()) for theta_j in thet if (theta_j!=0 and theta_j!=1)]
+                for i in range(m-1):
+                    matpow = matsym*matpow
+                    matsum = matsum + matpow
+                thet = (vecsym*matsum).applyfunc(sympy.expand)
+
+            elif formula == 'lts':
+
+                thet = (I-matsym).T.upper_triangular_solve(vecsym.T)
+                thet = thet.applyfunc(sympy.expand_mul)
+
+        # Don't consider perturbations to first stage:
+        theta = [np.poly1d(theta_j.as_poly(z).all_coeffs()) for theta_j in thet[1:]]
         return theta
 
     def internal_stability_plot(self,use_butcher=False):
@@ -1417,7 +1420,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             plt.hold(True)
         plt.hold(False) 
 
-    def maximum_internal_amplification(self,N=200,use_butcher=False):
+    def maximum_internal_amplification(self,N=200,use_butcher=False,formula='lts'):
         r"""The maximum amount by which any stage error is amplified,
             assuming the step size is taken so that the method is absolutely
             stable:
@@ -1432,10 +1435,19 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             By default the Shu-Osher coefficients are used.  The
             Butcher coefficients are used if use_butcher=True or
             if Shu-Osher coefficients are not defined.
+
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> ssp2 = rk.SSPRK2(6)
+                >>> ssp2.maximum_internal_amplification()
+                1.0974050096180772
+                >>> ssp2.maximum_internal_amplification(use_butcher=True)
+                2.0370511185806568
         """
         from utils import find_plot_bounds
 
-        p,q = self.stability_function()
+        p,q = self.stability_function(use_butcher=use_butcher,formula=formula)
         # Convert coefficients to floats for speed
         if p.coeffs.dtype=='object':
             p = np.poly1d([float(c) for c in p.coeffs])
@@ -1457,15 +1469,13 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         Z_stable = Z[ij_stable]
 
         # Evaluate the internal stability polynomials over the stable region
-        theta = self.internal_stability_polynomials(use_butcher)
+        theta = self.internal_stability_polynomials(use_butcher=use_butcher,formula=formula)
         maxamp = 0.
         for thetaj in theta:
             thetaj = np.poly1d([float(c) for c in thetaj.coeffs])
             maxamp = max(maxamp, np.max(np.abs(thetaj(Z_stable))))
             
         return maxamp
-
-
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
