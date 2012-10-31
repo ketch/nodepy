@@ -24,14 +24,16 @@ override the generic RK implementation of time-stepping and use
 special memory-efficient implementations instead.  It should be noted
 that, although these low-storage algorithms are implemented, due to
 Python language restrictions an extra intermediate copy of the solution
-array will be created.  Thus the implementation is not really 
+array will be created.  Thus the implementation in NodePy is not really 
 minimum-storage.
 
 At the moment, the following classes are implemented:
 
-    * 2S
-    * 2S*
-    * 3S*
+    * 2S : Methods using two registers (under Ketcheson's assumption)
+    * 2S* : Methods using two registers, one of which retains the previous
+            step solution
+    * 3S* : Methods using three registers, one of which retains the previous
+            step solution
     * 2S embedded pairs
     * 3S* embedded pairs
     * 2R embedded pairs

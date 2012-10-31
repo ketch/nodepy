@@ -23,13 +23,28 @@
     >>> RK.keys()
     ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'BuRK65', 'DP8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
 
-    >>> RK['Mid22']
+    >>> print RK['Mid22']
     Midpoint Runge-Kutta
     <BLANKLINE>
      0   |
-     1/2 |  1/2
+     1/2 | 1/2
     _____|__________
-         |    0    1
+         | 0    1
+
+* Many methods are naturally implemented in some Shu-Osher form different
+  from the Butcher form:
+
+    >>> ssp42 = SSPRK2(4)
+    >>> ssp42.print_shu_osher()
+    SSPRK(4,2)
+    <BLANKLINE>
+         |                     |
+     1/3 | 1                   | 1/3
+     2/3 |      1              |      1/3
+     1   |           1         |           1/3
+    _____|_____________________|_____________________
+         | 1/4            3/4  |                1/4
+
 
 **References**:  
     #. [butcher2003]_
@@ -169,39 +184,76 @@ class RungeKuttaMethod(GeneralLinearMethod):
         s=s.replace('- -','')
         return s
 
-    def __repr__(self): 
+    def print_shu_osher(self):
         """
-        Pretty-prints the Butcher array in the form:
+        Pretty-prints the Shu-Osher arrays in the form
+
+          |        |
+        c | \alpha | \beta
+        __________________
+          | amp1   | bmp1
+
+        where amp1, bmp1 represent the last rows of `\alpha,\beta`.
+        """
+        if (self.alpha is None or self.beta is None):
+            raise Exception('Shu-Osher arrays not defined for this method.')
+
+        from utils import array2strings
+
+        c = array2strings(self.c)
+        alpha = array2strings(self.alpha)
+        beta  = array2strings(self.beta)
+        lenmax, colmax = _get_column_widths([alpha,beta,c])
+        alenmax, blenmax, clenmax = lenmax
+
+        s=self.name+'\n'+self.info+'\n'
+        for i in range(len(self)):
+            s+=c[i].ljust(colmax+1)+'|'
+            for j in range(len(self)):
+                s+=alpha[i,j].ljust(colmax+1)
+            s+=' |'
+            for j in range(len(self)):
+                s+=beta[i,j].ljust(colmax+1)
+            s=s.rstrip()+'\n'
+        s+='_'*(colmax+1)+('|_'+'_'*(colmax+1)*len(self))*2+'\n'
+        s+= ' '*(colmax+1)+'|'
+        for j in range(len(self)):
+            s+=alpha[-1,j].ljust(colmax+1)
+        s+=' |'
+        for j in range(len(self)):
+            s+=beta[-1,j].ljust(colmax+1)
+        print s.rstrip()
+
+
+    def __str__(self):
+        """
+        Pretty-prints the Butcher array in the form
+
           |
         c | A
         ______
           | b
         """
-        from utils import shortstring
+        from utils import array2strings
 
-        A = [shortstring(ai) for ai in self.A.reshape(-1)]
-        b = [shortstring(bi) for bi in self.b]
-        c = [shortstring(ci) for ci in self.c]
-        bhatlenmax = 0
-        #if hasattr(self,'bhat'):
-        #    bhat = [shortstring(bi) for bi in self.bhat]
-        #    bhatlenmax = max([len(bi) for bi in bhat])
+        c = array2strings(self.c,printzeros=True)
+        A = array2strings(self.A)
+        b = array2strings(self.b,printzeros=True)
         lenmax, colmax = _get_column_widths([A,b,c])
         alenmax, blenmax, clenmax = lenmax
 
         s=self.name+'\n'+self.info+'\n'
         for i in range(len(self)):
-            s+=c[i]+' '*(clenmax-len(c[i])+1)+'| '
+            s+=c[i].ljust(colmax+1)+'|'
             for j in range(len(self)):
-                ss=shortstring(self.A[i,j])
-                s+=ss.ljust(colmax+1)
+                s+=A[i,j].ljust(colmax+1)
             s=s.rstrip()+'\n'
-        s+='_'*(clenmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
-        s+= ' '*(clenmax+1)+'|'
+        s+='_'*(colmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
+        s+= ' '*(colmax+1)+'|'
         for j in range(len(self)):
-            s+=' '*(colmax-len(b[j])+1)+b[j]
-        return s
-
+            s+=b[j].ljust(colmax+1)
+        return s.rstrip()
+     
     def __eq__(self,rkm):
         """
             Methods considered equal if their Butcher arrays are
@@ -299,12 +351,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 [1]
 
                 Reduce it by removing stage 1 (the second stage):
-                >>> rkm.dj_reduce()
+                >>> print rkm.dj_reduce()
                 Runge-Kutta Method
                 <BLANKLINE>                
                  0 |
                 ___|___
-                   |  1
+                   | 1
         """
         djs = self._dj_reducible_stages(tol=tol)
         if len(djs)>0:
@@ -600,7 +652,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if use_butcher == False and self.alpha is None:
             raise Exception('No Shu-Osher coefficients provided.')
 
-        if (not self.is_explicit) and (formula != 'det'):
+        if (not self.is_explicit()) and (formula != 'det'):
             raise NotImplementedError("Only formula='det' is implemented for implicit methods.")
 
         if formula == 'det' and use_butcher == False:
@@ -623,7 +675,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 bsym=sympy.matrices.Matrix(np.tile(self.b,(len(self),1)))
                 xsym=Asym-bsym
                 p1=xsym.charpoly(z).coeffs()
-                if self.is_explicit: # This switch is just for speed
+                if self.is_explicit(): # This switch is just for speed
                     q1=[sympy.Rational(1)]
                 else:
                     q1=Asym.charpoly(z).coeffs()
@@ -1114,39 +1166,6 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         to RungeKuttaMethod, but also includes time-stepping and
         a few other functions.
     """
-    def __repr__(self): 
-        """
-        Pretty-prints the Butcher array in the form:
-          |
-        c | A
-        ______
-          | b
-        """
-        from utils import shortstring
-
-        c = [shortstring(ci) for ci in self.c]
-        clenmax = max([len(ci) for ci in c])
-        A = [shortstring(ai) for ai in self.A.reshape(-1)]
-        alenmax = max([len(ai) for ai in A])
-        b = [shortstring(bi) for bi in self.b]
-        blenmax = max([len(bi) for bi in b])
-        colmax=max(alenmax,blenmax)
-
-        s=self.name+'\n'+self.info+'\n'
-
-        s=self.name+'\n'+self.info+'\n'
-        for i in range(len(self)):
-            s+=c[i]+' '*(clenmax-len(c[i])+1)+'| '
-            for j in range(i):
-                ss=shortstring(self.A[i,j])
-                s+=ss.ljust(colmax+1)
-            s=s.rstrip()+'\n'
-        s+='_'*(clenmax+1)+'|'+('_'*(colmax+1)*len(self))+'\n'
-        s+= ' '*(clenmax+1)+'|'
-        for j in range(len(self)):
-            s+=' '*(colmax-len(b[j])+1)+b[j]
-        return s
-
     def __step__(self,f,t,u,dt,x=None,errest=False):
         """
             Take a time step on the ODE u'=f(t,u).
@@ -1547,7 +1566,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             numself.bhat=np.array(self.bhat,dtype=np.float64)
         return numself
 
-    def __repr__(self): 
+    def __str__(self):
         """
         Pretty-prints the Butcher array in the form:
           |
@@ -1556,18 +1575,18 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
           | b
           | bhat
         """
-        s = super(ExplicitRungeKuttaPair,self).__repr__()
-        from utils import shortstring
+        s = super(ExplicitRungeKuttaPair,self).__str__()
+        from utils import array2strings
 
-        A = [shortstring(ai) for ai in self.A.reshape(-1)]
-        b = [shortstring(bi) for bi in self.b]
-        bhat = [shortstring(bi) for bi in self.bhat]
-        c = [shortstring(ci) for ci in self.c]
+        c    = array2strings(self.c)
+        A    = array2strings(self.A)
+        b    = array2strings(self.b)
+        bhat = array2strings(self.bhat)
         lenmax, colmax = _get_column_widths([A,b,c])
         alenmax, blenmax, clenmax = lenmax
-        s+= '\n'+' '*(clenmax+1)+'|'
+        s+= '\n'+' '*(colmax+1)+'|'
         for j in range(len(self)):
-            s+=' '*(colmax-len(bhat[j])+1)+bhat[j]
+            s+=bhat[j].ljust(colmax+1)
         return s
 
 
@@ -2122,13 +2141,13 @@ def RK22_family(gamma):
         **Examples**::
 
             >>> from nodepy import rk
-            >>> rk.RK22_family(-1)
+            >>> print rk.RK22_family(-1)
             Runge-Kutta Method
             <BLANKLINE>
              0    |
-             -1/2 |  -1/2
+             -1/2 | -1/2
             ______|____________
-                  |     2    -1
+                  | 2     -1
     """
     from sympy import Rational
     one = Rational(1,1)
@@ -2147,15 +2166,15 @@ def RK44_family(w):
         **Examples**::
 
             >>> from nodepy import rk
-            >>> rk.RK44_family(1)
+            >>> print rk.RK44_family(1)
             Runge-Kutta Method
             <BLANKLINE>
-             0   |
-             1/2 |  1/2
-             1/2 |  1/3   1/6
-             1   |  0     -2    3
-            _____|________________________
-                 |   1/6  -1/3     1   1/6
+             0    |
+             1/2  | 1/2
+             1/2  | 1/3   1/6
+             1    |       -2    3
+            ______|________________________
+                  | 1/6   -1/3  1     1/6
                        
     """
     from sympy import Rational
@@ -2182,15 +2201,15 @@ def SSPRK2(m):
             
             Load the 4-stage method:
             >>> SSP42=SSPRK2(4)
-            >>> SSP42
+            >>> print SSP42
             SSPRK(4,2)
             <BLANKLINE>
              0   |
-             1/3 |  1/3
-             2/3 |  1/3  1/3
-             1   |  1/3  1/3  1/3
+             1/3 | 1/3
+             2/3 | 1/3  1/3
+             1   | 1/3  1/3  1/3
             _____|____________________
-                 |  1/4  1/4  1/4  1/4
+                 | 1/4  1/4  1/4  1/4
 
             >>> SSP42.absolute_monotonicity_radius()
             2.999999999974534
@@ -2222,15 +2241,15 @@ def SSPRK3(m):
 
             Load the 4-stage method:
             >>> SSP43=SSPRK3(4)
-            >>> SSP43
+            >>> print SSP43
             SSPRK43
             <BLANKLINE>
              0   |
-             1/2 |  1/2
-             1   |  1/2  1/2
-             1/2 |  1/6  1/6  1/6
+             1/2 | 1/2
+             1   | 1/2  1/2
+             1/2 | 1/6  1/6  1/6
             _____|____________________
-                 |  1/6  1/6  1/6  1/2
+                 | 1/6  1/6  1/6  1/2
 
             >>> SSP43.absolute_monotonicity_radius()
             1.9999999999527063
@@ -2266,15 +2285,15 @@ def SSPRKm(m):
             
             Load the 4-stage method:
             >>> SSP44=SSPRKm(4)
-            >>> SSP44
+            >>> print SSP44
             SSPRK44
             <BLANKLINE>
-             0 |
-             1 |  1
-             2 |  1     1
-             3 |  1     1     1
-            ___|________________________
-               |   5/8  7/24  1/24  1/24
+             0    |
+             1    | 1
+             2    | 1     1
+             3    | 1     1     1
+            ______|________________________
+                  | 5/8   7/24  1/24  1/24
 
 
             >>> SSP44.absolute_monotonicity_radius()
@@ -2315,15 +2334,15 @@ def SSPIRK1(m):
             
             Load the 4-stage method:
             >>> ISSP41=SSPIRK1(4)
-            >>> ISSP41
+            >>> print ISSP41
             SSPIRK41
             <BLANKLINE>
-             1/4 |  1/4  0    0    0
-             1/2 |  1/4  1/4  0    0
-             3/4 |  1/4  1/4  1/4  0
-             1   |  1/4  1/4  1/4  1/4
+             1/4 | 1/4
+             1/2 | 1/4  1/4
+             3/4 | 1/4  1/4  1/4
+             1   | 1/4  1/4  1/4  1/4
             _____|____________________
-                 |  1/4  1/4  1/4  1/4
+                 | 1/4  1/4  1/4  1/4
     """
     A=snp.tri(m)/m
     b=snp.ones(m)/m
@@ -2342,15 +2361,15 @@ def SSPIRK2(m):
             
             Load the 4-stage method:
             >>> ISSP42=SSPIRK2(4)
-            >>> ISSP42
+            >>> print ISSP42
             SSPIRK42
             <BLANKLINE>
-             1/8 |  1/8  0    0    0
-             3/8 |  1/4  1/8  0    0
-             5/8 |  1/4  1/4  1/8  0
-             7/8 |  1/4  1/4  1/4  1/8
+             1/8 | 1/8
+             3/8 | 1/4  1/8
+             5/8 | 1/4  1/4  1/8
+             7/8 | 1/4  1/4  1/4  1/8
             _____|____________________
-                 |  1/4  1/4  1/4  1/4
+                 | 1/4  1/4  1/4  1/4
 
             >>> ISSP42.absolute_monotonicity_radius()
             7.999999999992724
@@ -2378,15 +2397,15 @@ def SSPIRK3(m):
             
             Load the 4-stage method:
             >>> ISSP43=SSPIRK3(4)
-            >>> ISSP43
+            >>> print ISSP43
             SSPIRK43
             <BLANKLINE>
-             -15**(1/2)/10 + 1/2 |  -15**(1/2)/10 + 1/2  0                    0                    0
-             -15**(1/2)/30 + 1/2 |  15**(1/2)/15         -15**(1/2)/10 + 1/2  0                    0
-             15**(1/2)/30 + 1/2  |  15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2  0
-             15**(1/2)/10 + 1/2  |  15**(1/2)/15         15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2
+             -15**(1/2)/10 + 1/2 | -15**(1/2)/10 + 1/2
+             -15**(1/2)/30 + 1/2 | 15**(1/2)/15         -15**(1/2)/10 + 1/2
+             15**(1/2)/30 + 1/2  | 15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2
+             15**(1/2)/10 + 1/2  | 15**(1/2)/15         15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2
             _____________________|____________________________________________________________________________________
-                                 |                  1/4                  1/4                  1/4                  1/4
+                                 | 1/4                  1/4                  1/4                  1/4
 
             >>> x=ISSP43.absolute_monotonicity_radius()
             >>> print "%.5f" % x
@@ -2422,15 +2441,15 @@ def RKC1(m,epsilon=0):
             
             Load the 4-stage method:
             >>> RKC41=RKC1(4)
-            >>> RKC41
+            >>> print RKC41
             RKC41
             <BLANKLINE>
              0    |
-             1/16 |  1/16
-             1/4  |  1/8   1/8
-             9/16 |  3/16  1/4   1/8
+             1/16 | 1/16
+             1/4  | 1/8   1/8
+             9/16 | 3/16  1/4   1/8
             ______|________________________
-                  |   1/4   3/8   1/4   1/8
+                  | 1/4   3/8   1/4   1/8
 
         **References**: 
             #. [verwer2004]_
@@ -2494,15 +2513,15 @@ def RKC2(m,epsilon=0):
             
             Load the 4-stage method:
             >>> RKC42=RKC2(4)
-            >>> RKC42
+            >>> print RKC42
             RKC42
             <BLANKLINE>
-             0    |
-             1/5  |  1/5
-             1/5  |  1/10    1/10
-             8/15 |  -8/45   32/135  64/135
-            ______|________________________________
-                  |  -51/64     3/8       1   27/64
+             0      |
+             1/5    | 1/5
+             1/5    | 1/10    1/10
+             8/15   | -8/45   32/135  64/135
+            ________|________________________________
+                    | -51/64  3/8     1       27/64
 
         **References**: 
             #. [verwer2004]_
@@ -2662,15 +2681,15 @@ def extrap(p,seq='harmonic',embedded=False, shuosher=False):
 
             >>> from nodepy import rk
             >>> ex3 = rk.extrap(3)
-            >>> ex3
+            >>> print ex3
             extrap3
             <BLANKLINE>
              0   |
-             1/2 |  1/2
-             1/3 |  1/3  0
-             2/3 |  1/3  0    1/3
+             1/2 | 1/2
+             1/3 | 1/3
+             2/3 | 1/3       1/3
             _____|____________________
-                 |    0   -2  3/2  3/2
+                 | 0    -2   3/2  3/2
 
             >>> ex3.num_seq_dep_stages()
             3
@@ -2963,13 +2982,13 @@ def compose(RK1,RK2,h1=1,h2=1):
         What method is obtained by two successive FE steps?
         >>> from nodepy import rk
         >>> fe=rk.loadRKM('FE')
-        >>> fe*fe
+        >>> print fe*fe
         Runge-Kutta Method
         <BLANKLINE>
          0     |
-         0.500 |  0.500
+         0.500 | 0.500
         _______|______________
-               |  0.500  0.500
+               | 0.500  0.500
                 
 
     TODO: Generalize this for any number of inputs
@@ -3159,10 +3178,10 @@ def _is_linearly_stable(h,tol,params):
     else:
         return 1
 
-def _get_column_widths(coefflists):
+def _get_column_widths(coeffarrays):
     lenmax = []
-    for coefflist in coefflists:
-        lenmax.append(max([len(ai) for ai in coefflist]))
+    for coeffarray in coeffarrays:
+        lenmax.append(max([len(ai) for ai in coeffarray.reshape(-1)]))
     colmax=max(lenmax)
     return lenmax, colmax
  

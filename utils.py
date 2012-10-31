@@ -23,14 +23,19 @@ def permutations(str):
             for i in range(len(perm)+1):
                 yield perm[:i] + str[0:1] + perm[i:]
 
-def shortstring(x):
+def shortstring(x,printzeros=False):
     import numpy as np
     import sympy.core.numbers
-    if x.__class__ is np.float64 or x.__class__ is sympy.Float:
+    if x==0 and printzeros==False:
+        return ''
+    elif x.__class__ is np.float64 or x.__class__ is sympy.Float:
         return '%6.3f' % x
     else: 
         return ' '+str(x)
 
+def array2strings(x,printzeros=False):
+    import numpy as np
+    return np.reshape([shortstring(xi,printzeros) for xi in x.reshape(-1)],x.shape)
 
 def find_plot_bounds(f,guess,N=101,zmax=1000):
     r"""Find reasonable area to plot for stability regions.
