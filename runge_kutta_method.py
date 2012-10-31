@@ -2388,8 +2388,9 @@ def SSPIRK3(m):
             _____________________|____________________________________________________________________________________
                                  |                  1/4                  1/4                  1/4                  1/4
 
-            >>> ISSP43.absolute_monotonicity_radius()
-            6.872983343691885
+            >>> x=ISSP43.absolute_monotonicity_radius()
+            >>> print "%.5f" % x
+            6.87298
 
         **References**:
             #. [ketcheson2009]_
@@ -3127,10 +3128,10 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
             >>> L1=semidisc.centered_diffusion_matrix(100)
             >>> L2=semidisc.centered_advection_diffusion_matrix(1.,1./500,100)
 
-            >>> rk.linearly_stable_step_size(rk44,L1,plot=0)
-            6.9580078125000116e-05
-            >>> rk.linearly_stable_step_size(rk44,L2,plot=0)
-            0.024225094627893518
+            >>> print "%.5f" % rk.linearly_stable_step_size(rk44,L1,plot=0)
+            0.00007
+            >>> print "%.5f" % rk.linearly_stable_step_size(rk44,L2,plot=0)
+            0.02423
     """
 
     from utils import bisect
