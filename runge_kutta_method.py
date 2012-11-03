@@ -614,7 +614,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
     # Classical Stability
     #============================================================
-    def stability_function(self,mode='exact',use_butcher=True,formula='det'):
+    def stability_function(self,stage=None,mode='exact',formula='lts',use_butcher=False):
         r""" 
             The stability function of a Runge-Kutta method is
             `\\phi(z)=p(z)/q(z)`, where
@@ -669,110 +669,29 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if formula == 'det' and use_butcher == False:
             raise NotImplementedError("Ratio of determinants not yet implemented for Shu-Osher coefficients.")
 
-        if mode=='float' or self.A.dtype != object:
-            # Floating point calculation using numpy's
-            # characteristic polynomial function
-            # This is always fast, so no need for alternative
-            # formulas
-            p1=np.poly(self.A.astype(float)-np.tile(self.b.astype(float),(len(self),1)))
-            q1=np.poly(self.A.astype(float))
 
-        else: # Compute symbolically
-            import sympy
-            z=sympy.var('z')
-            
-            if formula == 'det':
-                Asym=sympy.matrices.Matrix(self.A)
-                bsym=sympy.matrices.Matrix(np.tile(self.b,(len(self),1)))
-                xsym=Asym-bsym
-                p1=xsym.charpoly(z).coeffs()
-                if self.is_explicit(): # This switch is just for speed
-                    q1=[sympy.Rational(1)]
-                else:
-                    q1=Asym.charpoly(z).coeffs()
+        if stage is None:
+            stage = len(self)+1
 
-            elif formula == 'lts': # lower_triangular_solve
-                I = sympy.matrices.eye(len(self))
-                if use_butcher:
-                    Asym=sympy.matrices.Matrix(self.A)
-                    bsym=sympy.matrices.Matrix(self.b)
-                    e = sympy.matrices.ones((len(self),1))
-                    p1=z*bsym*(I-z*Asym).lower_triangular_solve(e)
-                    p1=p1[0].expand()+1
-                else: #Shu-Osher
-                    v = 1 - self.alpha.sum(1)
-                    vstar = sympy.matrices.Matrix(v[:-1]).T
-                    v_mp1 = sympy.Rational(v[-1])
-                    alphastar=sympy.matrices.Matrix(self.alpha[:-1,:])
-                    betastar=sympy.matrices.Matrix(self.beta[:-1,:])
-                    alpha_mp1 = sympy.matrices.Matrix(self.alpha[-1,:])
-                    beta_mp1 = sympy.matrices.Matrix(self.beta[-1,:])
-                    p1=(alpha_mp1 + z*beta_mp1)*(I-alphastar-z*betastar).lower_triangular_solve(vstar)
-                    p1=p1[0].expand()+v_mp1
+        m = self.num_seq_dep_stages()
+        if use_butcher==False:
+            alpha = self.alpha[0:stage,0:stage-1]
+            beta  = self.beta[0:stage,0:stage-1]
+        else:
+            beta = np.vstack((self.A,self.b))
+            alpha = beta*0
 
-                p1=p1.as_poly(z).all_coeffs()
-                p1=p1[::-1]
-                q1=[sympy.Rational(1)]
-
-            elif formula == 'pow': # Power series
-                s = self.num_seq_dep_stages()
-                I = sympy.matrices.eye(len(self))
-                if use_butcher:
-                    Asym=sympy.matrices.Matrix(self.A)
-                    bsym=sympy.matrices.Matrix(self.b)
-                    matsym = z*sympy.matrices.Matrix(self.A)
-                    vecsym = z*sympy.matrices.Matrix(self.b)
-                else:
-                    alphastarsym = sympy.matrices.Matrix(self.alpha[0:-1,:])
-                    betastarsym  = sympy.matrices.Matrix(self.beta[0:-1,:])
-
-                    matsym = alphastarsym + betastarsym*z
-                    vecsym = sympy.matrices.Matrix(self.alpha[-1,:]+z*self.beta[-1,:])
-
-                # Compute (I-zA)^(-1) = I + zA + (zA)^2 + ... + (zA)^(s-1)
-                matpow = I
-                matsum = I
-                for i in range(1,s):
-                    matpow = matpow*matsym
-                    matsum = matsum + matpow
-                p1 = vecsym*matsum
-                if use_butcher:
-                    e = sympy.matrices.ones((len(self),1))
-                    p1 = p1*e
-                    p1=p1[0].expand()+1
-                else:
-                    v = 1 - self.alpha.sum(1)
-                    vstar = sympy.matrices.Matrix(v[:-1]).T
-                    v_mp1 = sympy.Rational(v[-1])
-                    p1 = p1*vstar
-                    p1=p1[0].expand()+v_mp1
-                p1=p1.as_poly(z).all_coeffs()
-                p1=p1[::-1]
-                q1=[sympy.Rational(1)]
-
-
-            else:
-                raise Exception("Unknown value of 'formula'")
-
-        p=np.poly1d(p1[::-1])    # Numerator
-        q=np.poly1d(q1[::-1])    # Denominator
-
-        # Remove leading "zeros" that are not numerically zero:
-        # This is required only for floating-point calculations
-        maxdeg = self.num_seq_dep_stages()
-        if maxdeg < p.order:
-            c = p.coeffs[-(maxdeg+1):]
-            p = np.poly1d(c)
+        p,q = _stability_function(alpha,beta,self.is_explicit,m,formula,mode)
 
         return p,q
-
+        
 
     def plot_stability_function(self,bounds=[-20,1]):
         p,q=self.stability_function()
         xx=np.arange(bounds[0], bounds[1], 0.01)
         yy=p(xx)/q(xx)
         pl.plot(xx,yy)
-        pl.draw()  
+        pl.draw()
 
 
     def plot_stability_region(self,N=200,color='r',filled=True,
@@ -2240,7 +2159,7 @@ def SSPRK3(m):
 
         **References**: 
             #. [ketcheson2008]_
-
+_stability_function(alpha,beta,m,formula,mode='exact')
     """
     from sympy import sqrt, Rational
     one = Rational(1)
@@ -3168,6 +3087,95 @@ def _get_column_widths(coeffarrays):
         lenmax.append(max([len(ai) for ai in coeffarray.reshape(-1)]))
     colmax=max(lenmax)
     return lenmax, colmax
+
+
+def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
+    r"""
+        Compute stability function from the Shu-Osher representation.
+    """
+    s = alpha.shape[1]
+
+    if mode=='float':
+        # Floating point calculation using numpy's
+        # characteristic polynomial function
+        # This is always fast, so no need for alternative
+        # formulas
+        p1 = np.poly(beta[:-1,:].astype(float)-np.tile(beta[-1,:].astype(float),(s,1)))
+        q1 = np.poly(beta[:-1,:].astype(float))
+
+    else: # Compute symbolically
+        import sympy
+        z = sympy.var('z')
+        
+        if formula == 'det':
+            Asym = sympy.matrices.Matrix(beta[:-1,:])
+            bsym = sympy.matrices.Matrix(np.tile(beta[-1,:],(s,1)))
+            xsym = Asym-bsym
+            p1 = xsym.charpoly(z).coeffs()
+            if (not explicit): # This switch is just for speed
+                q1 = [sympy.Rational(1)]
+            else:
+                q1 = Asym.charpoly(z).coeffs()
+
+        elif formula == 'lts': # lower_triangular_solve
+            I = sympy.matrices.eye(s)
+            
+            v = 1 - alpha.sum(1)
+            vstar = sympy.matrices.Matrix(v[:-1]).T
+            v_mp1 = sympy.Rational(v[-1])
+            alpha_star = sympy.matrices.Matrix(alpha[:-1,:])
+            beta_star = sympy.matrices.Matrix(beta[:-1,:])
+            alpha_mp1 = sympy.matrices.Matrix(alpha[-1,:])
+            beta_mp1 = sympy.matrices.Matrix(beta[-1,:])
+            p1 = (alpha_mp1 + z*beta_mp1)*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
+            p1 = p1[0].expand()+v_mp1
+
+            p1 = p1.as_poly(z).all_coeffs()
+            p1 = p1[::-1]
+            q1 = [sympy.Rational(1)]
+
+        elif formula == 'pow': # Power series
+            I = sympy.matrices.eye(s)
+
+            alpha_star_sym = sympy.matrices.Matrix(alpha[:-1,:])
+            beta_star_sym  = sympy.matrices.Matrix(beta[:-1,:])
+
+            apbz_star = alphastarsym + betastarsym*z
+            apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
+
+            # Compute (I-zA)^(-1) = I + zA + (zA)^2 + ... + (zA)^(s-1)
+            apbx_power = I
+            Imapbz_inv = I
+            for i in range(1,m-1):
+                apbx_power = apbz_star*apbx_power
+                Imapbz_inv = Imapbz_inv + apbx_power
+            p1 = apbz*Imapbz_inv
+
+            v = 1 - self.alpha.sum(1)
+            vstar = sympy.matrices.Matrix(v[:-1]).T
+            v_mp1 = sympy.Rational(v[-1])
+            p1 = p1*vstar
+            p1 = p1[0].expand()+v_mp1
+            
+            p1 = p1.as_poly(z).all_coeffs()
+            p1 = p1[::-1]
+            q1 = [sympy.Rational(1)]
+
+
+        else:
+            raise Exception("Unknown value of 'formula'")
+
+    p = np.poly1d(p1[::-1])    # Numerator
+    q = np.poly1d(q1[::-1])    # Denominator
+
+    # Remove leading "zeros" that are not numerically zero:
+    # This is required only for floating-point calculations
+    if m < p.order:
+        c = p.coeffs[-(m+1):]
+        p = np.poly1d(c)
+
+    return p,q
+
  
 
 def _internal_stability_polynomials(alpha,beta,m,formula,mode='exact'):
@@ -3192,8 +3200,8 @@ def _internal_stability_polynomials(alpha,beta,m,formula,mode='exact'):
         apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
 
         if formula == 'pow':
-            apbz_power = sympy.matrices.eye(s)
-            Imapbz_inv = sympy.matrices.eye(s)
+            apbz_power = I
+            Imapbz_inv = I
 
             for i in range(m-1):
                 apbz_power = apbz_star*apbz_power
@@ -3208,7 +3216,6 @@ def _internal_stability_polynomials(alpha,beta,m,formula,mode='exact'):
     # Don't consider perturbations to first stage:
     theta = [np.poly1d(theta_j.as_poly(z).all_coeffs()) for theta_j in thet[1:]]
     return theta
-
 
 
 if __name__ == "__main__":
