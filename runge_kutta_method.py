@@ -1332,7 +1332,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 n = max(n, n_s[i]+1)
         return n
 
-    def internal_stability_polynomials(self,stage=None,mode='exact',formula='lts',use_butcher='False'):
+    def internal_stability_polynomials(self,stage=None,mode='exact',formula='lts',use_butcher=False):
         r""" 
             The internal stability polynomials of a Runge-Kutta method 
             depend on the implementation and must therefore be constructed
