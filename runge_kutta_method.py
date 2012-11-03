@@ -106,6 +106,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 you must provide either Butcher arrays or Shu-Osher arrays,
                 but not both.""")
 
+        if alpha is None and beta is None:
+            s = A.shape[0]
+            if A.dtype == object:
+                alpha = snp.normalize(np.zeros((s+1,s),dtype=object))
+                beta = snp.normalize(np.zeros((s+1,s),dtype=object))
+            else:
+                alpha = np.zeros((s+1,s))
+                beta = np.zeros((s+1,s))
+            beta[:-1,:] = A.copy()
+            beta[-1,:] = b.copy()
+
         self.alpha=alpha
         self.beta=beta
 
@@ -1321,7 +1332,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 n = max(n, n_s[i]+1)
         return n
 
-    def internal_stability_polynomials(self,mode='exact',use_butcher=False,formula='lts'):
+    def internal_stability_polynomials(self,stage=None,mode='exact',formula='lts',use_butcher='False'):
         r""" 
             The internal stability polynomials of a Runge-Kutta method 
             depend on the implementation and must therefore be constructed
@@ -1367,46 +1378,19 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 <BLANKLINE>
                 0.1667 x
         """
-        if mode=='float' or self.A.dtype != object:
-            # Floating-point calculation
-            raise NotImplementedError
+        if stage is None:
+            stage = len(self)+1
+
+        m = self.num_seq_dep_stages()
+        if use_butcher==False:
+            alpha = self.alpha[0:stage,0:stage-1]
+            beta  = self.beta[0:stage,0:stage-1]
         else:
-            # Symbolic calculation
-            import sympy
-            z = sympy.var('z')
-            I = sympy.matrices.eye(len(self))
-            if (self.alpha is None or self.beta is None): use_butcher = True
+            beta = np.vstack((self.A,self.b))
+            alpha = beta*0
 
-            if use_butcher:
-                matsym = z*sympy.matrices.Matrix(self.A)
-                vecsym = z*sympy.matrices.Matrix(self.b)
+        theta = _internal_stability_polynomials(alpha,beta,m,formula,mode)
 
-            else:
-                alphastarsym = sympy.matrices.Matrix(self.alpha[0:-1,:])
-                betastarsym  = sympy.matrices.Matrix(self.beta[0:-1,:])
- 
-                matsym = alphastarsym + betastarsym*z
-                vecsym = sympy.matrices.Matrix(self.alpha[-1,:]+z*self.beta[-1,:])
-
-            if formula == 'pow':
-                # Degree of nilpotency
-                m = self.num_seq_dep_stages()
-
-                matpow = sympy.matrices.eye(len(self))
-                matsum = sympy.matrices.eye(len(self))
-
-                for i in range(m-1):
-                    matpow = matsym*matpow
-                    matsum = matsum + matpow
-                thet = (vecsym*matsum).applyfunc(sympy.expand)
-
-            elif formula == 'lts':
-
-                thet = (I-matsym).T.upper_triangular_solve(vecsym.T)
-                thet = thet.applyfunc(sympy.expand_mul)
-
-        # Don't consider perturbations to first stage:
-        theta = [np.poly1d(theta_j.as_poly(z).all_coeffs()) for theta_j in thet[1:]]
         return theta
 
     def internal_stability_plot(self,use_butcher=False,formula='lts'):
@@ -3186,6 +3170,48 @@ def _get_column_widths(coeffarrays):
     return lenmax, colmax
  
 
+def _internal_stability_polynomials(alpha,beta,m,formula,mode='exact'):
+    r""" 
+        Compute internal stability polynomials from a Shu-Osher representation.
+    """
+    s = alpha.shape[1]
+
+    if mode=='float':
+        # Floating-point calculation
+        raise NotImplementedError
+    else:
+        # Symbolic calculation
+        import sympy
+        z = sympy.var('z')
+        I = sympy.matrices.eye(s)
+
+        alpha_star = sympy.matrices.Matrix(alpha[0:-1,:])
+        beta_star  = sympy.matrices.Matrix(beta[0:-1,:])
+
+        apbz_star = alpha_star + beta_star*z
+        apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
+
+        if formula == 'pow':
+            apbz_power = sympy.matrices.eye(s)
+            Imapbz_inv = sympy.matrices.eye(s)
+
+            for i in range(m-1):
+                apbz_power = apbz_star*apbz_power
+                Imapbz_inv = Imapbz_inv + apbz_power
+            thet = (apbz*Imapbz_inv).applyfunc(sympy.expand)
+
+        elif formula == 'lts':
+
+            thet = (I-apbz_star).T.upper_triangular_solve(apbz.T)
+            thet = thet.applyfunc(sympy.expand_mul)
+
+    # Don't consider perturbations to first stage:
+    theta = [np.poly1d(theta_j.as_poly(z).all_coeffs()) for theta_j in thet[1:]]
+    return theta
+
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+
