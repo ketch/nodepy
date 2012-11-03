@@ -12,17 +12,17 @@ class LinearMultistepTestCase(ut.TestCase):
 class LMMOrderTest(LinearMultistepTestCase):
     def runTest(self):
         for k in range(1,7):
-            ab=lmm.Adams_Bashforth(k)
+            ab = lmm.Adams_Bashforth(k)
             self.assertEqual(ab.order(),k)
-            am=lmm.Adams_Moulton(k)
+            am = lmm.Adams_Moulton(k)
             self.assertEqual(am.order(),k+1)
-            bdf=lmm.backward_difference_formula(k)
+            bdf = lmm.backward_difference_formula(k)
             self.assertEqual(bdf.order(),k)
 
 class LMMSSPCoeffTest(LinearMultistepTestCase):
     def runTest(self):
         for k in range(2,100):
-            ssp2=lmm.elm_ssp2(k)
+            ssp2 = lmm.elm_ssp2(k)
             self.assertAlmostEqual(ssp2.ssp_coefficient(),(k-2.)/(k-1.),10)
 
 class RungeKuttaTestCase(ut.TestCase):
@@ -89,11 +89,12 @@ class RKstabfuntest(RungeKuttaTestCase):
     import sympy
     one = sympy.Rational(1)
     knownValues = ( ('RK44',[one/24,one/6,one/2,one,one]), )
+    formula_representation = (('det',True),('lts',False),('pow',False))
 
     def runTest(self):
         for method, polycoeffs in self.knownValues:
-            for formula in ['det','lts','pow']:
-                p,q = self.RKs[method].stability_function(formula=formula)
+            for formula, use_butcher in self.formula_representation:
+                p,q = self.RKs[method].stability_function(formula=formula,use_butcher=use_butcher)
                 assert(all(p.coeffs==polycoeffs))
         ssp2 = rk.SSPRK2(3)
         one = self.one

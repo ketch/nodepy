@@ -681,7 +681,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             beta = np.vstack((self.A,self.b))
             alpha = beta*0
 
-        p,q = _stability_function(alpha,beta,self.is_explicit,m,formula,mode)
+        p,q = _stability_function(alpha,beta,self.is_explicit,m,formula=formula,mode=mode)
 
         return p,q
         
@@ -1308,7 +1308,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             beta = np.vstack((self.A,self.b))
             alpha = beta*0
 
-        theta = _internal_stability_polynomials(alpha,beta,m,formula,mode)
+        theta = _internal_stability_polynomials(alpha,beta,m,formula=formula,mode=mode)
 
         return theta
 
@@ -1334,7 +1334,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         fig = self.plot_stability_region()
         plt.hold(True)
-        theta = self.internal_stability_polynomials(use_butcher,formula=formula)
+        theta = self.internal_stability_polynomials(use_butcher=use_butcher,formula=formula)
         q = np.poly1d([1.])
 
         for p in theta:
@@ -2159,7 +2159,6 @@ def SSPRK3(m):
 
         **References**: 
             #. [ketcheson2008]_
-_stability_function(alpha,beta,m,formula,mode='exact')
     """
     from sympy import sqrt, Rational
     one = Rational(1)
@@ -3137,21 +3136,21 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         elif formula == 'pow': # Power series
             I = sympy.matrices.eye(s)
 
-            alpha_star_sym = sympy.matrices.Matrix(alpha[:-1,:])
-            beta_star_sym  = sympy.matrices.Matrix(beta[:-1,:])
+            alpha_star = sympy.matrices.Matrix(alpha[0:-1,:])
+            beta_star  = sympy.matrices.Matrix(beta[0:-1,:])
 
-            apbz_star = alphastarsym + betastarsym*z
+            apbz_star = alpha_star + beta_star*z
             apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
 
             # Compute (I-zA)^(-1) = I + zA + (zA)^2 + ... + (zA)^(s-1)
-            apbx_power = I
+            apbz_power = I
             Imapbz_inv = I
-            for i in range(1,m-1):
-                apbx_power = apbz_star*apbx_power
-                Imapbz_inv = Imapbz_inv + apbx_power
+            for i in range(1,m):
+                apbz_power = apbz_star*apbz_power
+                Imapbz_inv = Imapbz_inv + apbz_power
             p1 = apbz*Imapbz_inv
 
-            v = 1 - self.alpha.sum(1)
+            v = 1 - alpha.sum(1)
             vstar = sympy.matrices.Matrix(v[:-1]).T
             v_mp1 = sympy.Rational(v[-1])
             p1 = p1*vstar
@@ -3203,7 +3202,7 @@ def _internal_stability_polynomials(alpha,beta,m,formula,mode='exact'):
             apbz_power = I
             Imapbz_inv = I
 
-            for i in range(m-1):
+            for i in range(m):
                 apbz_power = apbz_star*apbz_power
                 Imapbz_inv = Imapbz_inv + apbz_power
             thet = (apbz*Imapbz_inv).applyfunc(sympy.expand)
