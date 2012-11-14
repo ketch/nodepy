@@ -507,10 +507,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
 
-    def principal_error_norm(self,tol=1.e-13):
+    def principal_error_norm(self,tol=1.e-13,method='float'):
         r"""The 2-norm of the vector of leading order error coefficients."""
         import rooted_trees as rt
-        p=self.order(tol)
+        p=self.order(tol,method=method)
         forest=rt.list_trees(p+1)
         errs=[]
         for tree in forest:
@@ -3081,8 +3081,8 @@ def relative_accuracy_efficiency(rk1,rk2,method='float',tol=1.e-14):
     p=rk1.order(method=method,tol=tol)
     if rk2.order()!=p: raise Exception('Methods have different orders')
 
-    A1=rk1.principal_error_norm()
-    A2=rk2.principal_error_norm()
+    A1=rk1.principal_error_norm(method=method,tol=tol)
+    A2=rk2.principal_error_norm(method=method,tol=tol)
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
 
@@ -3107,7 +3107,7 @@ def accuracy_efficiency(rk1,parallel=False,method='float',tol=1.e-14):
     """
     
     p=rk1.order(method=method,tol=tol)
-    A1=rk1.principal_error_norm()
+    A1=rk1.principal_error_norm(method=method,tol=tol)
     if parallel:
         # If we consider parallelization then we divide by number of parallel stages
         return 1.0/rk1.num_seq_dep_stages() * (1.0/A1)**(1./(p+1))
