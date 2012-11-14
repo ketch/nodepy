@@ -517,7 +517,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             errs.append(self.error_coefficient(tree))
         return np.sqrt(float(np.sum(np.array(errs)**2)))
 
-    def order(self,tol=1.e-14,method='hard-coded',extremely_high_order=False):
+    def order(self,tol=1.e-14,method='float',extremely_high_order=False):
         """ The order of a Runge-Kutta method.
 
             **Examples**::
@@ -541,23 +541,26 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 Advantages: Most satisfying, no maximum order
                 Disadvantages: way too slow for high order
         """
-        if method=='hard-coded':
+        if method=='float':
             if not extremely_high_order:
                 import oc_butcher
-                return oc_butcher.order(self.__num__(),tol)
+                p = oc_butcher.order(self.__num__(),tol)
             else:
                 import oc_butcher_high_order
-                return oc_butcher_high_order.order(self.__num__(),tol)
-        elif method=='generation-albrecht':
+                p = oc_butcher_high_order.order(self.__num__(),tol)
+            if p==0:
+                print 'Apparent order is 0; this may be due to roundoff.  Try order(method="exact") or increase tol.'
+        elif method=='exact':
             from sympy import simplify
             p=0
             while True:
                 z=self.order_conditions(p+1)
                 z = snp.array([simplify(zz) for zz in z])
-                if np.any(abs(z)>tol): return p
+                if np.any(abs(z)>tol): break
                 p=p+1
         elif method=='generation-trees':
             raise NotImplementedError
+        return p
 
     def order_conditions(self,p):
         """
@@ -3051,7 +3054,7 @@ def python_to_matlab(code):
     #print '******************'
     return outline
 
-def relative_accuracy_efficiency(rk1,rk2):
+def relative_accuracy_efficiency(rk1,rk2,method='float',tol=1.e-14):
     r"""
     Compute the accuracy efficiency of method rk1 relative to that of rk2,
     for two methods with the same order of accuracy.
@@ -3075,7 +3078,7 @@ def relative_accuracy_efficiency(rk1,rk2):
         1.2222911649987882
     """
 
-    p=rk1.order()
+    p=rk1.order(method=method,tol=tol)
     if rk2.order()!=p: raise Exception('Methods have different orders')
 
     A1=rk1.principal_error_norm()
@@ -3083,7 +3086,7 @@ def relative_accuracy_efficiency(rk1,rk2):
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
 
-def accuracy_efficiency(rk1,parallel=False):
+def accuracy_efficiency(rk1,parallel=False,method='float',tol=1.e-14):
     r"""
     Compute the accuracy efficiency of method rk1.
 
@@ -3103,7 +3106,7 @@ def accuracy_efficiency(rk1,parallel=False):
         0.52649219441213957
     """
     
-    p=rk1.order()
+    p=rk1.order(method=method,tol=tol)
     A1=rk1.principal_error_norm()
     if parallel:
         # If we consider parallelization then we divide by number of parallel stages
