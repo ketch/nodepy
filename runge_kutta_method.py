@@ -617,6 +617,24 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
     # Classical Stability
     #============================================================
+    def stability_function_unexpanded(self):
+        import sympy
+        z = sympy.var('z')
+        s = len(self)
+        I = sympy.matrices.eye(s)
+        
+        v = 1 - self.alpha.sum(1)
+        vstar = sympy.matrices.Matrix(v[:-1]).T
+        v_mp1 = sympy.Rational(v[-1])
+        alpha_star = sympy.matrices.Matrix(self.alpha[:-1,:])
+        beta_star = sympy.matrices.Matrix(self.beta[:-1,:])
+        alpha_mp1 = sympy.matrices.Matrix(self.alpha[-1,:])
+        beta_mp1 = sympy.matrices.Matrix(self.beta[-1,:])
+        p1 = (alpha_mp1 + z*beta_mp1)*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
+        p1 = p1[0] + v_mp1
+        return p1
+
+
     def stability_function(self,stage=None,mode='exact',formula='lts',use_butcher=False):
         r""" 
             The stability function of a Runge-Kutta method is
@@ -1314,6 +1332,31 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         theta = _internal_stability_polynomials(alpha,beta,m,formula=formula,mode=mode)
 
         return theta
+
+    def internal_stability_polynomials_unexpanded(self):
+        stage = len(self)+1
+
+        alpha = self.alpha[0:stage,0:stage-1]
+        beta  = self.beta[0:stage,0:stage-1]
+
+        s = alpha.shape[1]
+
+        import sympy
+        z = sympy.var('z')
+        I = sympy.matrices.eye(s)
+
+        alpha_star = sympy.matrices.Matrix(alpha[0:-1,:])
+        beta_star  = sympy.matrices.Matrix(beta[0:-1,:])
+
+        apbz_star = alpha_star + beta_star*z
+        apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
+
+        thet = (I-apbz_star).T.upper_triangular_solve(apbz.T)
+
+        # Don't consider perturbations to first stage:
+        theta = thet[1:]
+        return theta
+
 
     def internal_stability_plot(self,use_butcher=False,formula='lts'):
         r"""Plot internal stability regions.
