@@ -201,7 +201,7 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             # Change type of A to float64
-            # This can be a problem is A is symbolic
+            # This can be a problem if A is symbolic
             self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
 
@@ -218,7 +218,7 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             # Change type of A to float64
-            # This can be a problem is A is symbolic
+            # This can be a problem if A is symbolic
             self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
         self.name=name
@@ -308,7 +308,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             # Change type of A to float64
-            # This can be a problem is A is symbolic
+            # This can be a problem if A is symbolic
             self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta,np.vstack([self.A,self.b]))/sum(delta)
@@ -324,7 +324,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             # Change type of A to float64
-            # This can be a problem is A is symbolic
+            # This can be a problem if A is symbolic
             self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=bhat
@@ -342,7 +342,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i  ]=1.-alpha[i+1,i-1]-alpha[i+1,0]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             # Change type of A to float64
-            # This can be a problem is A is symbolic
+            # This can be a problem if A is symbolic
             self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta[:m+1],np.vstack([self.A,self.b]))/sum(delta)
@@ -359,7 +359,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
             # Change type of A to float64
-            # This can be a problem is A is symbolic
+            # This can be a problem if A is symbolic
             self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=bhat
