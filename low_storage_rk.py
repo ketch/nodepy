@@ -200,7 +200,9 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
                 alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            self.A=np.tril(self.A,-1)
+            # Change type of A to float64
+            # This can be a problem is A is symbolic
+            self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
 
         # Three-register methods
@@ -215,7 +217,9 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
                 alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            self.A=np.tril(self.A,-1)
+            # Change type of A to float64
+            # This can be a problem is A is symbolic
+            self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
         self.name=name
         self.info=description
@@ -303,7 +307,9 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            self.A=np.tril(self.A,-1)
+            # Change type of A to float64
+            # This can be a problem is A is symbolic
+            self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta,np.vstack([self.A,self.b]))/sum(delta)
 
@@ -317,8 +323,9 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            self.A=np.tril(self.A,-1)
-            print self.A
+            # Change type of A to float64
+            # This can be a problem is A is symbolic
+            self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=bhat
 
@@ -334,7 +341,9 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i-1]=-gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ]=1.-alpha[i+1,i-1]-alpha[i+1,0]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            self.A=np.tril(self.A,-1)
+            # Change type of A to float64
+            # This can be a problem is A is symbolic
+            self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=np.dot(delta[:m+1],np.vstack([self.A,self.b]))/sum(delta)
 
@@ -349,7 +358,9 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
                 alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
             self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            self.A=np.tril(self.A,-1)
+            # Change type of A to float64
+            # This can be a problem is A is symbolic
+            self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=bhat
  
@@ -481,6 +492,80 @@ def load_LSRK(file,lstype='2S',has_emb=False):
     if lstypename=='2S_pair': lstypename='2S'
     meth.name='RK'+str(ord)+'('+eostr+')'+str(m)+'['+lstypename+']'
     return meth
+
+
+def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
+    """
+       Load low storage methods of the types 2S/2S*/3S*/2S_pair/3S_pair
+       from a file containing the low-storage coefficient arrays. Such a file 
+       is usually written by RK-opt (see https://github.com/ketch/RK-opt).
+    """
+    import re
+
+    if has_emb:
+        f=open(file+'.bhat','r')
+        bhat=[]
+        for line in f:
+            bhat.append(float(line))
+
+    data = open(file).read()
+    regex = re.compile(r"#stage.*order.*\n(?P<nb_stages>[0-9]+?)\s+(?P<order>[0-9]+?)\s+A",re.DOTALL)
+    expr_match = re.match(regex, data).groupdict()
+
+    nb_stages = int(expr_match['nb_stages'])
+
+    beta = re.compile(r".*\nbeta\n(.*?)\n\n",re.DOTALL).match(data).group(1)
+    beta = beta.split("\n")
+    for k in range(nb_stages+1):
+        beta[k] = [float(i) for i in beta[k].split()]
+    
+    beta_sub=[0.]
+    for i in range(1,nb_stages+1):
+        beta_sub.append(beta[i][i-1])
+
+    delta = re.compile(r".*\ndelta\n(.*?)\n\n",re.DOTALL).match(data).group(1)
+    delta = [float(i) for i in delta.split()]
+
+    gamma = []
+    if lstype.startswith('2S'):
+        gamma1 = re.compile(r".*\ngamma1\n(.*?)\n\n",re.DOTALL).match(data).group(1)
+        gamma.append([float(i) for i in gamma1.split()])
+    
+        gamma2 = re.compile(r".*\ngamma2\n(.*?)\n\n",re.DOTALL).match(data).group(1)
+        gamma.append([float(i) for i in gamma2.split()])
+
+    elif lstype.startswith('3S*'):
+        gamma1 = re.compile(r".*\ngamma1\n(.*?)\n\n",re.DOTALL).match(data).group(1)
+        gamma.append([float(i) for i in gamma1.split()])
+    
+        gamma2 = re.compile(r".*\ngamma2\n(.*?)\n\n",re.DOTALL).match(data).group(1)
+        gamma.append([float(i) for i in gamma2.split()])
+
+        gamma3 = re.compile(r".*\ngamma3\n(.*?)\n\n",re.DOTALL).match(data).group(1)
+        gamma.append([float(i) for i in gamma3.split()])
+
+    if lstype=='2S' or lstype=='2S*' or lstype=='3S*':
+        if has_emb:
+            meth = LowStorageRungeKuttaPair(beta_sub,gamma,delta,lstype,bhat=bhat)
+        else:
+            meth = LowStorageRungeKuttaMethod(beta_sub,gamma,delta,lstype)
+    elif lstype=='2S_pair' or lstype=='3S*_pair':
+        meth = LowStorageRungeKuttaPair(beta_sub,gamma,delta,lstype)
+
+    ord = meth.order()
+    if lstype=='2S_pair': 
+        emb_ord=meth.embedded_order()
+        eostr = str(emb_ord)
+    else: eostr=''
+
+    m = len(meth)
+    lstypename = lstype
+
+    if lstypename=='2S_pair': lstypename='2S'
+    meth.name = 'RK'+str(ord)+'('+eostr+')'+str(m)+'['+lstypename+']'
+
+    return meth
+       
 
 def load_2R(name):
     """
