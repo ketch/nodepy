@@ -581,6 +581,54 @@ class RungeKuttaMethod(GeneralLinearMethod):
         z[-1]=np.dot(b,c**(p-1))-Rational(1,p)
         return z
 
+    def effective_order(self,tol=1.e-14):
+        """ 
+            Returns the effective order of a Runge-Kutta method.
+        """
+        q=0
+        while True:
+            if q==4: return q
+            z=self.effective_order_conditions(q+1)
+            if np.any(abs(z)>tol): return q
+            q=q+1
+
+    def effective_order_conditions(self,q):
+        """
+            Generates and evaluates code to test whether a method
+            satisfies the effective order q conditions (only).
+
+            Similar with order_conditions(self,p), but at the moment works 
+			only for q <= 4. (enough to find Explicit SSPRK)
+
+			Currently uses Albrecht's recursion to generate the
+			order conditions. Then based on q and p the effective order
+			conditions are derived.
+
+			TODO: Compute the effective order p>=5 conditions based on 
+			Albrecht's recursion approach.
+        """
+        from sympy import factorial,Rational
+        A,b,c=self.A,self.b,self.c
+        C=snp.diag(c)
+        code=runge_kutta_order_conditions(q)
+        tau=snp.zeros([q,len(self)])
+        for j in range(1,q):
+            tau[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
+        if q<=2:
+            z=snp.zeros(len(code)+1)
+            z[-1]=np.dot(b,c**(q-1))-Rational(1,q)
+        if q==3:
+            z=snp.zeros(len(code))
+            exec('z[0]='+code[0]+'-'+'np.dot(b,c**2)/2.+1/6.')
+        if q==4:
+            code2=runge_kutta_order_conditions(q-1)
+            z=snp.zeros(len(code)-1)
+            exec('z[0]='+code[1]+'-'+'np.dot(b,np.dot(A,c**2))/2.+1/24.')
+            exec('z[1]='+code2[0]+'-'+code[1]+'-'+code[2])
+        if q>4:
+            raise Exception('At the moment, conditions of effective order five or more are not computed.')
+        return z
+
     def stage_order(self,tol=1.e-14):
         r""" 
             The stage order of a Runge-Kutta method is the minimum, 
