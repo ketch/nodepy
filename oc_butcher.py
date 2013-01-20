@@ -7851,7 +7851,6 @@ def order(rk,tol=1.e-13): # pragma: no cover
     coneq[4764]=dot(b,dot(A,c)*dot(A,c)*dot(A,c)*dot(A,c)*c**3)-1/192.
     coneq[4765]=dot(b,c**11)-1/12.
     if any(abs(coneq)>tol):
-        return coneq
         return 11
     # order 13 conditions:
     coneq[0]=dot(b,dot(A,c**11))-1/156.
