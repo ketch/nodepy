@@ -18,8 +18,9 @@ for ip in range(1,p):
     forest = rt.list_trees(ip+1)
     for tree in forest:
         oc=rk.elementary_weight_str(tree,style='matlab')
-        rhs =str(tree.Emap())
-        f.write("  tau("+str(ioc)+")="+oc+"-"+rhs+";\n")
+        rhs =str(rt.Emap(tree))
+        #f.write("  tau("+str(ioc)+")="+oc+"-"+rhs+";\n")
+        f.write("  tau("+str(ioc)+")=("+oc+"-"+rhs+")/"+str(tree.symmetry())+";\n")
         ioc+=1
 
 f.close()
