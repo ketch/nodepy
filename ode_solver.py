@@ -67,7 +67,7 @@ class ODESolver(object):
                 t.append(t[-1]+dt)
 
         else:                   # Error-control mode
-            p=numself.embedded_method.order()
+            p=self.embedded_method.p
             alpha = 0.7/p; beta = 0.4/p; kappa = 0.9
             facmin = 0.2; facmax = 5.
             errestold = errtol

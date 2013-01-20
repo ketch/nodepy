@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> RK.keys()
-    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'BuRK65', 'DP8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
+    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'DP8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
 
     >>> print RK['Mid22']
     Midpoint Runge-Kutta
@@ -85,7 +85,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def __init__(self,A=None,b=None,alpha=None,beta=None,
                  name='Runge-Kutta Method',shortname='RKM',
-                 description='',mode='exact'):
+                 description='',mode='exact',order=None):
         r"""
             Initialize a Runge-Kutta method.  For explicit methods,
             the class ExplicitRungeKuttaMethod should be used instead.
@@ -156,6 +156,22 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 print """Warning: this method appears to be explicit, but is
                        being initialized as a RungeKuttaMethod rather than
                        as an ExplicitRungeKuttaMethod."""
+
+        if order is not None:
+            self._p = order
+        else:
+            self._p = None
+
+    @property
+    def p(self):
+        r"""Order of the method.  This can be imposed and cached, which is advantageous
+        to avoid issues with roundoff error and slow computation of the order conditions."""
+        if self._p is None:
+            self._p = self.order()
+        return self._p
+    @p.setter
+    def p(self,p):
+        self._p = p
 
     def __num__(self):
         """
@@ -1536,21 +1552,23 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         to achieve approximately this tolerance.
     """
     def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,
-            name='Runge-Kutta Pair',shortname='RKM',description=''):
+            name='Runge-Kutta Pair',shortname='RKM',description='',order=(None,None)):
         r"""
             In addition to the ordinary Runge-Kutta initialization,
             here the embedded coefficients `\hat{b}_j` are set as well.
         """
         super(ExplicitRungeKuttaPair,self).__init__(
-                        A,b,alpha,beta,name,shortname,description)
+                        A,b,alpha,beta,name,shortname,description,order=order[0])
         if bhat.shape != self.b.shape: 
             raise Exception("Dimensions of embedded method don't agree with those of principal method")
         self.bhat=bhat
         self.mtype = 'Explicit embedded Runge-Kutta pair'
+        self._p_hat = order[1]
 
     @property
     def embedded_method(self):
-        return ExplicitRungeKuttaMethod(self.A,self.bhat)
+        """Always recompute the embedded method on the fly.  This may be inefficient."""
+        return ExplicitRungeKuttaMethod(self.A,self.bhat,order=self._p_hat)
 
     def __num__(self):
         """
@@ -2665,7 +2683,7 @@ def DC(s,theta=0.,grid='eq'):
                     beta[s*k+m+1,s*(k-1)+i]-=theta
 
     name='DC'+str(s)*2
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=s+1).dj_reduce()
 
 
 #============================================================
@@ -2760,7 +2778,7 @@ def extrap(p,seq='harmonic',embedded=False, shuosher=False):
     if shuosher:
         return alpha, beta
     else:
-        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
+        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
 
 def extrap_pair(p, seq='harmonic'):
     """ 
@@ -2779,7 +2797,7 @@ def extrap_pair(p, seq='harmonic'):
     bhat = np.resize(rk2.b,rk1.b.shape)
 
     name='FE extrapolation pair of order '+str(p)+'('+str(p-1)+')'
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name).dj_reduce()
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name, order=(p,p-1)).dj_reduce()
 
 def extrap_gbs(p,embedded=False, shuosher=False):
     """ Construct extrapolation methods based on GBS.
@@ -2847,7 +2865,7 @@ def extrap_gbs(p,embedded=False, shuosher=False):
     if shuosher:
         return alpha, beta
     else:
-        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
+        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
    
 
 def extrap_gbs_pair(p, seq='harmonic'):
@@ -2867,7 +2885,7 @@ def extrap_gbs_pair(p, seq='harmonic'):
     bhat = np.resize(rk2.b,rk1.b.shape)
 
     name='GBS extrapolation pair of order '+str(2*p)+'('+str(2*p-2)+')'
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name).dj_reduce()
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name,order=(p,p-2)).dj_reduce()
 
 
 #============================================================
