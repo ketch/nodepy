@@ -717,6 +717,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
             This function constructs the numerator and denominator of the 
             stability function of a Runge-Kutta method.
 
+            For methods with rational coefficients, mode='exact' computes
+            the stability function using rational arithmetic.  Alternatively,
+            you can set mode='float' to force computation using floating point,
+            in case the exact computation is too slow.
+
             For explicit methods, the denominator is simply `1` and there
             are three options for computing the numerator (this is the
             'formula' option).  These only affect
@@ -726,10 +731,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
               - 'det': ratio of determinants
               - 'pow': power series
 
+            For implicit methods, only the 'det' (determinant) formula
+            is supported.  If mode='float' is selected, the formula
+            automatically switches to 'det'.
+
             The user can also select whether to compute the function based
             on Butcher or Shu-Osher coefficients by setting `use_butcher`.
-
-            Defaults: Butcher coefficients and ratio of determinants.
 
             **Output**:
                 - p -- Numpy poly representing the numerator
@@ -744,7 +751,22 @@ class RungeKuttaMethod(GeneralLinearMethod):
                          4          3       2
                 0.04167 x + 0.1667 x + 0.5 x + 1 x + 1
 
+                >>> dc = rk.DC(3)
+                >>> dc.stability_function(mode='exact')
+                (poly1d([0.000257201646090537, 0.00154320987654321, 0.0416666666666667,
+                       0.166666666666667, 0.500000000000000, 1.00000000000000,
+                       1.00000000000000], dtype=object), poly1d([1], dtype=object))
+
+                >>> dc.stability_function(mode='float')
+                (poly1d([  2.57201646e-04,   1.54320988e-03,   4.16666667e-02,
+                         1.66666667e-01,   5.00000000e-01,   1.00000000e+00,
+                         1.00000000e+00]), poly1d([ 1.]))
+                
         """
+        if mode=='float': # Override performance options
+            use_butcher = True
+            formula = 'det'
+
         if use_butcher == False and self.alpha is None:
             raise Exception('No Shu-Osher coefficients provided.')
 
@@ -754,11 +776,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if formula == 'det' and use_butcher == False:
             raise NotImplementedError("Ratio of determinants not yet implemented for Shu-Osher coefficients.")
 
-
         if stage is None:
             stage = len(self)+1
 
         m = self.num_seq_dep_stages()
+
         if use_butcher==False:
             alpha = self.alpha[0:stage,0:stage-1]
             beta  = self.beta[0:stage,0:stage-1]
@@ -799,7 +821,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         import stability_function 
         import matplotlib.pyplot as plt
 
-        p,q=self.__num__().stability_function()
+        p,q=self.__num__().stability_function(mode='float')
 
         fig = stability_function.plot_stability_region(p,q,N,color,filled,
                     plotroots,alpha,scalefac)
@@ -1224,7 +1246,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> rk4.imaginary_stability_interval()
                 2.8284274972975254
         """
-        p,q=self.__num__().stability_function()
+        p,q=self.__num__().stability_function(mode='float')
         zhi=zmax
         zlo=0.
         #Use bisection to get an upper bound:
@@ -1255,7 +1277,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 2.785294223576784
         """
 
-        p,q=self.__num__().stability_function()
+        p,q=self.__num__().stability_function(mode='float')
         zhi=zmax
         zlo=0.
         #Use bisection to get an upper bound:
@@ -1688,13 +1710,13 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         import stability_function 
         import matplotlib.pyplot as plt
 
-        p,q=self.__num__().stability_function()
+        p,q=self.__num__().stability_function(mode='float')
 
         fig = stability_function.plot_stability_region(p,q,N,color,filled,plotroots,
                 alpha,scalefac)
 
         plt.hold(True)
-        p,q = self.embedded_method.__num__().stability_function()
+        p,q = self.embedded_method.__num__().stability_function(mode='float')
         stability_function.plot_stability_region(p,q,N,color='k',filled=False,
                 plotroots=plotroots,alpha=alpha,scalefac=scalefac,fignum=fig.number)
 
