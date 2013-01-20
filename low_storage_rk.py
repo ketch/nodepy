@@ -41,27 +41,38 @@ At the moment, the following classes are implemented:
 
 **Examples**::
 
-    >>>
+    >>> from nodepy import lsrk
+    >>> myrk = lsrk.load_2R('DDAS47')
+    >>> print myrk
+    DDAS4()7[2R]
+    2R Method of Tselios \& Simos (2007)
+     0.000 |
+     0.336 | 0.336
+     0.286 | 0.094  0.192
+     0.745 | 0.094  0.150  0.501
+     0.639 | 0.094  0.150  0.285  0.110
+     0.724 | 0.094  0.150  0.285 -0.122  0.317
+     0.911 | 0.094  0.150  0.285 -0.122  0.061  0.444
+    _______|_________________________________________________
+           | 0.094  0.150  0.285 -0.122  0.061  0.346  0.187
+        
 
 """
 from runge_kutta_method import *
 
 #=====================================================
-class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
+class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
 #=====================================================
-    """
-        Class for 2R/3R/4R low-storage Runge-Kutta pairs.
-        These were developed by van der Houwen, Wray, and Kennedy et. al.
+    """ Class for 2R/3R/4R low-storage Runge-Kutta pairs.
 
+        These were developed by van der Houwen, Wray, and Kennedy et. al.
         Only 2R and 3R methods have been implemented so far.
-        Also, the implementation is only for embedded pairs
-        (not for single methods).
 
         References:
             * [kennedy2000]_
             * [ketcheson2010]_
     """
-    def __init__(self,a,b,bhat,regs=2,
+    def __init__(self,a,b,bhat=None,regs=2,
             name='2R Runge-Kutta Method',description=''):
         r"""
             Initializes the 2R method by storing the
@@ -81,7 +92,6 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
         """
         self.b=b
         self.a=a
-        self.bhat=bhat
         m=len(b)
         self.A=np.zeros([m,m])
         for i in range(1,m):
@@ -99,7 +109,9 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
                 #NEED TO FILL IN
                 pass
         self.c=np.sum(self.A,1)
-        self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
+        if bhat is not None:
+            self.bhat=bhat
+            self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
         self.name=name
         self.info=description
         self.lstype=str(regs)+'R+_pair'
@@ -119,6 +131,8 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
 
             OUTPUT:
                 unew -- approximate solution at time t[-1]+dt
+
+            TODO: Write a version of this for non-embedded methods
         """
         m=len(self); b=self.b; a=self.a
         S2=u[-1]+0.
@@ -151,22 +165,22 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
             uhat=uhat+self.bhat[m-1]*S1
             if errest: return S3, np.max(np.abs(S3-uhat))
             else: return S3
-        else: print 'Error: only 2R and 3R methods implemented so far!'
+        else: raise Exception('Error: only 2R and 3R methods implemented so far!')
 
 #=====================================================
-# End of class TwoRRungeKuttaPair
+# End of class TwoRRungeKuttaMethod
 #=====================================================
 
 
 #=====================================================
-class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
+class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
 #=====================================================
     """
         Class for low-storage Runge-Kutta methods
         that use Ketcheson's assumption (2S, 2S*, and 3S* methods).
 
         This class cannot be used for embedded pairs.  Use
-        the class LowStorageRungeKuttaPair instead.
+        the class TwoSRungeKuttaPair instead.
 
         The low-storage coefficient arrays `\beta,\gamma,\delta`
         follow the notation of [ketcheson2010]_ .
@@ -256,18 +270,18 @@ class LowStorageRungeKuttaMethod(ExplicitRungeKuttaMethod):
         return S1
 
 #=====================================================
-# End of class LowStorageRungeKuttaMethod
+# End of class TwoSRungeKuttaMethod
 #=====================================================
 
 #=====================================================
-class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
+class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
 #=====================================================
     """
         Class for low-storage embedded Runge-Kutta pairs
         that use Ketcheson's assumption (2S, 2S*, and 3S* methods).
 
         This class is only for embedded pairs.  Use
-        the class LowStorageRungeKuttaMethod for single 2S/3S methods.
+        the class TwoSRungeKuttaMethod for single 2S/3S methods.
 
         The low-storage coefficient arrays `\beta,\gamma,\delta`
         follow the notation of [ketcheson2010]_ .
@@ -422,7 +436,7 @@ class LowStorageRungeKuttaPair(ExplicitRungeKuttaPair):
 
 
 #=====================================================
-#End of LowStorageRungeKuttaPair class
+#End of TwoSRungeKuttaPair class
 #=====================================================
 
 def load_LSRK(file,lstype='2S',has_emb=False):
@@ -465,23 +479,23 @@ def load_LSRK(file,lstype='2S',has_emb=False):
     if lstype=='2S' or lstype=='2S*': 
         for i in range(1,m+1): gamma[0].append(1.-gamma[1][i]*sum(delta[0:i]))
         if has_emb:
-            meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype,bhat=bhat)
+            meth = TwoSRungeKuttaPair(beta,gamma,delta,lstype,bhat=bhat)
         else:
-            meth = LowStorageRungeKuttaMethod(beta,gamma,delta,lstype)
+            meth = TwoSRungeKuttaMethod(beta,gamma,delta,lstype)
     elif lstype=='2S_pair':
         for i in range(1,m+1): gamma[0].append(1.-gamma[1][i]*sum(delta[0:i]))
-        meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype)
+        meth = TwoSRungeKuttaPair(beta,gamma,delta,lstype)
     elif lstype.startswith('3S*'):
         for i in range(1,m+1): gamma[0].append(1.-gamma[2][i]
                                         -gamma[1][i]*sum(delta[0:i]))
         if lstype=='3S*':
             if has_emb:
-                meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype,bhat=bhat)
+                meth = TwoSRungeKuttaPair(beta,gamma,delta,lstype,bhat=bhat)
             else:
-                meth = LowStorageRungeKuttaMethod(beta,gamma,delta,lstype)
+                meth = TwoSRungeKuttaMethod(beta,gamma,delta,lstype)
 
         elif lstype=='3S*_pair':
-            meth = LowStorageRungeKuttaPair(beta,gamma,delta,lstype)
+            meth = TwoSRungeKuttaPair(beta,gamma,delta,lstype)
     ord=meth.order()
     if lstype=='2S_pair': 
         emb_ord=meth.embedded_order()
@@ -571,6 +585,8 @@ def load_2R(name):
     """
         Loads 2R low-storage methods from the literature.
     """
+    bhat=None
+    regs=2
     if name=='DDAS47':
         fullname='DDAS4()7[2R]'
         descript='2R Method of Tselios \& Simos (2007)'
@@ -684,4 +700,4 @@ def load_2R(name):
                          1454774750537./11112645198328,
                          772137014323./4386814405182,
                          277420604269./1857595682219])
-    return TwoRRungeKuttaPair(a,b,bhat,regs,fullname,description=descript)
+    return TwoRRungeKuttaMethod(a,b,bhat,regs,fullname,description=descript)
