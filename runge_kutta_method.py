@@ -1285,7 +1285,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
     def num_seq_dep_stages(self):
         r"""Number of sequentially dependent stages.
 
-        of sequential function evaluations that must be made.
+        Number of sequential function evaluations that must be made.
 
             **Examples**::
 

@@ -30,6 +30,8 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
     # Convert coefficients to floats for speed
     if p.coeffs.dtype=='object':
         p = np.poly1d([float(c) for c in p.coeffs])
+    if q.coeffs.dtype=='object':
+        q = np.poly1d([float(c) for c in q.coeffs])
 
     # Check if the stability region is bounded or not
     m,n = p.order,q.order
