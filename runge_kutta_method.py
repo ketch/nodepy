@@ -442,7 +442,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     # Accuracy
     #============================================================
 
-    def error_coefficient(self,tree):
+    def error_coefficient(self,tree,mode='exact'):
         r"""
         Returns the coefficient in the Runge-Kutta method's error expansion
         multiplying a single elementary differential,
@@ -468,9 +468,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         from numpy import dot
         from sympy import Rational, simplify
         code=elementary_weight_str(tree)
-        b=self.b
-        A=self.A
-        c=self.c
+        A,b,c = self.A,self.b,self.c
+
         if A.dtype == object:
             exec('coeff=simplify('+code+'-Rational(1,'+str(tree.density())+'))')
         else:
@@ -523,17 +522,24 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
 
-    def principal_error_norm(self,tol=1.e-13,method='float'):
+    def principal_error_norm(self,tol=1.e-13,mode='float'):
         r"""The 2-norm of the vector of leading order error coefficients."""
         import rooted_trees as rt
-        p=self.order(tol,method=method)
-        forest=rt.list_trees(p+1)
+        forest=rt.list_trees(self.p+1)
         errs=[]
+
+        if mode == 'float':
+            method = self.__num__()
+        elif mode == 'exact':
+            method = self
+        else:
+            raise Exception('Unrecognized mode value')
+
         for tree in forest:
-            errs.append(self.error_coefficient(tree))
+            errs.append(method.error_coefficient(tree))
         return np.sqrt(float(np.sum(np.array(errs)**2)))
 
-    def order(self,tol=1.e-14,method='float',extremely_high_order=False):
+    def order(self,tol=1.e-14,mode='float',extremely_high_order=False):
         """ The order of a Runge-Kutta method.
 
             **Examples**::
@@ -543,21 +549,21 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4.order()
                 4
 
-            method=='hard-coded': 
+            mode=='hard-coded': 
                 Use hard-coded Butcher conditions in oc_butcher.py (those were
                 auto-generated previously).  
                 This is the fastest, evaluated using floating-point coefficients.
 
-            method=='generation-albrecht': 
+            mode=='generation-albrecht': 
                 Use Albrecht's recursion to generate the order conditions.  
                 Evaluated symbolically.
 
-            method=='generation-trees':
+            mode=='generation-trees':
                 Use Butcher's recursive product on trees.
                 Advantages: Most satisfying, no maximum order
                 Disadvantages: way too slow for high order
         """
-        if method=='float':
+        if mode=='float':
             if not extremely_high_order:
                 import oc_butcher
                 p = oc_butcher.order(self.__num__(),tol)
@@ -565,8 +571,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 import oc_butcher_high_order
                 p = oc_butcher_high_order.order(self.__num__(),tol)
             if p==0:
-                print 'Apparent order is 0; this may be due to roundoff.  Try order(method="exact") or increase tol.'
-        elif method=='exact':
+                print 'Apparent order is 0; this may be due to roundoff.  Try order(mode="exact") or increase tol.'
+        elif mode=='exact':
             from sympy import simplify
             p=0
             while True:
@@ -574,7 +580,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 z = snp.array([simplify(zz) for zz in z])
                 if np.any(abs(z)>tol): break
                 p=p+1
-        elif method=='generation-trees':
+        elif mode=='generation-trees':
             raise NotImplementedError
         return p
 
@@ -3110,7 +3116,7 @@ def python_to_matlab(code):
     #print '******************'
     return outline
 
-def relative_accuracy_efficiency(rk1,rk2,method='float',tol=1.e-14):
+def relative_accuracy_efficiency(rk1,rk2,mode='float',tol=1.e-14):
     r"""
     Compute the accuracy efficiency of method rk1 relative to that of rk2,
     for two methods with the same order of accuracy.
@@ -3131,18 +3137,18 @@ def relative_accuracy_efficiency(rk1,rk2,method='float',tol=1.e-14):
         >>> dp5 = rk.loadRKM('DP5')
         >>> f45 = rk.loadRKM('Fehlberg45')
         >>> rk.relative_accuracy_efficiency(dp5,f45)
-        1.2222911649987882
+        1.2222911649987864
     """
 
-    p=rk1.order(method=method,tol=tol)
+    p=rk1.order(mode=mode,tol=tol)
     if rk2.order()!=p: raise Exception('Methods have different orders')
 
-    A1=rk1.principal_error_norm(method=method,tol=tol)
-    A2=rk2.principal_error_norm(method=method,tol=tol)
+    A1=rk1.principal_error_norm(mode=mode,tol=tol)
+    A2=rk2.principal_error_norm(mode=mode,tol=tol)
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
 
-def accuracy_efficiency(rk1,parallel=False,method='float',tol=1.e-14):
+def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14):
     r"""
     Compute the accuracy efficiency of method rk1.
 
@@ -3159,11 +3165,11 @@ def accuracy_efficiency(rk1,parallel=False,method='float',tol=1.e-14):
         >>> from nodepy import rk
         >>> dp5 = rk.loadRKM('DP5')
         >>> rk.accuracy_efficiency(dp5)
-        0.52649219441213957
+        0.5264921944121389
     """
     
-    p=rk1.order(method=method,tol=tol)
-    A1=rk1.principal_error_norm(method=method,tol=tol)
+    p=rk1.order(mode=mode,tol=tol)
+    A1=rk1.principal_error_norm(mode=mode,tol=tol)
     if parallel:
         # If we consider parallelization then we divide by number of parallel stages
         return 1.0/rk1.num_seq_dep_stages() * (1.0/A1)**(1./(p+1))
