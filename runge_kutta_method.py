@@ -2893,7 +2893,7 @@ def extrap_gbs(p,embedded=False, shuosher=False):
     if shuosher:
         return alpha, beta
     else:
-        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
+        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=2*p).dj_reduce()
    
 
 def extrap_gbs_pair(p, seq='harmonic'):
@@ -2919,7 +2919,6 @@ def extrap_gbs_pair(p, seq='harmonic'):
 #============================================================
 # Miscellaneous functions
 #============================================================
-def rk_order_conditions_hardcoded(rkm,p,tol):
     """ 
         Returns a vector that is identically zero if the
         Runge-Kutta method satisfies the conditions of order p (only) 
