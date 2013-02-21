@@ -2913,7 +2913,7 @@ def extrap_gbs_pair(p, seq='harmonic'):
     bhat = np.resize(rk2.b,rk1.b.shape)
 
     name='GBS extrapolation pair of order '+str(2*p)+'('+str(2*p-2)+')'
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name,order=(p,p-2)).dj_reduce()
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name,order=(2*p,2*(p-2))).dj_reduce()
 
 
 #============================================================
