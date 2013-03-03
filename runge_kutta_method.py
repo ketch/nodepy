@@ -767,7 +767,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 (poly1d([  2.57201646e-04,   1.54320988e-03,   4.16666667e-02,
                          1.66666667e-01,   5.00000000e-01,   1.00000000e+00,
                          1.00000000e+00]), poly1d([ 1.]))
-                
+                >>> ssp3 = rk.SSPIRK3(4)
+                >>> ssp3.stability_function()
+                (poly1d([  4.39037781e-04,   1.17473328e-02,   1.25403331e-01,
+                         5.49193338e-01,   1.00000000e+00]), poly1d([  1.61332303e-04,  -5.72599537e-03,   7.62099923e-02,
+                        -4.50806662e-01,   1.00000000e+00]))
         """
         if mode=='float': # Override performance options
             use_butcher = True
@@ -776,16 +780,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if use_butcher == False and self.alpha is None:
             raise Exception('No Shu-Osher coefficients provided.')
 
-        if (not self.is_explicit()) and (formula != 'det'):
-            raise NotImplementedError("Only formula='det' is implemented for implicit methods.")
+        if self.is_explicit():
+            m = self.num_seq_dep_stages()
+        else:
+            m = np.inf
+            mode = 'float'
+            formula = 'det'
+            use_butcher = True
 
         if formula == 'det' and use_butcher == False:
             raise NotImplementedError("Ratio of determinants not yet implemented for Shu-Osher coefficients.")
 
         if stage is None:
             stage = len(self)+1
-
-        m = self.num_seq_dep_stages()
 
         if use_butcher==False:
             alpha = self.alpha[0:stage,0:stage-1]
@@ -3247,6 +3254,8 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         # formulas
         p1 = np.poly(beta[:-1,:].astype(float)-np.tile(beta[-1,:].astype(float),(s,1)))
         q1 = np.poly(beta[:-1,:].astype(float))
+        p = np.poly1d(p1[::-1])    # Numerator
+        q = np.poly1d(q1[::-1])    # Denominator
 
     else: # Compute symbolically
         import sympy
@@ -3313,8 +3322,6 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
     p = np.poly1d(p1[::-1])    # Numerator
     q = np.poly1d(q1[::-1])    # Denominator
 
-    # Remove leading "zeros" that are not numerically zero:
-    # This is required only for floating-point calculations
     if m < p.order:
         c = p.coeffs[-(m+1):]
         p = np.poly1d(c)
