@@ -784,7 +784,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             m = self.num_seq_dep_stages()
         else:
             m = np.inf
-            mode = 'float'
+            #mode = 'float'
             formula = 'det'
             use_butcher = True
 
@@ -801,7 +801,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             beta = np.vstack((self.A,self.b))
             alpha = beta*0
 
-        p,q = _stability_function(alpha,beta,self.is_explicit,m,formula=formula,mode=mode)
+        p,q = _stability_function(alpha,beta,self.is_explicit(),m,formula=formula,mode=mode)
 
         return p,q
         
@@ -3266,7 +3266,7 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
             bsym = sympy.matrices.Matrix(np.tile(beta[-1,:],(s,1)))
             xsym = Asym-bsym
             p1 = xsym.charpoly(z).coeffs()
-            if (not explicit): # This switch is just for speed
+            if explicit: # This switch is just for speed
                 q1 = [sympy.Rational(1)]
             else:
                 q1 = Asym.charpoly(z).coeffs()
