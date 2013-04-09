@@ -759,7 +759,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
                 >>> dc = rk.DC(3)
                 >>> dc.stability_function(mode='exact')
-                (poly1d([0.000257201646090537, 0.00154320987654321, 0.0416666666666667,
+                (poly1d([0.000257201646090536, 0.00154320987654321, 0.0416666666666667,
                        0.166666666666667, 0.500000000000000, 1.00000000000000,
                        1.00000000000000], dtype=object), poly1d([1], dtype=object))
 
@@ -1247,7 +1247,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])
         return unew
 
-    def imaginary_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
+    def imaginary_stability_interval(self):
         r"""
             Length of imaginary axis half-interval contained in the
             method's region of absolute stability.
@@ -1257,56 +1257,85 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.imaginary_stability_interval()
-                2.8284274972975254
+                2.8284271247461903
         """
-        p,q=self.__num__().stability_function(mode='float')
-        zhi=zmax
-        zlo=0.
-        #Use bisection to get an upper bound:
-        while (zhi-zlo)>tol:
-            z=0.5*(zhi+zlo)
-            mag=abs(p(1j*z))
-            if (mag-1.)>eps: zhi=z
-            else: zlo=z
-                
-        #Now check more carefully:
-        vals = np.array([abs(p(1j*zz)) for zz in np.linspace(0.,z,z/0.01)])
-        unstable_z=np.where(vals>1.+eps)[0]
-        if len(unstable_z)==0: return z
-        else: 
-            zz = np.linspace(0.,z,z/0.01)
-            return zz[min(unstable_z)]
+        p,q=self.stability_function()
 
-    def real_stability_interval(self,tol=1.e-7,zmax=100.,eps=1.e-6):
+        c = p.c[::-1].copy()
+        c[1::2] = 0      # Zero the odd coefficients to get real part
+        c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
+        p1 = np.poly1d(c[::-1])
+
+        c = p.c[::-1].copy()
+        c[::2] = 0      # Zero the even coefficients to get imaginary part
+        c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
+        p2 = np.poly1d(c[::-1])
+
+        c = q.c[::-1].copy()
+        c[1::2] = 0      # Zero the odd coefficients to get real part
+        c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
+        q1 = np.poly1d(c[::-1])
+
+        c = q.c[::-1].copy()
+        c[::2] = 0      # Zero the even coefficients to get imaginary part
+        c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
+        q2 = np.poly1d(c[::-1])
+
+        ppq = p1**2 + p2**2 + q1**2 + q2**2
+        pmq = p1**2 + p2**2 - q1**2 - q2**2
+
+        pmq_roots = np.array([x.real for x in pmq.r if abs(x.imag)<1.e-14 and x.real>0])
+        ppq_roots = np.array([x.real for x in ppq.r if abs(x.imag)<1.e-14 and x.real>0])
+
+        if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
+        else: pmqr = np.inf
+        if len(ppq_roots)>0: ppqr = np.min(ppq_roots)
+        else: ppqr = np.inf
+
+        mr = min(pmqr,ppqr)
+
+        # Check whether it is stable between 0 and mr
+        # This could fail in the case of double roots
+        if mr == np.inf:
+            z = 1j/2.
+        else:
+            z = mr*1j/2.
+
+        if abs(p(z)/q(z))<=1:
+            return mr
+        else:
+            return 0
+
+
+    def real_stability_interval(self):
         r"""
             Length of negative real axis interval contained in the
             method's region of absolute stability.
-    
+
             **Examples**::
 
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.real_stability_interval()
-                2.785294223576784
+                2.785293563405276
         """
-
         p,q=self.__num__().stability_function(mode='float')
-        zhi=zmax
-        zlo=0.
-        #Use bisection to get an upper bound:
-        while (zhi-zlo)>tol:
-            z=0.5*(zhi+zlo)
-            mag=abs(p(-z))
-            if (mag-1.)>eps: zhi=z
-            else: zlo=z
-                
-        #Now check more carefully:
-        vals = np.array([p(-zz) for zz in np.linspace(0.,z,z/0.01)])
-        unstable_z=np.where(vals>1.+eps)[0]
-        if len(unstable_z)==0: return z
-        else: 
-            zz = np.linspace(0.,z,z/0.01)
-            return zz[min(unstable_z)]
+        pmq = p-q
+        ppq = p+q
+        pmq_roots = np.array([-x.real for x in pmq.r if abs(x.imag)<1.e-14 and x.real<0])
+        ppq_roots = np.array([-x.real for x in ppq.r if abs(x.imag)<1.e-14 and x.real<0])
+        q_roots   = np.array([-x.real for x in q.r if abs(x.imag)<1.e-14 and x.real<0])
+        # We should actually check the signs of things in between the roots
+        # This could fail in the case of double roots or inconsistent methods
+        if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
+        else: pmqr = np.inf
+        if len(ppq_roots)>0: ppqr = np.min(ppq_roots)
+        else: ppqr = np.inf
+        if len(q_roots)>0: qrm = np.min(q_roots)
+        else: qrm = np.inf
+        t = min(pmqr,ppqr)
+        return min(qrm,t)
+
 
     def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
                                             tol=3.e-16):
