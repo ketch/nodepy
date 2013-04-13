@@ -6,7 +6,7 @@ def load_rkpair_from_file(filename='rk1210.txt'):
     f = open(filename)
     #if ((filename=='rk108.txt')):
 	#stages=17
-    if ((filename=='rk10(8).txt')):
+    if ((filename=='rk108.txt')):
 	name='Feagin\'s 10(8) pair'
 	stages=20
     if ((filename=='rk108curtis.txt')):
@@ -63,7 +63,7 @@ def load_rkmethod_from_file(filename='rk1210.txt'):
     f = open(filename)
     #if ((filename=='rk108.txt')):
 	#stages=17
-    if ((filename=='rk10(8).txt')):
+    if ((filename=='rk108.txt')):
 	name='Feagin\'s 10(8) pair'
 	stages=20
     if ((filename=='rk108curtis.txt')):
