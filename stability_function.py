@@ -1,6 +1,98 @@
 import numpy as np
 import matplotlib.pyplot as pl
 
+def imaginary_stability_interval(p,q=None,eps=1.e-14):
+    r"""
+        Length of imaginary axis half-interval contained in the
+        method's region of absolute stability.
+
+        **Examples**::
+
+            >>> from nodepy import rk
+            >>> rk4 = rk.loadRKM('RK44')
+            >>> rk4.imaginary_stability_interval()
+            2.8284271247461903
+    """
+    if q is None: q = np.poly1d([1.])
+
+    c = p.c[::-1].copy()
+    c[1::2] = 0      # Zero the odd coefficients to get real part
+    c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
+    p1 = np.poly1d(c[::-1])
+
+    c = p.c[::-1].copy()
+    c[::2] = 0      # Zero the even coefficients to get imaginary part
+    c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
+    p2 = np.poly1d(c[::-1])
+
+    c = q.c[::-1].copy()
+    c[1::2] = 0      # Zero the odd coefficients to get real part
+    c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
+    q1 = np.poly1d(c[::-1])
+
+    c = q.c[::-1].copy()
+    c[::2] = 0      # Zero the even coefficients to get imaginary part
+    c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
+    q2 = np.poly1d(c[::-1])
+
+    ppq = p1**2 + p2**2 + q1**2 + q2**2
+    pmq = p1**2 + p2**2 - q1**2 - q2**2
+
+    ppq_roots = np.array([x.real for x in ppq.r if abs(x.imag)<eps and x.real>0])
+    pmq_roots = np.array([x.real for x in pmq.r if abs(x.imag)<eps and x.real>0])
+
+    if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
+    else: pmqr = np.inf
+    if len(ppq_roots)>0: ppqr = np.min(ppq_roots)
+    else: ppqr = np.inf
+
+    mr = min(pmqr,ppqr)
+
+    # Check whether it is stable between 0 and mr
+    # This could fail in the case of double roots
+    if mr == np.inf:
+        z = 1j/20.
+    else:
+        z = mr*1j/20.
+
+    if np.abs(p(z)/q(z))<=1:
+        return mr
+    else:
+        return 0
+
+
+def real_stability_interval(p,q=None,eps=1.e-14):
+    r"""
+        Length of negative real axis interval contained in the
+        method's region of absolute stability.
+
+        **Examples**::
+
+            >>> from nodepy import rk
+            >>> rk4 = rk.loadRKM('RK44')
+            >>> I = rk4.real_stability_interval()
+            >>> print "%.10f" % I
+            2.7852935634
+    """
+    if q is None: q = np.poly1d([1.])
+
+    pmq = p-q
+    ppq = p+q
+    pmq_roots = np.array([-x.real for x in pmq.r if abs(x.imag)<eps and x.real<0])
+    ppq_roots = np.array([-x.real for x in ppq.r if abs(x.imag)<eps and x.real<0])
+    q_roots   = np.array([-x.real for x in q.r if abs(x.imag)<eps and x.real<0])
+    # We should actually check the signs of things in between the roots
+    # This could fail in the case of double roots or inconsistent methods
+    if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
+    else: pmqr = np.inf
+    if len(ppq_roots)>0: ppqr = np.min(ppq_roots)
+    else: ppqr = np.inf
+    if len(q_roots)>0: qrm = np.min(q_roots)
+    else: qrm = np.inf
+    t = min(pmqr,ppqr)
+    return min(qrm,t)
+
+
 def plot_stability_region(p,q,N=200,color='r',filled=True,
                           plotroots=False,alpha=1.,scalefac=1.,fignum=None):
     r""" 

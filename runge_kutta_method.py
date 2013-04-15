@@ -769,13 +769,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
                          1.00000000e+00]), poly1d([ 1.]))
                 >>> ssp3 = rk.SSPIRK3(4)
                 >>> ssp3.stability_function()
-                (poly1d([4*sqrt(15) + 16, 8 + 12*sqrt(15)/5, 2*sqrt(15)/5 + 12/5,
-                       2*sqrt(15)/75 + 4/15, -8/75 + 7*sqrt(15)/225], dtype=object), poly1d([1, -2 + 2*sqrt(15)/5, -3*sqrt(15)/5 + 12/5, -7/5 + 9*sqrt(15)/25,
-                       -2*sqrt(15)/25 + 31/100], dtype=object))
+                (poly1d([-67/300 + 13*sqrt(15)/225, -sqrt(15)/25 + 1/6, -sqrt(15)/5 + 9/10,
+                       -1 + 2*sqrt(15)/5, 1], dtype=object), poly1d([-2*sqrt(15)/25 + 31/100, -7/5 + 9*sqrt(15)/25, -3*sqrt(15)/5 + 12/5,
+                       -2 + 2*sqrt(15)/5, 1], dtype=object))
+
                 >>> ssp3.stability_function(mode='float')
                 (poly1d([  4.39037781e-04,   1.17473328e-02,   1.25403331e-01,
                          5.49193338e-01,   1.00000000e+00]), poly1d([  1.61332303e-04,  -5.72599537e-03,   7.62099923e-02,
                         -4.50806662e-01,   1.00000000e+00]))
+                >>> ssp2 = rk.SSPIRK2(1)
+                >>> ssp2.stability_function()
+                (poly1d([1/2, 1], dtype=object), poly1d([-1/2, 1], dtype=object))
         """
         if mode=='float': # Override performance options
             use_butcher = True
@@ -784,12 +788,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if use_butcher == False and self.alpha is None:
             raise Exception('No Shu-Osher coefficients provided.')
 
-        if self.is_explicit():
+        if formula == 'pow':
+            m = len(self)
+        elif self.is_explicit():
             m = self.num_seq_dep_stages()
         else:
             m = np.inf
             formula = 'det'
-            #use_butcher = True
+            use_butcher = True
 
         #if formula == 'det' and use_butcher == False:
         #    raise NotImplementedError("Ratio of determinants not yet implemented for Shu-Osher coefficients.")
@@ -800,11 +806,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if use_butcher==False:
             alpha = self.alpha[0:stage,0:stage-1]
             beta  = self.beta[0:stage,0:stage-1]
+            v_mp1 = 1-alpha[-1,:].sum()
         else:
             beta = np.vstack((self.A,self.b))
             alpha = beta*0
 
         p,q = _stability_function(alpha,beta,self.is_explicit(),m,formula=formula,mode=mode)
+
+        if self.is_explicit():  # Trim leading coefficients that ought to be zero
+            d_true = self.num_seq_dep_stages()-1
+            d_num  = len(p.coeffs)-1
+            if d_num>d_true:
+                p = np.poly1d(p.coeffs[(d_num-d_true):])
 
         return p,q
         
@@ -1262,56 +1275,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> rk4.imaginary_stability_interval()
                 2.8284271247461903
         """
-        if mode=='exact':
-            p,q=self.stability_function()
-        else:
-            p,q=self.__num__().stability_function(mode='float')
-
-        c = p.c[::-1].copy()
-        c[1::2] = 0      # Zero the odd coefficients to get real part
-        c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
-        p1 = np.poly1d(c[::-1])
-
-        c = p.c[::-1].copy()
-        c[::2] = 0      # Zero the even coefficients to get imaginary part
-        c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
-        p2 = np.poly1d(c[::-1])
-
-        c = q.c[::-1].copy()
-        c[1::2] = 0      # Zero the odd coefficients to get real part
-        c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
-        q1 = np.poly1d(c[::-1])
-
-        c = q.c[::-1].copy()
-        c[::2] = 0      # Zero the even coefficients to get imaginary part
-        c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
-        q2 = np.poly1d(c[::-1])
-
-        ppq = p1**2 + p2**2 + q1**2 + q2**2
-        pmq = p1**2 + p2**2 - q1**2 - q2**2
-
-        ppq_roots = np.array([x.real for x in ppq.r if abs(x.imag)<eps and x.real>0])
-        pmq_roots = np.array([x.real for x in pmq.r if abs(x.imag)<eps and x.real>0])
-
-        if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
-        else: pmqr = np.inf
-        if len(ppq_roots)>0: ppqr = np.min(ppq_roots)
-        else: ppqr = np.inf
-
-        mr = min(pmqr,ppqr)
-
-        # Check whether it is stable between 0 and mr
-        # This could fail in the case of double roots
-        if mr == np.inf:
-            z = 1j/20.
-        else:
-            z = mr*1j/20.
-
-        if np.abs(p(z)/q(z))<=1:
-            return mr
-        else:
-            return 0
-
+        import stability_function
+        p,q=self.stability_function(mode=mode)
+        return stability_function.imaginary_stability_interval(p,q)
 
     def real_stability_interval(self,mode='exact',eps=1.e-14):
         r"""
@@ -1326,26 +1292,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> print "%.10f" % I
                 2.7852935634
         """
-        if mode=='exact':
-            p,q=self.stability_function()
-        else:
-            p,q=self.__num__().stability_function(mode='float')
-
-        pmq = p-q
-        ppq = p+q
-        pmq_roots = np.array([-x.real for x in pmq.r if abs(x.imag)<eps and x.real<0])
-        ppq_roots = np.array([-x.real for x in ppq.r if abs(x.imag)<eps and x.real<0])
-        q_roots   = np.array([-x.real for x in q.r if abs(x.imag)<eps and x.real<0])
-        # We should actually check the signs of things in between the roots
-        # This could fail in the case of double roots or inconsistent methods
-        if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
-        else: pmqr = np.inf
-        if len(ppq_roots)>0: ppqr = np.min(ppq_roots)
-        else: ppqr = np.inf
-        if len(q_roots)>0: qrm = np.min(q_roots)
-        else: qrm = np.inf
-        t = min(pmqr,ppqr)
-        return min(qrm,t)
+        import stability_function
+        p,q=self.stability_function(mode=mode)
+        return stability_function.real_stability_interval(p,q)
 
 
     def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
@@ -3301,61 +3250,44 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         import sympy
         z = sympy.var('z')
         
-        if formula == 'det':
-            if explicit:
-                v = 1. - alpha[:,1:].sum(1)
-                alpha[:,0]=0.
-            else:
-                v = 1 - alpha.sum(1)
-            I = sympy.matrices.eye(s)
-            vstar = sympy.matrices.Matrix(v[:-1]).T
-            v_mp1 = v[-1]
-            alphastar=sympy.matrices.Matrix(alpha[:-1,:])
-            betastar=sympy.matrices.Matrix(beta[:-1,:])
-            alpha_mp1 = sympy.matrices.Matrix(alpha[-1,:])
-            beta_mp1 = sympy.matrices.Matrix(beta[-1,:])
-            xsym = I - alphastar - z*betastar + vstar/v_mp1 * (alpha_mp1+z*beta_mp1)
-            x = sympy.poly(sympy.simplify(xsym.det(method='berkowitz')),z)
-            p1 = x.coeffs()
+        if explicit:
+            v = 1 - alpha[:,1:].sum(1)
+            alpha[:,0]=0.
+            q1 = [sympy.Rational(1)]
+        else:
+            v = 1 - alpha.sum(1)
 
-            #Asym = sympy.matrices.Matrix(beta[:-1,:])
-            #bsym = sympy.matrices.Matrix(np.tile(beta[-1,:],(s,1)))
-            #xsym = Asym-bsym
-            #p1 = xsym.charpoly(z).coeffs()
-            if explicit: # This switch is just for speed
-                q1 = [sympy.Rational(1)]
-            else:
-                denomsym = I - alphastar - z*betastar
-                x = sympy.poly(sympy.simplify(denomsym.det(method='berkowitz')),z)
-                q1 = x.coeffs()
+        alpha_star=sympy.matrices.Matrix(alpha[:-1,:])
+        beta_star=sympy.matrices.Matrix(beta[:-1,:])
+        I = sympy.matrices.eye(s)
+
+        v_mp1 = v[-1]
+        vstar = sympy.matrices.Matrix(v[:-1]).T
+        alpha_mp1 = sympy.matrices.Matrix(alpha[-1,:])
+        beta_mp1 = sympy.matrices.Matrix(beta[-1,:])
+
+        if formula == 'det':
+            xsym = I - alpha_star - z*beta_star + vstar/v_mp1 * (alpha_mp1+z*beta_mp1)
+            p1 = sympy.simplify(xsym.det(method='berkowitz')*v_mp1)
+            p1 = p1.as_poly(z).all_coeffs()
+
+            denomsym = I - alpha_star - z*beta_star
+            q1 = sympy.simplify(denomsym.det(method='berkowitz'))
+            q1 = q1.as_poly(z).all_coeffs()
 
         elif formula == 'lts': # lower_triangular_solve
-            I = sympy.matrices.eye(s)
-            
-            v = 1 - alpha.sum(1)
-            vstar = sympy.matrices.Matrix(v[:-1]).T
-            v_mp1 = sympy.Rational(v[-1])
-            alpha_star = sympy.matrices.Matrix(alpha[:-1,:])
-            beta_star = sympy.matrices.Matrix(beta[:-1,:])
-            alpha_mp1 = sympy.matrices.Matrix(alpha[-1,:])
-            beta_mp1 = sympy.matrices.Matrix(beta[-1,:])
             p1 = (alpha_mp1 + z*beta_mp1)*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
             p1 = p1[0].expand()+v_mp1
-
             p1 = p1.as_poly(z).all_coeffs()
-            p1 = p1[::-1]
-            q1 = [sympy.Rational(1)]
 
         elif formula == 'pow': # Power series
-            I = sympy.matrices.eye(s)
-
-            alpha_star = sympy.matrices.Matrix(alpha[0:-1,:])
-            beta_star  = sympy.matrices.Matrix(beta[0:-1,:])
-
             apbz_star = alpha_star + beta_star*z
-            apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
+            apbz = sympy.matrices.Matrix(alpha_mp1+z*beta_mp1)
 
-            # Compute (I-zA)^(-1) = I + zA + (zA)^2 + ... + (zA)^(s-1)
+            # Compute (I-(alpha + z beta)^(-1) = I + (alpha + z beta) + (alpha + z beta)^2 + ... + (alpha + z beta)^(s-1)
+            # This is coded for Shu-Osher coefficients
+            # For them, we need to take m=s
+            # For Butcher coefficients, perhaps we could get away with m=num_seq_dep_stages (???)
             apbz_power = I
             Imapbz_inv = I
             for i in range(1,m):
@@ -3363,22 +3295,16 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
                 Imapbz_inv = Imapbz_inv + apbz_power
             p1 = apbz*Imapbz_inv
 
-            v = 1 - alpha.sum(1)
-            vstar = sympy.matrices.Matrix(v[:-1]).T
-            v_mp1 = sympy.Rational(v[-1])
             p1 = p1*vstar
             p1 = p1[0].expand()+v_mp1
             
             p1 = p1.as_poly(z).all_coeffs()
-            p1 = p1[::-1]
-            q1 = [sympy.Rational(1)]
-
 
         else:
             raise Exception("Unknown value of 'formula'")
 
-    p = np.poly1d(p1[::-1])    # Numerator
-    q = np.poly1d(q1[::-1])    # Denominator
+        p = np.poly1d(p1)    # Numerator
+        q = np.poly1d(q1)    # Denominator
 
     if m < p.order:
         c = p.coeffs[-(m+1):]
