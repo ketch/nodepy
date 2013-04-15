@@ -769,6 +769,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
                          1.00000000e+00]), poly1d([ 1.]))
                 >>> ssp3 = rk.SSPIRK3(4)
                 >>> ssp3.stability_function()
+                (poly1d([4*sqrt(15) + 16, 8 + 12*sqrt(15)/5, 2*sqrt(15)/5 + 12/5,
+                       2*sqrt(15)/75 + 4/15, -8/75 + 7*sqrt(15)/225], dtype=object), poly1d([1, -2 + 2*sqrt(15)/5, -3*sqrt(15)/5 + 12/5, -7/5 + 9*sqrt(15)/25,
+                       -2*sqrt(15)/25 + 31/100], dtype=object))
+                >>> ssp3.stability_function(mode='float')
                 (poly1d([  4.39037781e-04,   1.17473328e-02,   1.25403331e-01,
                          5.49193338e-01,   1.00000000e+00]), poly1d([  1.61332303e-04,  -5.72599537e-03,   7.62099923e-02,
                         -4.50806662e-01,   1.00000000e+00]))
@@ -784,12 +788,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
             m = self.num_seq_dep_stages()
         else:
             m = np.inf
-            #mode = 'float'
             formula = 'det'
-            use_butcher = True
+            #use_butcher = True
 
-        if formula == 'det' and use_butcher == False:
-            raise NotImplementedError("Ratio of determinants not yet implemented for Shu-Osher coefficients.")
+        #if formula == 'det' and use_butcher == False:
+        #    raise NotImplementedError("Ratio of determinants not yet implemented for Shu-Osher coefficients.")
 
         if stage is None:
             stage = len(self)+1
@@ -1247,7 +1250,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])
         return unew
 
-    def imaginary_stability_interval(self):
+    def imaginary_stability_interval(self,mode='exact',eps=1.e-14):
         r"""
             Length of imaginary axis half-interval contained in the
             method's region of absolute stability.
@@ -1259,7 +1262,10 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> rk4.imaginary_stability_interval()
                 2.8284271247461903
         """
-        p,q=self.stability_function()
+        if mode=='exact':
+            p,q=self.stability_function()
+        else:
+            p,q=self.__num__().stability_function(mode='float')
 
         c = p.c[::-1].copy()
         c[1::2] = 0      # Zero the odd coefficients to get real part
@@ -1284,8 +1290,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         ppq = p1**2 + p2**2 + q1**2 + q2**2
         pmq = p1**2 + p2**2 - q1**2 - q2**2
 
-        pmq_roots = np.array([x.real for x in pmq.r if abs(x.imag)<1.e-14 and x.real>0])
-        ppq_roots = np.array([x.real for x in ppq.r if abs(x.imag)<1.e-14 and x.real>0])
+        ppq_roots = np.array([x.real for x in ppq.r if abs(x.imag)<eps and x.real>0])
+        pmq_roots = np.array([x.real for x in pmq.r if abs(x.imag)<eps and x.real>0])
 
         if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
         else: pmqr = np.inf
@@ -1297,17 +1303,17 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         # Check whether it is stable between 0 and mr
         # This could fail in the case of double roots
         if mr == np.inf:
-            z = 1j/2.
+            z = 1j/20.
         else:
-            z = mr*1j/2.
+            z = mr*1j/20.
 
-        if abs(p(z)/q(z))<=1:
+        if np.abs(p(z)/q(z))<=1:
             return mr
         else:
             return 0
 
 
-    def real_stability_interval(self):
+    def real_stability_interval(self,mode='exact',eps=1.e-14):
         r"""
             Length of negative real axis interval contained in the
             method's region of absolute stability.
@@ -1316,15 +1322,20 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
-                >>> rk4.real_stability_interval()
-                2.785293563405276
+                >>> I = rk4.real_stability_interval()
+                >>> print "%.10f" % I
+                2.7852935634
         """
-        p,q=self.__num__().stability_function(mode='float')
+        if mode=='exact':
+            p,q=self.stability_function()
+        else:
+            p,q=self.__num__().stability_function(mode='float')
+
         pmq = p-q
         ppq = p+q
-        pmq_roots = np.array([-x.real for x in pmq.r if abs(x.imag)<1.e-14 and x.real<0])
-        ppq_roots = np.array([-x.real for x in ppq.r if abs(x.imag)<1.e-14 and x.real<0])
-        q_roots   = np.array([-x.real for x in q.r if abs(x.imag)<1.e-14 and x.real<0])
+        pmq_roots = np.array([-x.real for x in pmq.r if abs(x.imag)<eps and x.real<0])
+        ppq_roots = np.array([-x.real for x in ppq.r if abs(x.imag)<eps and x.real<0])
+        q_roots   = np.array([-x.real for x in q.r if abs(x.imag)<eps and x.real<0])
         # We should actually check the signs of things in between the roots
         # This could fail in the case of double roots or inconsistent methods
         if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
@@ -2485,12 +2496,12 @@ def SSPIRK3(m):
             >>> print ISSP43
             SSPIRK43
             <BLANKLINE>
-             -15**(1/2)/10 + 1/2 | -15**(1/2)/10 + 1/2
-             -15**(1/2)/30 + 1/2 | 15**(1/2)/15         -15**(1/2)/10 + 1/2
-             15**(1/2)/30 + 1/2  | 15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2
-             15**(1/2)/10 + 1/2  | 15**(1/2)/15         15**(1/2)/15         15**(1/2)/15         -15**(1/2)/10 + 1/2
-            _____________________|____________________________________________________________________________________
-                                 | 1/4                  1/4                  1/4                  1/4
+             -sqrt(15)/10 + 1/2 | -sqrt(15)/10 + 1/2
+             -sqrt(15)/30 + 1/2 | sqrt(15)/15         -sqrt(15)/10 + 1/2
+             sqrt(15)/30 + 1/2  | sqrt(15)/15         sqrt(15)/15         -sqrt(15)/10 + 1/2
+             sqrt(15)/10 + 1/2  | sqrt(15)/15         sqrt(15)/15         sqrt(15)/15         -sqrt(15)/10 + 1/2
+            ____________________|________________________________________________________________________________
+                                | 1/4                 1/4                 1/4                 1/4
 
             >>> x=ISSP43.absolute_monotonicity_radius()
             >>> print "%.5f" % x
@@ -3241,7 +3252,7 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
     import matplotlib.pyplot as plt
 
     tol=1.e-14
-    p,q = rk.__num__().stability_function()
+    p,q = rk.__num__().stability_function(mode='float')
     lamda = np.linalg.eigvals(L)
     hmax = 2.5*len(rk)**2 / max(abs(lamda))
     h=bisect(0,hmax,acc,tol,_is_linearly_stable, params=(p,q,lamda))
@@ -3291,14 +3302,32 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         z = sympy.var('z')
         
         if formula == 'det':
-            Asym = sympy.matrices.Matrix(beta[:-1,:])
-            bsym = sympy.matrices.Matrix(np.tile(beta[-1,:],(s,1)))
-            xsym = Asym-bsym
-            p1 = xsym.charpoly(z).coeffs()
+            if explicit:
+                v = 1. - alpha[:,1:].sum(1)
+                alpha[:,0]=0.
+            else:
+                v = 1 - alpha.sum(1)
+            I = sympy.matrices.eye(s)
+            vstar = sympy.matrices.Matrix(v[:-1]).T
+            v_mp1 = v[-1]
+            alphastar=sympy.matrices.Matrix(alpha[:-1,:])
+            betastar=sympy.matrices.Matrix(beta[:-1,:])
+            alpha_mp1 = sympy.matrices.Matrix(alpha[-1,:])
+            beta_mp1 = sympy.matrices.Matrix(beta[-1,:])
+            xsym = I - alphastar - z*betastar + vstar/v_mp1 * (alpha_mp1+z*beta_mp1)
+            x = sympy.poly(sympy.simplify(xsym.det(method='berkowitz')),z)
+            p1 = x.coeffs()
+
+            #Asym = sympy.matrices.Matrix(beta[:-1,:])
+            #bsym = sympy.matrices.Matrix(np.tile(beta[-1,:],(s,1)))
+            #xsym = Asym-bsym
+            #p1 = xsym.charpoly(z).coeffs()
             if explicit: # This switch is just for speed
                 q1 = [sympy.Rational(1)]
             else:
-                q1 = Asym.charpoly(z).coeffs()
+                denomsym = I - alphastar - z*betastar
+                x = sympy.poly(sympy.simplify(denomsym.det(method='berkowitz')),z)
+                q1 = x.coeffs()
 
         elif formula == 'lts': # lower_triangular_solve
             I = sympy.matrices.eye(s)
