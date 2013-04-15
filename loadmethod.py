@@ -6,12 +6,18 @@ def load_rkpair_from_file(filename='rk1210.txt'):
     f = open(filename)
     #if ((filename=='rk108.txt')):
 	#stages=17
-    if ((filename=='rk10(8).txt')):
+    if ((filename=='rk108.txt')):
 	name='Feagin\'s 10(8) pair'
 	stages=20
+    if ((filename=='rk108curtis.txt')):
+	name='Curtis\' 10(8) pair'
+	stages=21
     if ((filename=='rk1210.txt')):
         name='Feagin\'s 12(10) pair'
 	stages=25
+    if ((filename=='rk129hiroshi.txt')):
+        name='Hiroshi\'s 12(9) pair'
+	stages=29
     if ((filename=='rk1412.txt')):
 	name='Feagin\'s 14(12) pair'
 	stages=35
@@ -57,12 +63,18 @@ def load_rkmethod_from_file(filename='rk1210.txt'):
     f = open(filename)
     #if ((filename=='rk108.txt')):
 	#stages=17
-    if ((filename=='rk10(8).txt')):
+    if ((filename=='rk108.txt')):
 	name='Feagin\'s 10(8) pair'
 	stages=20
+    if ((filename=='rk108curtis.txt')):
+	name='Curtis\' 10(8) pair'
+	stages=21
     if ((filename=='rk1210.txt')):
         name='Feagin\'s 12(10) pair'
 	stages=25
+    if ((filename=='rk129hiroshi.txt')):
+        name='Hiroshi\'s 12(9) pair'
+	stages=29
     if ((filename=='rk1412.txt')):
 	name='Feagin\'s 14(12) pair'
 	stages=35
@@ -100,5 +112,5 @@ def load_rkmethod_from_file(filename='rk1210.txt'):
                 A[k,j] = float(words[2])
         except ValueError:
             continue
-
+ 
     return rk.ExplicitRungeKuttaMethod(A=A, b=b, name=name)

@@ -209,8 +209,13 @@ def detest(testkey):
         e=np.ones(51)
         ivp.L_rhs = np.diag(-2*e)+np.diag(e[:-1],-1)+np.diag(e[:-1],1);
         ivp.rhs = lambda t,u: np.dot(ivp.L_rhs,u)
-        ivp.dt0 = 1.e-2    
-    #Need to do C5 here...
+        ivp.dt0 = 1.e-2     
+    elif testkey=='C5':
+        ivp.u0=np.zeros(30)
+	ivp.u0 = np.array([3.42947415189,3.35386959711,1.35494901715,6.64145542550,5.97156957878,2.18231499728,11.2630437207,14.6952576794,6.27960525067,-30.1552268759,1.65699966404,1.43785752721,-21.1238353380,28.4465098142,15.3882659679,-.557160570446,.505696783289,.230578543901,-.415570776342,.365682722812,.169143213293,-.325325669158,.189706021964,.0877265322780,-.0240476254170,-.287659532608,-.117219543175,-.176860753121,-.216393453025,-.0148647893090])	
+        ivp.T=20.
+        ivp.rhs = _C5rhs
+        ivp.dt0 = 1.e-2
     elif testkey=='D1':
         eps=0.1
         ivp.u0=np.array([1.-eps,0.,0.,np.sqrt((1.+eps)/(1.-eps))])
@@ -356,15 +361,49 @@ def _B4rhs(t,u):
     du[1]= u[0] - (u[1]*u[2])/np.sqrt(u[0]**2+u[1]**2)
     du[2]=        (u[0]     )/np.sqrt(u[0]**2+u[1]**2)
     return du
+def _C5rhs(t,u):
+    r = np.zeros(5); u1 = np.zeros(15); u2 = np.zeros(15); y1 = np.zeros((3,5)); y2 = np.zeros((3,5)); d = np.zeros((5,5)); du=np.zeros(30); ynew1 = np.zeros((3,5)); ynew2 = np.zeros((3,5));
+    k2 = 2.95912208286; m0 = 1.00000597682; 
+    m = np.array([.000954786104043,.000285583733151,.0000437273164546,.0000517759138449,.00000277777777778])
+    k=0
+    for j in range(0,5):
+	for i in range(0,3):
+	    y1[i][j] = u[k]
+	    y2[i][j] = u[k+15]
+	    k+=1
+
+    for j in range(0,5):
+	r[j] = np.sqrt(y1[0][j]**2+y1[1][j]**2+y1[2][j]**2)
+
+    for k in range(0,5):
+	for j in range(0,5):
+	    d[k][j] = np.sqrt((y1[0][k]-y1[0][j])**2+(y1[1][k]-y1[1][j])**2+(y1[2][k]-y1[2][j])**2)
+	      
+    for j  in range(0,5):
+	for i in range(0,3):
+	    term=0.;
+	    for k in range(0,5):
+		if (k != j):
+		    term = term+m[k]*((y1[i][k]-y1[i][j])/d[j][k]**3 - y1[i][k]/r[k]**3)
+	    ynew1[i][j] = y2[i][j] 
+	    ynew2[i][j] = k2*(-(m0+m[j])*y1[i][j]/r[j]**3+term)
+    k=0
+    for j in range(0,5):
+	for i in range(0,3):
+	    du[k] = ynew1[i][j]
+	    du[k+15] = ynew2[i][j] 
+	    k+=1
+    
+    return du
 
 def detest_suite():
     """The entire non-stiff DETEST suite of problems."""
-    detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5','F1','F2','F3','F4','F5']
+    detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','C5','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5','F1','F2','F3','F4','F5']
     return [detest(dtkey) for dtkey in detestkeys]
 
 def detest_suite_plus():
     """The entire non-stiff DETEST suite of problems plus the problems from Shampine-Baca paper. More problems can be added"""
-    detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5','F1','F2','F3','F4','F5','SB1','SB2','SB3']
+    detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','C5','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5','F1','F2','F3','F4','F5','SB1','SB2','SB3']
     return [detest(dtkey) for dtkey in detestkeys]
 
 def detest_stiff(testkey):
