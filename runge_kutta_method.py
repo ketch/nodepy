@@ -814,7 +814,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         p,q = _stability_function(alpha,beta,self.is_explicit(),m,formula=formula,mode=mode)
 
         if self.is_explicit():  # Trim leading coefficients that ought to be zero
-            d_true = self.num_seq_dep_stages()-1
+            d_true = self.num_seq_dep_stages()
             d_num  = len(p.coeffs)-1
             if d_num>d_true:
                 p = np.poly1d(p.coeffs[(d_num-d_true):])
@@ -2713,11 +2713,12 @@ def DC(s,theta=0.,grid='eq'):
 #============================================================
 # Extrapolation methods
 #============================================================
-def extrap(p,seq='harmonic',embedded=False, shuosher=False):
+def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
     """ Construct extrapolation methods.
         For now, based on explicit Euler, but allowing arbitrary sequences.
 
-        **Input**: p -- number of grid points & number of correction iterations
+        **Input**: p -- number of grid points & number of extrapolation iterations
+                   base -- the base method to be used ('euler' or 'midpoint')
                    seq -- extrapolation sequence
 
         **Output**: A ExplicitRungeKuttaMethod
@@ -2727,7 +2728,7 @@ def extrap(p,seq='harmonic',embedded=False, shuosher=False):
             >>> from nodepy import rk
             >>> ex3 = rk.extrap(3)
             >>> print ex3
-            extrap3
+            Ex-Euler 3
             <BLANKLINE>
              0   |
              1/2 | 1/2
@@ -2749,168 +2750,110 @@ def extrap(p,seq='harmonic',embedded=False, shuosher=False):
 
             - generalize base method
     """
+    base = base.lower()
+    if not base in ['euler','midpoint']:
+        raise Exception('Unrecognized base method '+base)
 
-    if seq=='harmonic': 
-        N=snp.arange(p)+1
-    elif seq=='Romberg': 
-        N=snp.arange(p)+1;  N=2**(N-1)
+    if base == 'euler':
+        name = 'Ex-Euler '+str(p)
+        an_exp = 1
+        if seq == 'harmonic':
+            N = snp.arange(p)+1
+        elif seq == 'Romberg':
+            N = snp.arange(p)+1;  N = 2**(N-1)
+    elif base == 'midpoint':
+        name = 'Ex-Midpoint '+str(p)
+        an_exp = 2
+        N = 2*snp.arange(p)+2
 
-    J=np.cumsum(N)+1
-    order_reducer=0
+    J = np.cumsum(N)+1
+    order_reducer = 0
     if embedded:
         if p>1:
-            order_reducer=1
+            order_reducer = 1
         else:
             raise Exception('Embedded pair must have order>0')
     # Number of real stages:
     nrs = J[-1]
+
     # Shu-Osher arrays
-    alpha=snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
-    beta=snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
+    alpha = snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
+    beta =  snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
 
     # T_11
-    alpha[1,0]=1
-    beta[1,0]=1/N[0]
+    alpha[1,0] = 1
+    beta[1,0] = 1/N[0]
+    if base == 'midpoint':
+        alpha[2,0] = 1
+        beta[2,1] = 2/N[0]
 
     for j in range(1,len(N)):
         #Form T_j1:
         alpha[J[j-1],0] = 1
-        beta[J[j-1],0]=1/N[j]
+        beta[ J[j-1],0] = 1/N[j]
+        if base == 'midpoint':
+            alpha[J[j-1]+1,0] = 1
+            beta[ J[j-1]+1,J[j-1]] = 2/N[j]
 
-        for i in range(1,N[j]):
-            alpha[J[j-1]+i,J[j-1]+i-1]=1
-            beta[J[j-1]+i,J[j-1]+i-1]=1/N[j]
+        if base == 'euler':
+            for i in range(1,N[j]):
+                alpha[J[j-1]+i,J[j-1]+i-1] = 1
+                beta[ J[j-1]+i,J[j-1]+i-1] = 1/N[j]
+        elif base == 'midpoint':
+            for i in range(1,int(N[j]/2)):
+                alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)  ] = 1
+                alpha[J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+1] = 1
+                beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2/N[j]
+                beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2/N[j]
+
     
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
-    if (embedded and p>2) or not embedded:
+    if (embedded and p>2) or (not embedded):
         for j in range(1,p):
             #form T_{j+1,2}:
-            alpha[nrs-1+j,J[j]-1]=1+1/(N[j]/N[j-1]-1)
-            alpha[nrs-1+j,J[j-1]-1]=-1/(N[j]/N[j-1]-1)
+            alpha[nrs-1+j,J[j]-1] = 1 + 1/((N[j]/N[j-1])**an_exp - 1)
+            alpha[nrs-1+j,J[j-1]-1] = - 1/((N[j]/N[j-1])**an_exp - 1)
     
     #Now form all the rest, up to T_ss:
     nsd = nrs-1+p # Number of stages done
     for k in range(2,p-order_reducer):
         for ind,j in enumerate(range(k,p)):
             #form T_{j+1,k+1}:
-            alpha[nsd+ind,nsd-(p-k)+ind] = 1+1/(N[j]/N[j-k]-1)
-            alpha[nsd+ind,nsd-(p-k)+ind-1] = -1/(N[j]/N[j-k]-1)
+            alpha[nsd+ind,nsd-(p-k)+ind] = 1 + 1/((N[j]/N[j-k])**an_exp - 1)
+            alpha[nsd+ind,nsd-(p-k)+ind-1] = - 1/((N[j]/N[j-k])**an_exp - 1)
         nsd += p-k
       
-    name='extrap'+str(p)
     if shuosher:
         return alpha, beta
     else:
         return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
 
-def extrap_pair(p, seq='harmonic'):
+def extrap_pair(p, base='euler', seq='harmonic'):
     """ 
-        Returns an embedded RK pair.  The prinicpal method has
-        order p and the embedded method has order p-1.
-        Both methods are constructed based on FE extrapolation.
+        Returns an embedded RK pair.  If the base method is Euler, the prinicpal method has
+        order p and the embedded method has order p-1.  If the base
+        method is midpoint, the orders are $2p, 2(p-1)$.
     """
     if p<2:
         raise Exception('Embedded pair must have order > 0')
 
-    alpha1, beta1 = extrap(p, shuosher=True)
-    alpha2, beta2 = extrap(p,embedded=True, shuosher=True)
+    alpha1, beta1 = extrap(p, base, shuosher=True)
+    alpha2, beta2 = extrap(p, base, embedded=True, shuosher=True)
 
     rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
     rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
     bhat = np.resize(rk2.b,rk1.b.shape)
 
-    name='FE extrapolation pair of order '+str(p)+'('+str(p-1)+')'
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name, order=(p,p-1)).dj_reduce()
+    if base == 'euler':
+        name='Euler extrapolation pair of order '+str(p)+'('+str(p-1)+')'
+        order = (p,p-1)
+    elif base == 'midpoint':
+        name='Midpoint extrapolation pair of order '+str(2*p)+'('+str(2*(p-1))+')'
+        order = (2*p,2*(p-1))
+    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name, order=order).dj_reduce()
 
-def extrap_gbs(p,embedded=False, shuosher=False):
-    """ Construct extrapolation methods based on GBS.
-
-        **Input**: p -- number of extrapolation terms
-
-        **Output**: A ExplicitRungeKuttaMethod
-
-        The order is equal to 2p.
-
-        **References**: 
-
-            #. [Hairer]_ chapter II.9
-    """
-
-    # Only supports harmonic sequence right now
-    N=2*snp.arange(p)+2
-    J=np.cumsum(N)+1
-    order_reducer=0
-    if embedded:
-        if p>1:
-            order_reducer=1
-        else:
-            raise Exception('Embedded pair must have order > 0')
-    nrs = J[-1]
-    
-    alpha=snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
-    beta=snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
-    
-    # T_11
-    alpha[1,0]=1
-    alpha[2,0]=1
-    beta[1,0]=1/N[0]
-    beta[2,1]=2/N[0]
-
-    for j in range(1,len(N)):
-        #Form T_j1:
-        alpha[J[j-1],0] = 1
-        alpha[J[j-1]+1,0] = 1
-        beta[J[j-1],0]=1/N[j]
-        beta[J[j-1]+1,J[j-1]]=2/N[j]
-        for i in range(1,int(N[j]/2)):
-            alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)  ]=1
-            alpha[J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+1]=1
-            beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1]=2/N[j]
-            beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2]=2/N[j]
-    
-    #Really there are no more "stages", and we could form T_ss directly
-    if (embedded and p>2) or not embedded:
-        for j in range(1,p):
-            #form T_{j+1,2}:
-            alpha[nrs-1+j,J[j]-1]=1+1/((N[j]/N[j-1])**2-1)
-            alpha[nrs-1+j,J[j-1]-1]=-1/((N[j]/N[j-1])**2-1)
-    
-    #Now form all the rest, up to T_ss
-
-    nsd = nrs-1+p
-    for k in range(2,p-order_reducer):
-        for ind,j in enumerate(range(k,p)):
-            #form T_{j+1,k+1}:
-            alpha[nsd+ind,nsd-(p-k)+ind] = 1+1/((N[j]/N[j-k])**2-1)
-            alpha[nsd+ind,nsd-(p-k)+ind-1] = -1/((N[j]/N[j-k])**2-1)
-        nsd += p-k
-    name='GBS extrapolation method of order '+str(2*p)
-    if shuosher:
-        return alpha, beta
-    else:
-        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=2*p).dj_reduce()
    
-
-def extrap_gbs_pair(p, seq='harmonic'):
-    """ 
-        Returns an embedded RK pair.  The prinicpal method has
-        order 2p and the embedded method has order 2(p-1).
-        Both methods are constructed based on GBS extrapolation.
-    """
-    if p<2:
-        raise Exception('Embedded pair must have order > 0')
-
-    alpha1, beta1 = extrap_gbs(p, shuosher=True)
-    alpha2, beta2 = extrap_gbs(p,embedded=True, shuosher=True)
-
-    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
-    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
-    bhat = np.resize(rk2.b,rk1.b.shape)
-
-    name='GBS extrapolation pair of order '+str(2*p)+'('+str(2*p-2)+')'
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name,order=(2*p,2*(p-2))).dj_reduce()
-
 
 #============================================================
 # Miscellaneous functions
