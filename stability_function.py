@@ -61,7 +61,7 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
         return 0
 
 
-def real_stability_interval(p,q=None,eps=1.e-14):
+def real_stability_interval(p,q=None,eps=1.e-12):
     r"""
         Length of negative real axis interval contained in the
         method's region of absolute stability.
@@ -73,24 +73,32 @@ def real_stability_interval(p,q=None,eps=1.e-14):
             >>> I = rk4.real_stability_interval()
             >>> print "%.10f" % I
             2.7852935634
+            >>> rkc = rk.RKC1(2)
+            >>> rkc.real_stability_interval()
+            8.0
     """
     if q is None: q = np.poly1d([1.])
 
+    # Find points where p = +/- q
     pmq = p-q
     ppq = p+q
     pmq_roots = np.array([-x.real for x in pmq.r if abs(x.imag)<eps and x.real<0])
     ppq_roots = np.array([-x.real for x in ppq.r if abs(x.imag)<eps and x.real<0])
-    q_roots   = np.array([-x.real for x in q.r if abs(x.imag)<eps and x.real<0])
-    # We should actually check the signs of things in between the roots
-    # This could fail in the case of double roots or inconsistent methods
-    if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
-    else: pmqr = np.inf
-    if len(ppq_roots)>0: ppqr = np.min(ppq_roots)
-    else: ppqr = np.inf
-    if len(q_roots)>0: qrm = np.min(q_roots)
-    else: qrm = np.inf
-    t = min(pmqr,ppqr)
-    return min(qrm,t)
+    roots = np.hstack((pmq_roots,ppq_roots))
+    roots = np.unique(roots)
+
+    z = -roots[0]/2.
+    if np.abs(p(z)/q(z))>1.+eps:
+        return 0.
+
+    for i in range(len(roots)-1):
+        z = -(roots[i]+roots[i+1])/2
+        if np.abs(p(z)/q(z))>1.+eps:
+            return roots[i]
+    z = -roots[-1]*2 
+    if np.abs(p(z)/q(z))>1.+eps:
+        return roots[-1]
+    return np.inf
 
 
 def plot_stability_region(p,q,N=200,color='r',filled=True,
@@ -223,3 +231,8 @@ def taylor(p):
     coeffs=1./factorial(np.arange(p+1))
 
     return np.poly1d(coeffs[::-1])
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+

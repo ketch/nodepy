@@ -1277,7 +1277,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         """
         import stability_function
         p,q=self.stability_function(mode=mode)
-        return stability_function.imaginary_stability_interval(p,q)
+        return stability_function.imaginary_stability_interval(p,q,eps=eps)
 
     def real_stability_interval(self,mode='exact',eps=1.e-14):
         r"""
@@ -1294,7 +1294,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         """
         import stability_function
         p,q=self.stability_function(mode=mode)
-        return stability_function.real_stability_interval(p,q)
+        return stability_function.real_stability_interval(p,q,eps=eps)
 
 
     def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
@@ -2742,13 +2742,24 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
             >>> ex3.principal_error_norm()
             0.04606423319938055
 
+            >>> ex4 = rk.extrap(2,'midpoint')
+            >>> print ex4
+            Ex-Midpoint 2
+            <BLANKLINE>
+             0    |
+             1/2  | 1/2
+             1/4  | 1/4
+             1/2  |             1/2
+             3/4  | 1/4               1/2
+            ______|______________________________
+                  | 0     -1/3  2/3   0     2/3
+
+            >>> ex4.order()
+            4
+ 
         **References**: 
 
             #. [Hairer]_ chapter II.9
-
-        **TODO**: 
-
-            - generalize base method
     """
     base = base.lower()
     if not base in ['euler','midpoint']:
@@ -2834,6 +2845,15 @@ def extrap_pair(p, base='euler', seq='harmonic'):
         Returns an embedded RK pair.  If the base method is Euler, the prinicpal method has
         order p and the embedded method has order p-1.  If the base
         method is midpoint, the orders are $2p, 2(p-1)$.
+
+        **Examples**::
+
+            >>> from nodepy import rk
+            >>> ex32 = rk.extrap_pair(3)
+            >>> ex32.order()
+            3
+            >>> ex32.embedded_method.order()
+            2
     """
     if p<2:
         raise Exception('Embedded pair must have order > 0')
@@ -2858,6 +2878,7 @@ def extrap_pair(p, base='euler', seq='harmonic'):
 #============================================================
 # Miscellaneous functions
 #============================================================
+def rk_order_conditions_hardcoded(rkm,p):
     """ 
         Returns a vector that is identically zero if the
         Runge-Kutta method satisfies the conditions of order p (only) 
@@ -3040,7 +3061,6 @@ def python_to_matlab(code):
         Convert python code string (order condition) to matlab code string
         Doesn't really work yet.  We need to do more parsing.
     """
-    #print code
     outline=code
     outline=outline.replace("**",".^")
     outline=outline.replace("*",".*")
