@@ -1667,12 +1667,26 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         else: return unew
 
 
-    def error_metrics(self):
+    def error_metrics(self,q=None,p=None):
         r"""Return full set of error metrics
             See [kennedy2000]_ p. 181"""
-        A_qp1, A_qp1_max, A_qp2, A_qp2_max, D = super(ExplicitRungeKuttaPair).error_metrics()
+        if q is None:
+            q=self.order()
+            print 'main method has order '+str(q)
+        if p is None:
+            p=self.embedded_method.order()
+            print 'embedded method has order '+str(p)
 
-        p=self.embedded_method.order(1.e-13)
+        tau_1=self.error_coeffs(q+1)
+        tau_2=self.error_coeffs(q+2)
+
+        A_qp1=np.sqrt(float(np.sum(np.array(tau_1)**2)))
+        A_qp1_max=max([abs(tau) for tau in tau_1])
+        A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
+        A_qp2_max=max([abs(tau) for tau in tau_2])
+
+        D=max(np.max(np.abs(self.A)),
+                np.max(np.abs(self.b)),np.max(np.abs(self.c)))
         tau_pp2=self.error_coeffs(p+2)
 
         tau_pp1_hat=self.embedded_method.error_coeffs(p+1)
@@ -2640,11 +2654,11 @@ def dcweights(x):
 
     return w
 
-def DC_pair(s):
+def DC_pair(s,theta=0.):
 
     if s<2:
         raise Exception('s must be equal to or greater than 2')
-    dc = DC(s)
+    dc = DC(s,theta=theta)
     name='Deferred Correction pair of order '+str(s+1)+'('+str(s)+')'
     return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[-1],name=name).dj_reduce()
 
