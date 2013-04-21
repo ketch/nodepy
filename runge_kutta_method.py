@@ -1940,6 +1940,7 @@ def loadRKM(which='All'):
 
         'FE':         Forward Euler
         'RK44':       Classical 4-stage 4th-order
+	'Merson43'    Merson 4(3) pair from Hairer and Wanner book pg. 167
         'MTE22':      Minimal truncation error 2-stage 2nd-order
         'Heun33':     Third-order method of Heun
         'SSP22':      Trapezoidal rule 2nd-order
@@ -2123,6 +2124,13 @@ def loadRKM(which='All'):
     b=np.array([16*one/135,zero,6656*one/12825,28561*one/56430,-9*one/50,2*one/55])
     bhat=np.array([25*one/216,0,1408*one/2565,2197*one/4104,-1*one/5,zero])
     RK['Fehlberg45']=ExplicitRungeKuttaPair(A,b,bhat,name='Fehlberg RK5(4)6',shortname='Fehlberg45')
+    #================================================
+    A=np.array([[0,0,0,0,0],[one/3,0,0,0,0],[one/6,one/6,0,0,0],
+        [one/8,0,3*one/8,0,0],
+        [one/2,0,-3*one/2,2*one,0]])
+    b=np.array([one/6,0*one,0*one,2*one/3,1*one/6])
+    bhat=np.array([one/10,0*one,3*one/10,2*one/5,1*one/5])
+    RK['Merson43']=ExplicitRungeKuttaPair(A,b,bhat,name='Merson RK4(3)',shortname='Merson43')
     #================================================
     A=np.array([[0,0,0,0,0,0,0],[one/5,0,0,0,0,0,0],[3*one/40,9*one/40,0,0,0,0,0],
         [44*one/45,-56*one/15,32*one/9,0,0,0,0],
