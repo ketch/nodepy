@@ -1,5 +1,6 @@
-Overview
----------
+[![Build Status](https://travis-ci.org/ketch/nodepy.png)](https://travis-ci.org/ketch/nodepy)
+
+# Overview
 
 NodePy (Numerical ODEs in Python) is a Python package for designing, analyzing,
 and testing numerical methods for initial value ODEs. Its development was
@@ -21,22 +22,19 @@ The development version can be obtained from
 
 http://github.com/ketch/nodepy
 
-Citation
---------
+# Citation
 
 If you use NodePy in a published work, please cite it as follows:
 
 Ketcheson, D. I.  NodePy software version <version number>.
 
-License
----------
+# License
 
 NodePy is distributed under the terms of the modified Berkeley Software
 Distribution (BSD) license. 
 
 
-Funding
----------
+# Funding
 
 NodePy development has been supported by:
 

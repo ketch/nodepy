@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as pl
 
 def imaginary_stability_interval(p,q=None,eps=1.e-14):
     r"""
@@ -126,6 +125,7 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
 
     """
     from utils import find_plot_bounds
+    import matplotlib.pyplot as pl
 
     # Convert coefficients to floats for speed
     if p.coeffs.dtype=='object':
@@ -186,6 +186,7 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
             - color   -- color to use for this plot
             - filled  -- if true, order star is filled in (solid); otherwise it is outlined
     """
+    import matplotlib.pyplot as pl
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
     X=np.tile(x,(N,1))
@@ -215,11 +216,11 @@ def pade_exp(k,j):
     for n in range(1,k+1):
         newcoeff=Pcoeffs[0]*(k-n+1.)/(j+k-n+1.)/n
         Pcoeffs=[newcoeff]+Pcoeffs
-    P=pl.poly1d(Pcoeffs)
+    P=np.poly1d(Pcoeffs)
     for n in range(1,j+1):
         newcoeff=-1.*Qcoeffs[0]*(j-n+1.)/(j+k-n+1.)/n
         Qcoeffs=[newcoeff]+Qcoeffs
-    Q=pl.poly1d(Qcoeffs)
+    Q=np.poly1d(Qcoeffs)
     return P,Q
 
 def taylor(p):
