@@ -9,7 +9,7 @@ setup(name='nodepy',
                     'low_storage_rk','oc_butcher','oc_butcher_high_order',
                     'ode_solver','semidisc','snp','stability_function',
                     'strmanip','threestep_runge_kutta_method',
-                    'twostep_runge_kutta_method','unit_tests','utils']
+                    'twostep_runge_kutta_method','unit_tests','utils'],
       #package_data={'' : ['examples/*.py']},
       author=['David Ketcheson'],
       author_email=['dketch@gmail.com'],
