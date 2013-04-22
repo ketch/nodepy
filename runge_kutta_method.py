@@ -54,7 +54,6 @@ from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import numpy as np
 import snp
-import matplotlib.pyplot as pl
 import sympy
 
 
@@ -823,6 +822,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         
 
     def plot_stability_function(self,bounds=[-20,1]):
+        import matplotlib.pyplot as pl
         p,q=self.stability_function()
         xx=np.arange(bounds[0], bounds[1], 0.01)
         yy=p(xx)/q(xx)
@@ -880,6 +880,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, order star is filled in (solid); otherwise it is outlined
         """
+        import matplotlib.pyplot as pl
         p,q=self.__num__().stability_function()
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
@@ -3055,6 +3056,7 @@ def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
     """
+    import matplotlib.pyplot as pl
     m=len(p)
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
