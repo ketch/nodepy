@@ -10,5 +10,5 @@ setup(name='nodepy',
       url='http://numerics.kaust.edu.sa/nodepy/',
       description='Numerical ODE solvers in Python',
       license='modified BSD',
-      requires=['numpy','sympy'],
+      install_requires=['numpy','sympy'],
       )
