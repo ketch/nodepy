@@ -51,9 +51,9 @@
     #. [hairer1993]_
 """
 from __future__ import division
-from nodepy.general_linear_method import GeneralLinearMethod
+from general_linear_method import GeneralLinearMethod
 import numpy as np
-from nodepy import snp
+import snp
 import matplotlib.pyplot as pl
 import sympy
 

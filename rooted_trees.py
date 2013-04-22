@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as pl
 from sympy import factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
 from utils import permutations
@@ -388,6 +387,7 @@ class RootedTree(str):
             plotting the root, parsing the subtrees, plotting the 
             subtrees' roots, and calling _plot_subtree on each child
         """
+        import matplotlib.pyplot as pl
         if iplot==1: pl.clf()
         pl.subplot(nrows,ncols,iplot)
         pl.hold(True)
@@ -414,6 +414,7 @@ class RootedTree(str):
                 xwidth -- width in which this subtree must fit, in order
                             to avoid possibly overlapping with others
         """
+        import matplotlib.pyplot as pl
         ychild=yroot+1
         nleaves,subtrees=self._parse_subtrees()
         nchildren=nleaves+len(subtrees)
@@ -515,6 +516,7 @@ class RootedTree(str):
 def plot_all_trees(p,title='str'):
 #=====================================================
     """ Plots all rooted trees of order p """
+    import matplotlib.pyplot as pl
     forest=list_trees(p)
     nplots=len(forest)
     nrows=int(np.ceil(np.sqrt(float(nplots))))
