@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as pl
 
 def imaginary_stability_interval(p,q=None,eps=1.e-14):
     r"""
@@ -125,6 +124,7 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
             - fignum -- number of existing figure to use for plot
 
     """
+    import matplotlib.pyplot as plt
 
     # Convert coefficients to floats for speed
     if p.coeffs.dtype=='object':
@@ -157,18 +157,18 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
     R=np.abs(p(Z*scalefac)/q(Z*scalefac))
 
     # Plot
-    h = pl.figure(fignum)
-    pl.hold(True)
+    h = plt.figure(fignum)
+    plt.hold(True)
     if filled:
-        pl.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
+        plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
     else:
-        pl.contour(X,Y,R,[0,1],colors=color,alpha=alpha,linewidths=3)
-    if plotroots: pl.plot(np.real(p.r),np.imag(p.r),'ok')
-    if len(q)>1: pl.plot(np.real(q.r),np.imag(q.r),'xk')
-    pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-    pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
-    pl.axis('Image')
-    pl.hold(False)
+        plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha,linewidths=3)
+    if plotroots: plt.plot(np.real(p.r),np.imag(p.r),'ok')
+    if len(q)>1: plt.plot(np.real(q.r),np.imag(q.r),'xk')
+    plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+    plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+    plt.axis('Image')
+    plt.hold(False)
     return h
 
 
@@ -187,6 +187,7 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
             - color   -- color to use for this plot
             - filled  -- if true, order star is filled in (solid); otherwise it is outlined
     """
+    import matplotlib.pyplot as plt
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
     X=np.tile(x,(N,1))
@@ -194,16 +195,16 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
     Z=X+Y*1j
     R=np.abs(p(Z)/q(Z)/np.exp(Z))
     if subplot is not None:
-        pl.subplot(subplot[0],subplot[1],subplot[2])
+        plt.subplot(subplot[0],subplot[1],subplot[2])
     else:
-        pl.clf()
-    pl.contourf(X,Y,R,[0,1,1.e299],colors=color)
-    pl.hold(True)
-    pl.plot([0,0],[bounds[2],bounds[3]],'--k')
-    pl.plot([bounds[0],bounds[1]],[0,0],'--k')
-    pl.axis('Image')
-    pl.hold(False)
-    pl.draw()
+        plt.clf()
+    plt.contourf(X,Y,R,[0,1,1.e299],colors=color)
+    plt.hold(True)
+    plt.plot([0,0],[bounds[2],bounds[3]],'--k')
+    plt.plot([bounds[0],bounds[1]],[0,0],'--k')
+    plt.axis('Image')
+    plt.hold(False)
+    plt.draw()
 
 
 def pade_exp(k,j):
@@ -216,11 +217,11 @@ def pade_exp(k,j):
     for n in range(1,k+1):
         newcoeff=Pcoeffs[0]*(k-n+1.)/(j+k-n+1.)/n
         Pcoeffs=[newcoeff]+Pcoeffs
-    P=pl.poly1d(Pcoeffs)
+    P=np.poly1d(Pcoeffs)
     for n in range(1,j+1):
         newcoeff=-1.*Qcoeffs[0]*(j-n+1.)/(j+k-n+1.)/n
         Qcoeffs=[newcoeff]+Qcoeffs
-    Q=pl.poly1d(Qcoeffs)
+    Q=np.poly1d(Qcoeffs)
     return P,Q
 
 def taylor(p):

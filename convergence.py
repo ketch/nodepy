@@ -15,7 +15,6 @@ Functions for running convergence and performance tests.
 
     >>> work, error = convergence.ctest([rk4,SSP2,SSP104],myivp)
 """
-import matplotlib.pyplot as pl
 import numpy as np
 import runge_kutta_method as rk
 
@@ -44,6 +43,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
             - Option to plot versus f-evals or dt
 
     """
+    import matplotlib.pyplot as pl
     pl.clf(); pl.hold(True)
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
@@ -100,6 +100,7 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
             >>> work,err=ptest(bs5,myivp)
 
     """
+    import matplotlib.pyplot as pl
     pl.clf(); pl.draw(); pl.hold(True)
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
