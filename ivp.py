@@ -406,6 +406,12 @@ def detest_suite_plus():
     detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','C5','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5','F1','F2','F3','F4','F5','SB1','SB2','SB3']
     return [detest(dtkey) for dtkey in detestkeys]
 
+def detest_suite_minus():
+    """The entire non-stiff DETEST suite of problems except the F (discontinous) problems."""
+    detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','C5','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5']
+    return [detest(dtkey) for dtkey in detestkeys]
+
+
 def detest_stiff(testkey):
     """The stiff DETEST suite.  Only a few problems have been implemented."""
     ivp=IVP()
