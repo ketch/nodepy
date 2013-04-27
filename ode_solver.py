@@ -55,7 +55,7 @@ class ODESolver(object):
         """
         numself = self.__num__()
         f=ivp.rhs; u0=ivp.u0; T=ivp.T
-        u=[u0]; t=[t0]; dthist=[]
+        u=[u0]; t=[t0]; dthist=[]; errest_hist=[]
         rejected_steps=0
 
         if errtol is None:      # Fixed-timestep mode
@@ -69,7 +69,7 @@ class ODESolver(object):
         else:                   # Error-control mode
             p=self.embedded_method.p
             alpha = 0.7/p; beta = 0.4/p; kappa = 0.9
-            facmin = 0.2; facmax = 5.
+            facmin = 0.2; facmax = 5.0
             errestold = errtol
             errest=1.
 
@@ -82,11 +82,12 @@ class ODESolver(object):
                     t.append(t[-1]+dt)
                     errestold = errest  #Should this happen if step is rejected?
                     dthist.append(dt)
+                    errest_hist.append(errest)
                 else: rejected_steps+=1
 
                 if controllertype=='P':
                   #Compute new dt using P-controller
-                  facopt = (errtol/errest)**alpha 
+                  facopt = (errtol/(errest+1.e-6*errtol))**alpha 
 
                 elif controllertype=='PI':
                   #Compute new dt using PI-controller
@@ -96,5 +97,10 @@ class ODESolver(object):
 
                 dt = dt * min(facmax,max(facmin,kappa*facopt))
 
-        if diagnostics==False: return t,u
-        else: return t,u,rejected_steps,dthist
+        if diagnostics==False: 
+            return t,u
+        else: 
+            if errtol is None:
+                return t,u,rejected_steps,dthist
+            else:
+                return t,u,rejected_steps,dthist,errest_hist

@@ -101,14 +101,14 @@ def real_stability_interval(p,q=None,eps=1.e-12):
     return np.inf
 
 
-def plot_stability_region(p,q,N=200,color='r',filled=True,
+def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
                           plotroots=False,alpha=1.,scalefac=1.,fignum=None):
     r""" 
         Plot the region of absolute stability of a rational function; i.e. the set
 
         `\{ z \in C : |\phi (z)|\le 1 \}`
 
-        The plot bounds are determined automatically, attempting to
+        Unless specified explicitly, the plot bounds are determined automatically, attempting to
         include the entire region.  A check is performed beforehand for
         methods with unbounded stability regions.
         Note that this function is not responsible for actually drawing the 
@@ -125,7 +125,6 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
             - fignum -- number of existing figure to use for plot
 
     """
-    from utils import find_plot_bounds
 
     # Convert coefficients to floats for speed
     if p.coeffs.dtype=='object':
@@ -133,19 +132,21 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,
     if q.coeffs.dtype=='object':
         q = np.poly1d([float(c) for c in q.coeffs])
 
-    # Check if the stability region is bounded or not
-    m,n = p.order,q.order
-    if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
-        print 'The stability region is unbounded'
-        bounds = (-10*m,m,-5*m,5*m)
-    else:
-        stable = lambda z : np.abs(p(z)/q(z))<=1.0
-        bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
-        if np.min(np.abs(np.array(bounds)))<1.e-14:
-            print 'No stable region found; is this method zero-stable?'
+    if bounds is None:
+        from utils import find_plot_bounds
+        # Check if the stability region is bounded or not
+        m,n = p.order,q.order
+        if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
+            print 'The stability region is unbounded'
+            bounds = (-10*m,m,-5*m,5*m)
+        else:
+            stable = lambda z : np.abs(p(z)/q(z))<=1.0
+            bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+            if np.min(np.abs(np.array(bounds)))<1.e-14:
+                print 'No stable region found; is this method zero-stable?'
 
-    if (m == n) and (abs(p[m])==abs(q[n])):
-        print 'The stability region may be unbounded'
+        if (m == n) and (abs(p[m])==abs(q[n])):
+            print 'The stability region may be unbounded'
 
     # Evaluate the stability function over a grid
     x=np.linspace(bounds[0],bounds[1],N)

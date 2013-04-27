@@ -830,7 +830,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         pl.draw()
 
 
-    def plot_stability_region(self,N=200,color='r',filled=True,
+    def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
                               plotroots=False,alpha=1.,scalefac=1.,
                               to_file=False, longtitle=True,fignum=None):
         r""" 
@@ -852,7 +852,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         p,q=self.__num__().stability_function(mode='float')
 
-        fig = stability_function.plot_stability_region(p,q,N,color,filled,
+        fig = stability_function.plot_stability_region(p,q,N,color,filled,bounds,
                     plotroots,alpha,scalefac)
 
         ax = fig.get_axes()
@@ -1720,7 +1720,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         elif np.all(self.A[-1,:]==self.bhat): return True
         else: return False
 
-    def plot_stability_region(self,N=200,color='r',filled=True,
+    def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
                               plotroots=False,alpha=1.,scalefac=1.,to_file=False,
                               longtitle=True):
         import stability_function 
@@ -1728,12 +1728,12 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
         p,q=self.__num__().stability_function(mode='float')
 
-        fig = stability_function.plot_stability_region(p,q,N,color,filled,plotroots,
+        fig = stability_function.plot_stability_region(p,q,N,color,filled,bounds,plotroots,
                 alpha,scalefac)
 
         plt.hold(True)
         p,q = self.embedded_method.__num__().stability_function(mode='float')
-        stability_function.plot_stability_region(p,q,N,color='k',filled=False,
+        stability_function.plot_stability_region(p,q,N,color='k',filled=False,bounds=bounds,
                 plotroots=plotroots,alpha=alpha,scalefac=scalefac,fignum=fig.number)
 
         ax = fig.get_axes()
@@ -2659,8 +2659,12 @@ def DC_pair(s,theta=0.):
     if s<2:
         raise Exception('s must be equal to or greater than 2')
     dc = DC(s,theta=theta)
+    if theta==0:
+        bhat_ind = -1
+    else:
+        bhat_ind = -3
     name='Deferred Correction pair of order '+str(s+1)+'('+str(s)+')'
-    return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[-1],name=name).dj_reduce()
+    return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[bhat_ind],name=name).dj_reduce()
 
 
 def DC(s,theta=0.,grid='eq'):
