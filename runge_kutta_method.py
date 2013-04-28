@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> RK.keys()
-    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'DP8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
+    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'Merson43', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'DP8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
 
     >>> print RK['Mid22']
     Midpoint Runge-Kutta
@@ -758,9 +758,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
                 >>> dc = rk.DC(3)
                 >>> dc.stability_function(mode='exact')
-                (poly1d([0.000257201646090536, 0.00154320987654321, 0.0416666666666667,
-                       0.166666666666667, 0.500000000000000, 1.00000000000000,
-                       1.00000000000000], dtype=object), poly1d([1], dtype=object))
+                (poly1d([1/3888, 1/648, 1/24, 1/6, 1/2, 1, 1], dtype=object), poly1d([1], dtype=object))
 
                 >>> dc.stability_function(mode='float')
                 (poly1d([  2.57201646e-04,   1.54320988e-03,   4.16666667e-02,
@@ -787,7 +785,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if use_butcher == False and self.alpha is None:
             raise Exception('No Shu-Osher coefficients provided.')
 
-        if formula == 'pow':
+        if formula == 'pow' and use_butcher == False:
             m = len(self)
         elif self.is_explicit():
             m = self.num_seq_dep_stages()
@@ -2676,7 +2674,7 @@ def DC_pair(s,theta=0.):
     return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[bhat_ind],name=name).dj_reduce()
 
 
-def DC(s,theta=0.,grid='eq'):
+def DC(s,theta=0,grid='eq'):
     """ Spectral deferred correction methods.
         For now, based on explicit Euler and equispaced points.
         TODO: generalize base method and grid.
@@ -2698,15 +2696,16 @@ def DC(s,theta=0.,grid='eq'):
 
     # Choose the grid:
     if grid=='eq':
-        t=np.linspace(0.,1.,s+1) # Equispaced
+        #t=np.linspace(0.,1.,s+1) # Equispaced
+        t=snp.arange(s+1)/s # Equispaced
     elif grid=='cheb':
         t=0.5*(np.cos(np.arange(0,s+1)*np.pi/s)+1.)  #Chebyshev
         t=t[::-1]
     dt=np.diff(t)
 
     m=s
-    alpha=np.zeros([s**2+m+1,s**2+m])
-    beta=np.zeros([s**2+m+1,s**2+m])
+    alpha=snp.zeros([s**2+m+1,s**2+m])
+    beta=snp.zeros([s**2+m+1,s**2+m])
 
     w=dcweights(t)       #Get the quadrature weights for our grid
                          #w[i,j] is the weight of node i for the integral
@@ -2714,18 +2713,18 @@ def DC(s,theta=0.,grid='eq'):
 
     #first iteration (k=1)
     for i in range(1,s+1):
-        alpha[i,i-1]=1.
+        alpha[i,i-1]=1
         beta[i,i-1]=dt[i-1]
 
     #subsequent iterations:
     for k in range(1,s+1):
         beta[s*k+1,0]=w[0,0]
         for i in range(1,s+1):
-            alpha[s*k+1,0]=1.
+            alpha[s*k+1,0]=1
             beta[s*k+1,s*(k-1)+i]=w[i,0]
 
         for m in range(1,s):
-            alpha[s*k+m+1,s*k+m] = 1.
+            alpha[s*k+m+1,s*k+m] = 1
             beta[s*k+m+1,s*k+m] = theta
             beta[s*k+m+1,0]=w[0,m]
             for i in range(1,s+1):

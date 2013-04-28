@@ -32,16 +32,12 @@ def load_rkpair_from_file(filename='rk1210.txt'):
             continue
 
         if words[-1]=='b[k]':
-            print "loading b"
             current_array = 'b'
         elif words[-1]=='c[k]':
-            print "loading c"
             current_array = 'c'
 	elif words[-1]=='bhat[k]':
-            print "loading bhat"
             current_array = 'bhat'
         elif words[-1]=='A[k,j]':
-            print "loading A"
             current_array = 'A'
 
         try:
@@ -89,16 +85,12 @@ def load_rkmethod_from_file(filename='rk1210.txt'):
             continue
 
         if words[-1]=='b[k]':
-            print "loading b"
             current_array = 'b'
         elif words[-1]=='c[k]':
-            print "loading c"
             current_array = 'c'
 	elif words[-1]=='bhat[k]':
-            print "loading bhat"
             current_array = 'bhat'
         elif words[-1]=='A[k,j]':
-            print "loading A"
             current_array = 'A'
 
         try:
