@@ -336,6 +336,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             Returns a list of unnecessary stages.  If the method is
             DJ-irreducible, returns an empty list.
+
+            This routine may not work correctly for RK pairs, as it
+            doesn't check bhat.
         """
         from copy import copy
         b=self.b; A=self.A
@@ -430,12 +433,20 @@ class RungeKuttaMethod(GeneralLinearMethod):
             self.bhat=bhat
         if self.alpha is not None:
             for i in range(s+1):
-                if self.alpha[i,stage] != 0: # Just for speed
+                if self.alpha[i,stage] != 0: # Doing this check speeds things up
                     self.alpha,self.beta = shu_osher_zero_alpha_ij(self.alpha,self.beta,i,stage)
             alpha=np.delete(np.delete(self.alpha,stage,1),stage,0)
             self.alpha = alpha
             beta=np.delete(np.delete(self.beta,stage,1),stage,0)
             self.beta = beta
+        if hasattr(self,'alphahat'):
+            for i in range(s+1):
+                if self.alphahat[i,stage] != 0: # Doing this check speeds things up
+                    self.alphahat,self.betahat = shu_osher_zero_alpha_ij(self.alphahat,self.betahat,i,stage)
+            alphahat=np.delete(np.delete(self.alphahat,stage,1),stage,0)
+            self.alphahat = alphahat
+            betahat=np.delete(np.delete(self.betahat,stage,1),stage,0)
+            self.betahat = betahat
 
     #============================================================
     # Accuracy
@@ -1445,12 +1456,10 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         return theta
 
 
-    def internal_stability_plot(self,use_butcher=False,formula='lts'):
+    def internal_stability_plot(self,bounds=None,N=200,use_butcher=False,formula='lts'):
         r"""Plot internal stability regions.
         
-            Plots the curve `|\theta(z)|=1`.  We should
-            think of a better way to plot, since we really only
-            care if `|\theta(z)|\gg 1/\epsilon_{machine}`
+            Plots the $\epsilon$-internal-stability region contours.
 
             By default the Shu-Osher coefficients are used.  The
             Butcher coefficients are used if use_butcher=True or
@@ -1464,16 +1473,42 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         """
         import stability_function
         import matplotlib.pyplot as plt
+        from utils import find_plot_bounds
+        from matplotlib.colors import LogNorm
+        
+        p,q = self.stability_function(use_butcher=use_butcher,formula=formula)
+        # Convert coefficients to floats for speed
+        if p.coeffs.dtype=='object':
+            p = np.poly1d([float(c) for c in p.coeffs])
+            q = np.poly1d([float(c) for c in q.coeffs])
 
-        fig = self.plot_stability_region()
-        plt.hold(True)
+        stable = lambda z : np.abs(p(z)/q(z))<=1.0
+        bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
+
         theta = self.internal_stability_polynomials(use_butcher=use_butcher,formula=formula)
-        q = np.poly1d([1.])
 
-        for p in theta:
-            stability_function.plot_stability_region(p,q,color='k',filled=False,fignum=fig.number)
-            plt.hold(True)
-        plt.hold(False) 
+        x=np.linspace(bounds[0],bounds[1],N)
+        y=np.linspace(bounds[2],bounds[3],N)
+        X=np.tile(x,(N,1))
+        Y=np.tile(y[:,np.newaxis],(1,N))
+        Z=X+Y*1j
+
+        th_vals = np.zeros((len(theta),N,N))
+
+        for j in range(len(theta)):
+            thetaj = np.poly1d([float(c) for c in theta[j].coeffs])
+            th_vals[j,...] = thetaj(Z)
+        th_max = np.max(np.abs(th_vals),axis=0)
+
+        fig = plt.figure()
+        CS = plt.contour(X,Y,th_max,colors='k')
+        plt.clabel(CS, fmt='%d', colors='k')
+        plt.hold(True)
+
+        p,q=self.__num__().stability_function(mode='float')
+        stability_function.plot_stability_region(p,q,N,color='k',filled=False,bounds=bounds,
+                fignum=fig.number)
+
 
     def maximum_internal_amplification(self,N=200,use_butcher=False,formula='lts'):
         r"""The maximum amount by which any stage error is amplified,
@@ -1565,6 +1600,14 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         is accurate of order one less than the order of `u^{n+1}`.  Then their
         difference can be used as an error estimate.
 
+        The class also admits Shu-Osher representations:
+
+        \\begin{align*}
+        y_i = & v_i u^{n} + \\sum_{j=1}^s \\alpha_{ij} y_j + \\Delta t \\sum_{j=1}^{s} + \\beta_{ij} f(y_j)) & (1\\le j \\le s+1) \\\\
+        u^{n+1} = & y_{s+1}
+        \\hat{u}^{n+1} = & \\hat{v}_{s+1} u^{n} + \\sum_{j=1}^s \\hat{\\alpha}_{s+1,j} + \\Delta t \\sum_{j=1}^{s} \\hat{\\beta}_{s+1,j} f(y_j).
+        \\end{align*}
+
         In NodePy, if *rkp* is a Runge-Kutta pair, the principal (usually
         higher-order) method is the one used if accuracy or stability properties
         are queried.  Properties of the embedded (usually lower-order) method can
@@ -1574,7 +1617,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         error tolerance.  The step size will be adjusted automatically
         to achieve approximately this tolerance.
     """
-    def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,
+    def __init__(self,A=None,b=None,bhat=None,alpha=None,beta=None,alphahat=None,betahat=None,
             name='Runge-Kutta Pair',shortname='RKM',description='',order=(None,None)):
         r"""
             In addition to the ordinary Runge-Kutta initialization,
@@ -1582,16 +1625,21 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         """
         super(ExplicitRungeKuttaPair,self).__init__(
                         A,b,alpha,beta,name,shortname,description,order=order[0])
+        if bhat is None:
+            A,bhat=shu_osher_to_butcher(alpha,beta)
         if bhat.shape != self.b.shape: 
             raise Exception("Dimensions of embedded method don't agree with those of principal method")
-        self.bhat=bhat
+        self.bhat     = bhat
+        self.alphahat = alphahat
+        self.betahat  = betahat
         self.mtype = 'Explicit embedded Runge-Kutta pair'
         self._p_hat = order[1]
 
     @property
     def embedded_method(self):
         """Always recompute the embedded method on the fly.  This may be inefficient."""
-        return ExplicitRungeKuttaMethod(self.A,self.bhat,order=self._p_hat)
+        #return ExplicitRungeKuttaMethod(self.A,self.bhat,order=self._p_hat)
+        return ExplicitRungeKuttaMethod(alpha=self.alphahat,beta=self.betahat,order=self._p_hat)
 
     def __num__(self):
         """
@@ -2889,7 +2937,14 @@ def extrap_pair(p, base='euler', seq='harmonic'):
 
     rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
     rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
-    bhat = np.resize(rk2.b,rk1.b.shape)
+    #bhat = np.append(rk2.b,[0]*(len(rk1.b)-len(rk2.b)))
+
+    alphahat = alpha1.copy()
+    alphahat[-1,:-1] = alpha2[-1,:]
+    alphahat[-1,-1] = 0
+    betahat = beta1.copy()
+    betahat[-1,:-1] = beta2[-1,:]
+    betahat[-1,-1] = 0
 
     if base == 'euler':
         name='Euler extrapolation pair of order '+str(p)+'('+str(p-1)+')'
@@ -2897,7 +2952,7 @@ def extrap_pair(p, base='euler', seq='harmonic'):
     elif base == 'midpoint':
         name='Midpoint extrapolation pair of order '+str(2*p)+'('+str(2*(p-1))+')'
         order = (2*p,2*(p-1))
-    return ExplicitRungeKuttaPair(A=rk1.A, b=rk1.b, bhat=bhat, name=name, order=order).dj_reduce()
+    return ExplicitRungeKuttaPair(alpha=rk1.alpha, beta=rk1.beta, alphahat=alphahat, betahat=betahat, name=name, order=order).dj_reduce()
 
    
 
