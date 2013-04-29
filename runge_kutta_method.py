@@ -1501,8 +1501,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         th_max = np.max(np.abs(th_vals),axis=0)
 
         fig = plt.figure()
-        CS = plt.contour(X,Y,th_max,colors='k')
-        plt.clabel(CS, fmt='%d', colors='k')
+        CS = plt.contour(X,Y,th_max,colors='k',norm=LogNorm())
+        plt.clabel(CS, fmt='%d', colors='k')#,manual=True)
         plt.hold(True)
 
         p,q=self.__num__().stability_function(mode='float')
@@ -1638,8 +1638,10 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
     @property
     def embedded_method(self):
         """Always recompute the embedded method on the fly.  This may be inefficient."""
-        #return ExplicitRungeKuttaMethod(self.A,self.bhat,order=self._p_hat)
-        return ExplicitRungeKuttaMethod(alpha=self.alphahat,beta=self.betahat,order=self._p_hat)
+        if self.alphahat is None:
+            return ExplicitRungeKuttaMethod(self.A,self.bhat,order=self._p_hat)
+        else:
+            return ExplicitRungeKuttaMethod(alpha=self.alphahat,beta=self.betahat,order=self._p_hat)
 
     def __num__(self):
         """
@@ -2935,10 +2937,6 @@ def extrap_pair(p, base='euler', seq='harmonic'):
     alpha1, beta1 = extrap(p, base, shuosher=True)
     alpha2, beta2 = extrap(p, base, embedded=True, shuosher=True)
 
-    rk1 = ExplicitRungeKuttaMethod(alpha=alpha1,beta=beta1)
-    rk2 = ExplicitRungeKuttaMethod(alpha=alpha2,beta=beta2)
-    #bhat = np.append(rk2.b,[0]*(len(rk1.b)-len(rk2.b)))
-
     alphahat = alpha1.copy()
     alphahat[-1,:-1] = alpha2[-1,:]
     alphahat[-1,-1] = 0
@@ -2952,7 +2950,7 @@ def extrap_pair(p, base='euler', seq='harmonic'):
     elif base == 'midpoint':
         name='Midpoint extrapolation pair of order '+str(2*p)+'('+str(2*(p-1))+')'
         order = (2*p,2*(p-1))
-    return ExplicitRungeKuttaPair(alpha=rk1.alpha, beta=rk1.beta, alphahat=alphahat, betahat=betahat, name=name, order=order).dj_reduce()
+    return ExplicitRungeKuttaPair(alpha=alpha1, beta=beta1, alphahat=alphahat, betahat=betahat, name=name, order=order).dj_reduce()
 
    
 
