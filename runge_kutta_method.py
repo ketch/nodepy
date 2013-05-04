@@ -1626,7 +1626,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         super(ExplicitRungeKuttaPair,self).__init__(
                         A,b,alpha,beta,name,shortname,description,order=order[0])
         if bhat is None:
-            A,bhat=shu_osher_to_butcher(alpha,beta)
+            Ahat,bhat=shu_osher_to_butcher(alphahat,betahat)
         if bhat.shape != self.b.shape: 
             raise Exception("Dimensions of embedded method don't agree with those of principal method")
         self.bhat     = bhat
