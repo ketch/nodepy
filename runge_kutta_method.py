@@ -9,7 +9,6 @@
 
 * Check its order of accuracy::
 
-    >>> ssp104.order()
     4
 
 * Find its radius of absolute monotonicity::
@@ -2722,11 +2721,11 @@ def dcweights(x):
 
     return w
 
-def DC_pair(s,theta=0.):
+def DC_pair(s,theta=0.,grid='eq'):
 
     if s<2:
         raise Exception('s must be equal to or greater than 2')
-    dc = DC(s,theta=theta)
+    dc = DC(s,theta=theta,grid=grid)
     if theta==0:
         bhat_ind = -1
     else:
