@@ -184,6 +184,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             numself.A=np.array(self.A,dtype=np.float64)
             numself.b=np.array(self.b,dtype=np.float64)
             numself.c=np.array(self.c,dtype=np.float64)
+            numself.alpha=np.array(self.alpha,dtype=np.float64)
+            numself.beta=np.array(self.beta,dtype=np.float64)
         return numself
 
     def latex(self):
@@ -1419,7 +1421,12 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         if stage is None:
             stage = len(self)+1
 
-        m = self.num_seq_dep_stages()
+        if formula == 'pow' and use_butcher == False:
+            m = len(self)
+        elif self.is_explicit():
+            m = self.num_seq_dep_stages()
+        else:
+            m = len(self)
         if use_butcher==False:
             alpha = self.alpha[0:stage,0:stage-1]
             beta  = self.beta[0:stage,0:stage-1]
@@ -1427,7 +1434,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             beta = np.vstack((self.A,self.b))
             alpha = beta*0
 
-        theta = _internal_stability_polynomials(alpha,beta,m,formula=formula,mode=mode)
+        explicit = self.is_explicit()
+        theta = _internal_stability_polynomials(alpha,beta,explicit,m,formula=formula,mode=mode)
 
         return theta
 
@@ -1456,7 +1464,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         return theta
 
 
-    def internal_stability_plot(self,bounds=None,N=200,use_butcher=False,formula='lts'):
+    def internal_stability_plot(self,bounds=None,N=200,use_butcher=False,formula='lts',levels=[1,100,500,1000,1500,10000]):
         r"""Plot internal stability regions.
         
             Plots the $\epsilon$-internal-stability region contours.
@@ -1501,7 +1509,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         th_max = np.max(np.abs(th_vals),axis=0)
 
         fig = plt.figure()
-        CS = plt.contour(X,Y,th_max,colors='k',norm=LogNorm())
+        CS = plt.contour(X,Y,th_max,colors='k',levels=levels)
         plt.clabel(CS, fmt='%d', colors='k')#,manual=True)
         plt.hold(True)
 
@@ -1652,6 +1660,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         numself = super(ExplicitRungeKuttaPair,self).__num__()
         if self.A.dtype==object:
             numself.bhat=np.array(self.bhat,dtype=np.float64)
+        if hasattr(self,'alphahat'):
+            numself.alphahat=np.array(self.alphahat,dtype=np.float64)
+            numself.betahat=np.array(self.betahat,dtype=np.float64)
         return numself
 
     def __str__(self):
@@ -2932,7 +2943,7 @@ def extrap_pair(p, base='euler', seq='harmonic'):
             2
     """
     if p<2:
-        raise Exception('Embedded pair must have order > 0')
+        raise Exception('Embedded method must have order > 0')
 
     alpha1, beta1 = extrap(p, base, shuosher=True)
     alpha2, beta2 = extrap(p, base, embedded=True, shuosher=True)
@@ -3357,7 +3368,7 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
 
  
 
-def _internal_stability_polynomials(alpha,beta,m,formula,mode='exact'):
+def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
     r""" 
         Compute internal stability polynomials from a Shu-Osher representation.
     """
@@ -3372,8 +3383,15 @@ def _internal_stability_polynomials(alpha,beta,m,formula,mode='exact'):
         z = sympy.var('z')
         I = sympy.matrices.eye(s)
 
-        alpha_star = sympy.matrices.Matrix(alpha[0:-1,:])
-        beta_star  = sympy.matrices.Matrix(beta[0:-1,:])
+        if explicit:
+            v = 1 - alpha[:,1:].sum(1)
+            alpha[:,0]=0.
+            q1 = [sympy.Rational(1)]
+        else:
+            v = 1 - alpha.sum(1)
+
+        alpha_star = sympy.matrices.Matrix(alpha[:-1,:])
+        beta_star  = sympy.matrices.Matrix(beta[:-1,:])
 
         apbz_star = alpha_star + beta_star*z
         apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
