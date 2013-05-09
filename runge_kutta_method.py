@@ -1570,11 +1570,13 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         # Evaluate the internal stability polynomials over the stable region
         theta = self.internal_stability_polynomials(use_butcher=use_butcher,formula=formula)
         maxamp = 0.
+        maxamp_origin = 0.
         for thetaj in theta:
             thetaj = np.poly1d([float(c) for c in thetaj.coeffs])
             maxamp = max(maxamp, np.max(np.abs(thetaj(Z_stable))))
+            maxamp_origin = max(maxamp_origin, np.abs(thetaj(0.)))
             
-        return maxamp
+        return maxamp, maxamp_origin
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
