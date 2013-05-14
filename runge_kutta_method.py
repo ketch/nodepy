@@ -1708,24 +1708,60 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
             The implementation here is wasteful in terms of storage.
         """
-        m=len(self)
-        y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
-        if x is not None: fy=[f(t[-1],y[0],x)]
-        else: fy=[f(t[-1],y[0])]
-        for i in range(1,m):
-            y.append(u[-1]+0)
-            for j in range(i):
-                y[i]+=self.A[i,j]*dt*fy[j]
-            if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
-            else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
-        if m==1: i=0 #fix just for one-stage methods
-        if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
-        else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
-        unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])
-        if errest:
-            uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
-            return unew, np.max(np.abs(unew-uhat))
-        else: return unew
+	
+	m=len(self)
+	if np.size(self.alphahat)>1:
+		init = u[-1]		# Initial values
+		size = np.size(init)
+		uhat = np.zeros(size)
+		y = [np.zeros((size)) for i in range(m+1)]      # Define y to be a matrix of m+1 rows and size columns
+		fy = [np.zeros((size)) for i in range(m)]       # Define fy
+		y[0][:]=init	       # Initialize y[0]
+		if x is not None: fy[0][:]=f(t[-1],y[0][:],x)
+        	else: fy[0][:]=f(t[-1],y[0][:])
+		for i in range(1,m+1):
+	    	    for j in range(i):
+                	y[i]+=(-self.alpha[i,j])*init+self.alpha[i,j]*y[j]+dt*self.beta[i,j]*fy[j]
+	    	    y[i] += init # Needed this bcoz it can't be inside running sum as it can get duplicated
+	    	    if i<m :
+	                if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:],x)
+	                else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:])
+		unew = y[m][:]
+	
+		if errest:
+		    #error = dt*sum([(self.b[j]-self.bhat[j])*fy[j] for j in range(m)])
+		    if dt<1e-10:
+			print dt
+		    fy = np.array(fy).reshape(np.shape(fy)[0],np.shape(fy)[1]);
+		    y = np.array(y).reshape(np.shape(y)[0],np.shape(y)[1]);
+		    for i in range(size):
+			if size==1: # For single ODE problems
+                            uhat[i]=(1-np.sum(self.alphahat[-1,:]))*init+np.sum(self.alphahat[-1,:]*y[0:-1,i])+dt*np.sum(self.betahat[-1,:]*fy[:,i])
+		        else: # System of ODEs
+			    uhat[i]=(1-np.sum(self.alphahat[-1,:]))*init[i]+np.sum(self.alphahat[-1,:]*y[0:-1,i])+dt*np.sum(self.betahat[-1,:]*fy[:,i])
+		    uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
+                    return unew, np.max(np.abs(unew-uhat))
+        	else: return unew  
+
+	else:
+            y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
+            if x is not None: fy=[f(t[-1],y[0],x)]
+            else: fy=[f(t[-1],y[0])]
+            for i in range(1,m):
+                y.append(u[-1]+0)
+                for j in range(i):
+                    y[i]+=self.A[i,j]*dt*fy[j]
+                if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
+                else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
+	    if m==1: i=0 #fix just for one-stage methods
+            if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
+            else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
+            unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+            if errest:
+		#print dt
+                uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
+                return unew, np.max(np.abs(unew-uhat))
+            else: return unew
 
 
     def error_metrics(self,q=None,p=None):
