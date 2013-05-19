@@ -9,7 +9,6 @@
 
 * Check its order of accuracy::
 
-    >>> ssp104.order()
     4
 
 * Find its radius of absolute monotonicity::
@@ -1571,11 +1570,13 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         # Evaluate the internal stability polynomials over the stable region
         theta = self.internal_stability_polynomials(use_butcher=use_butcher,formula=formula)
         maxamp = 0.
+        maxamp_origin = 0.
         for thetaj in theta:
             thetaj = np.poly1d([float(c) for c in thetaj.coeffs])
             maxamp = max(maxamp, np.max(np.abs(thetaj(Z_stable))))
+            maxamp_origin = max(maxamp_origin, np.abs(thetaj(0.)))
             
-        return maxamp
+        return maxamp, maxamp_origin
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
@@ -1707,24 +1708,60 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
             The implementation here is wasteful in terms of storage.
         """
-        m=len(self)
-        y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
-        if x is not None: fy=[f(t[-1],y[0],x)]
-        else: fy=[f(t[-1],y[0])]
-        for i in range(1,m):
-            y.append(u[-1]+0)
-            for j in range(i):
-                y[i]+=self.A[i,j]*dt*fy[j]
-            if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
-            else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
-        if m==1: i=0 #fix just for one-stage methods
-        if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
-        else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
-        unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])
-        if errest:
-            uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
-            return unew, np.max(np.abs(unew-uhat))
-        else: return unew
+	
+	m=len(self)
+	if np.size(self.alphahat)>1:
+		init = u[-1]		# Initial values
+		size = np.size(init)
+		uhat = np.zeros(size)
+		y = [np.zeros((size)) for i in range(m+1)]      # Define y to be a matrix of m+1 rows and size columns
+		fy = [np.zeros((size)) for i in range(m)]       # Define fy
+		y[0][:]=init	       # Initialize y[0]
+		if x is not None: fy[0][:]=f(t[-1],y[0][:],x)
+        	else: fy[0][:]=f(t[-1],y[0][:])
+		for i in range(1,m+1):
+	    	    for j in range(i):
+                	y[i]+=(-self.alpha[i,j])*init+self.alpha[i,j]*y[j]+dt*self.beta[i,j]*fy[j]
+	    	    y[i] += init # Needed this bcoz it can't be inside running sum as it can get duplicated
+	    	    if i<m :
+	                if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:],x)
+	                else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:])
+		unew = y[m][:]
+	
+		if errest:
+		    #error = dt*sum([(self.b[j]-self.bhat[j])*fy[j] for j in range(m)])
+		    if dt<1e-10:
+			print dt
+		    fy = np.array(fy).reshape(np.shape(fy)[0],np.shape(fy)[1]);
+		    y = np.array(y).reshape(np.shape(y)[0],np.shape(y)[1]);
+		    for i in range(size):
+			if size==1: # For single ODE problems
+                            uhat[i]=(1-np.sum(self.alphahat[-1,:]))*init+np.sum(self.alphahat[-1,:]*y[0:-1,i])+dt*np.sum(self.betahat[-1,:]*fy[:,i])
+		        else: # System of ODEs
+			    uhat[i]=(1-np.sum(self.alphahat[-1,:]))*init[i]+np.sum(self.alphahat[-1,:]*y[0:-1,i])+dt*np.sum(self.betahat[-1,:]*fy[:,i])
+		    uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
+                    return unew, np.max(np.abs(unew-uhat))
+        	else: return unew  
+
+	else:
+            y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
+            if x is not None: fy=[f(t[-1],y[0],x)]
+            else: fy=[f(t[-1],y[0])]
+            for i in range(1,m):
+                y.append(u[-1]+0)
+                for j in range(i):
+                    y[i]+=self.A[i,j]*dt*fy[j]
+                if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
+                else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
+	    if m==1: i=0 #fix just for one-stage methods
+            if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
+            else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
+            unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+            if errest:
+		#print dt
+                uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
+                return unew, np.max(np.abs(unew-uhat))
+            else: return unew
 
 
     def error_metrics(self,q=None,p=None):
@@ -2006,7 +2043,7 @@ def loadRKM(which='All'):
         'SSP22':      Trapezoidal rule 2nd-order
         'DP5':        Dormand-Prince 5th-order
 	'CMR6':       Calvo et al.'s 6(5) method
-	'DP8':        Dormand-Prince 8th-order and 7th-order pair
+	'DP8':        Prince-Dormand 8th-order and 7th-order pair
         'Fehlberg45': 5th-order part of Fehlberg's pair
         'Lambert65':
 
@@ -2221,7 +2258,7 @@ def loadRKM(which='All'):
         [1./32,0,3./32,0,0,0,0,0,0,0,0,0,0],[5./16,0,-75./64,75./64,0,0,0,0,0,0,0,0,0],[3./80,0,0,3./16,3./20,0,0,0,0,0,0,0,0],[29443841./614563906,0,0,77736538./692538347,-28693883./1125000000,23124283./1800000000,0,0,0,0,0,0,0],[16016141./946692911,0,0,61564180./158732637,22789713./633445777,545815736./2771057229,-180193667./1043307555,0,0,0,0,0,0],[39632708./573591083,0,0,-433636366./683701615,-421739975./2616292301,100302831./723423059,790204164./839813087,800635310./3783071287,0,0,0,0,0],[246121993./1340847787,0,0,-37695042795./15268766246,-309121744./1061227803,-12992083./490766935,6005943493./2108947869,393006217./1396673457,123872331./1001029789,0,0,0,0],[-1028468189./846180014,0,0,8478235783./508512852,1311729495./1432422823,-10304129995./1701304382,-48777925059./3047939560,15336726248./1032824649,-45442868181./3398467696,3065993473./597172653,0,0,0],[185892177./718116043,0,0,-3185094517./667107341,-477755414./1098053517,-703635378./230739211,5731566787./1027545527,5232866602./850066563,-4093664535./808688257,3962137247./1805957418,65686358./487910083,0,0],[403863854./491063109,0,0,-5068492393./434740067,-411421997./543043805,652783627./914296604,11173962825./925320556,-13158990841./6184727034,3936647629./1978049680,-160528059./685178525,248638103./1413531060,0,0]])
     b=np.array([14005451./335480064,0.,0.,0.,0.,-59238493./1068277825,181606767./758867731,561292985./797845732,-1041891430./1371343529,760417239./1151165299,118820643./751138087,-528747749./2220607170,1./4])
     bhat=np.array([13451932./455176623,0.,0.,0.,0.,-808719846./976000145,1757004468./5645159321,656045339./265891186,-3867574721./1518517206,465885868./322736535,53011238./667516719,2./45,0.])
-    RK['DP8']=ExplicitRungeKuttaPair(A,b,bhat,name='Dormand-Prince 8(7)')
+    RK['DP8']=ExplicitRungeKuttaPair(A,b,bhat,name='Prince-Dormand 8(7)')
     #================================================
     A=np.array([[0,0,0,0,0,0,0], [0.392382208054010,0,0,0,0,0,0],
                 [0.310348765296963 ,0.523846724909595 ,0,0,0,0,0],[0.114817342432177 ,0.248293597111781 ,0,0,0,0,0],
