@@ -46,6 +46,9 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     if sdName=='upwind advection':
         sd.L  = upwind_advection_matrix(N,dx)
         sd.u0 = np.sin(2*np.pi*sd.xCenter)
+    if sdName=='weno5':
+        sd.L  = weno5_linearized_matrix(N,dx)
+        sd.u0 = np.sin(2*np.pi*sd.xCenter)
     elif sdName == 'spectral difference advection':
         sd.L,sd.xSol,sd.u0 = spectral_difference_matrix(N,sd.xCenter,dx,order)
     else: print 'unrecognized sdname'
@@ -112,6 +115,30 @@ def upwind_advection_matrix(N,dx):
     L=L/dx
     return L
 
+def weno5_linearized_matrix(N,dx=0):
+    import scipy.linalg
+    if dx == 0: dx = 1./N
+    e=np.zeros(N)
+    e[0]  =  1./3
+    e[-1] =  5./6
+    e[-2] = -1./6
+    L2a = scipy.linalg.circulant(e)
+    e     =  np.zeros(N)
+    e[1]  = -1./6
+    e[0]  =  5./6
+    e[-1] =  1./3
+    L2b = scipy.linalg.circulant(e)
+    e     =  np.zeros(N)
+    e[2]  =  1./3
+    e[1]  = -7./6
+    e[0]  = 11./6
+    L2c = scipy.linalg.circulant(e)
+    L2 = 3./10*L2a + 3./5*L2b + 1./10*L2c
+    last_column = L2[:,0].reshape(N,1)
+    L1 = np.hstack((L2[:,1:],last_column))
+    L = (L1-L2)/dx
+    return L
+    
 
 def centered_advection_matrix(N,dx=0):
     "3-point centered difference approximation of first derivative."
