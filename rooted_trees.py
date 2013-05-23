@@ -565,7 +565,7 @@ def Dprod(tree,alpha):
         >>> Dprod(tree,Emap)
         1/2
     """
-    if tree == None: return 0
+    if tree == (0,): return 0
     if tree == (): return alpha(None)
     nleaves,subtrees=tree._parse_subtrees()
     result=alpha(RootedTree(()))**nleaves
@@ -735,6 +735,7 @@ def order(tree):
         >>> rt.order(tree)
         5
     """
+    if tree == (0,): return 0
     return 1 + sum([order(subtree) for subtree in tree])
 
 def density(tree):
