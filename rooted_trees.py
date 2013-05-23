@@ -159,9 +159,11 @@ class RootedTree(tuple):
             **Examples**::
 
                 >>> from nodepy import rt
-                >>> tree = rt.RootedTree('{T{T}}')
+                >>> tree = rt.RootedTree( ( (),((),)) )
+                >>> print tree
+                {T{T}}
                 >>> tree.lamda(rt.Emap)
-                (['T', '{T}', '{{T}}', '{T}', '{T^2}', '{T{T}}'], [1/2, 1, 1, 1/2, 1, 1])
+                ([(), (()), ((())), (()), ((), ()), ((()), ())], [1/2, 1, 1, 1/2, 1, 1])
 
             **Reference**: 
                 [butcher2003]_ pp. 275-276
