@@ -1,10 +1,11 @@
 import numpy as np
 from sympy import factorial, sympify, Rational
-#from sage.combinat.combinat import permutations
 from utils import permutations
 
+leaf = ()
+
 #=====================================================
-class RootedTree(str):
+class RootedTree(tuple):
 #=====================================================
     r"""
         A rooted tree is a directed acyclic graph with one node, which
@@ -83,93 +84,47 @@ class RootedTree(str):
             #. [butcher2003]_
             #. [hairer1993]_
     """
-    def __init__(self,strg):
+    def __init__(self,rep):
         """
             TODO:   - Check validity of strg more extensively
                     - Accept any leaf ordering, but convert it to our convention
                     - convention for ordering of subtrees?
         """
-        if any([strg[i] not in '{}T^1234567890' for i in range(len(strg))]):
-            raise Exception('Not a valid rooted tree string (illegal character)')
-        op,cl=strg.count('{'),strg.count('}')
-        if op!=cl or (op+cl>0 and (strg[0]!='{' or strg[-1]!='}')):
-            raise Exception('Not a valid rooted tree string')
-        self=strg
+        if rep is str:
+            if any([strg[i] not in '{}T^1234567890' for i in range(len(strg))]):
+                raise Exception('Not a valid rooted tree string (illegal character)')
+            op,cl=strg.count('{'),strg.count('}')
+            if op!=cl or (op+cl>0 and (strg[0]!='{' or strg[-1]!='}')):
+                raise Exception('Not a valid rooted tree string')
+            self=str_to_tuple(rep) # This still needs to be implemented
+        elif rep is tuple:
+            self = rep
 
-    def order(self):
+    def __str__(self):
         """
-        The order of a rooted tree, denoted $r(t)$, is the number of 
-        vertices in the tree.
+            Examples::
 
-        **Examples**::
-
-            >>> from nodepy import rooted_trees as rt
-            >>> tree=rt.RootedTree('{T^2{T{T}}}')
-            >>> tree.order()
-            7
+                >>> tree=rt.RootedTree( ((),(),((),((),))) )
+                >>> print tree
+                {T^2{T{T}}}
         """
-        from strmanip import getint
-        if self=='T': return 1
-        if self=='':  return 0
-        r=self.count('{')
-        pos=0
-        while pos!=-1:
-            pos=self.find('T',pos+1)
-            if pos!=-1:
-                try: r+=getint(self[pos+2:])
-                except: r+=1
-        return r
+        if self == ():
+            return 'T'
+        nleaves = self.count( () )
+        if nleaves > 1:
+            leaves_str = 'T^'+str(nleaves)
+        elif nleaves == 1:
+            leaves_str = 'T'
+        else:
+            leaves_str = ''
+        return '{'+leaves_str+''.join([str(RootedTree(tree)) for tree in self.nonleaf_subtrees()])+'}'
 
-    def density(self):
-        r"""
-        The density of a rooted tree, denoted by $\\gamma(t)$,
-        is the product of the orders of the subtrees.
-
-        **Examples**::
-
-            >>> from nodepy import rooted_trees as rt
-            >>> tree=rt.RootedTree('{T^2{T{T}}}')
-            >>> tree.density()
-            56
-
-        **Reference**: 
-
-            - [butcher2003]_ p. 127, eq. 301(c)
-        """
-        gamma=self.order()
-        nleaves,subtrees=self._parse_subtrees()
-        for tree in subtrees:
-            gamma*=tree.density()
-        return gamma
-
-    def symmetry(self):
-        r""" 
-        The symmetry $\\sigma(t)$ of a rooted tree is...
-
-        **Examples**::
-
-            >>> from nodepy import rooted_trees as rt
-            >>> tree=rt.RootedTree('{T^2{T{T}}}')
-            >>> tree.symmetry()
-            2
-
-        **Reference**: 
-
-            - [butcher2003]_ p. 127, eq. 301(b)
-        """
-        from strmanip import getint
-        if self=='T': return 1
-        sigma=1
-        if self[1]=='T':
-            try: sigma=factorial(getint(self[3:]))
-            except: pass
-        nleaves,subtrees=self._parse_subtrees()
-        while len(subtrees)>0:
-            st=subtrees[0]
-            nst=subtrees.count(st)
-            sigma*=factorial(nst)*st.symmetry()**nst
-            while st in subtrees: subtrees.remove(st)
-        return sigma
+    def nonleaf_subtrees(self):
+        """Return tuple of subtrees with leaves removed."""
+        tree = list(self)
+        while leaf in tree:
+            tree.remove(leaf)
+        return RootedTree(tree)
 
 
     def Dmap(self):
@@ -180,7 +135,7 @@ class RootedTree(str):
         **Reference**: 
             #. [butcher1997]_
         """
-        return self=='T'
+        return self == ()
 
     def lamda(self,alpha,extraargs=[]):
         r""" 
@@ -211,9 +166,10 @@ class RootedTree(str):
             **Reference**: 
                 [butcher2003]_ pp. 275-276
         """
-        if self=='': return [RootedTree('')],[0]
-        if self=='T': return [RootedTree('T')],[1]
+        if self == None: return [None],[0]
+        if self == ():   return [RootedTree(())],[1]
         t,u=self._factor()
+        print self, t, u, t*u==self
         if extraargs:
             l1,f1=t.lamda(alpha,*extraargs)
             l2,f2=u.lamda(alpha,*extraargs)
@@ -273,34 +229,30 @@ class RootedTree(str):
 
             **Examples**::
 
-                >>> tree=RootedTree('{T^2{T}}')
+                >>> tree=RootedTree( ((),(),((),)) )
+                >>> print tree
+                {T^2{T}}
                 >>> t,u=tree._factor()
-                >>> t
-                '{T{T}}'
-                >>> u
-                'T'
+                >>> print t
+                {T{T}}
+                >>> print u
+                T
                 >>> t*u==tree
                 True
 
             .. note:: This function is typically only called by lamda().
         """
-        nleaves,subtrees=self._parse_subtrees()
-        if nleaves==0: # Root has no leaves
-            t=RootedTree('{'+''.join(subtrees[1:])+'}')
-            u=RootedTree(subtrees[0])
-        if nleaves==1:
-            t=RootedTree(self[0]+self[2:])
-            u=RootedTree('T')
-        if nleaves==2:
-            t=RootedTree(self[0:2]+self[4:])
-            u=RootedTree('T')
-        if nleaves>2 and nleaves<10:
-            t=RootedTree(self[0:3]+str(int(self[3])-1)+self[4:])
-            u=RootedTree('T')
-        if nleaves>=10:
-            t=RootedTree(self[0:3]+str(int(self[3:5])-1)+self[5:])
-            u=RootedTree('T')
-        if t=='{}': t=RootedTree('T')
+        if len(self) == 1:
+            t = RootedTree( () )
+            u = RootedTree(self[0])
+        elif () in self:
+            u = RootedTree( () )
+            t = list(self)
+            t.remove(())
+            t = RootedTree(t)
+        else:
+            t = RootedTree(self[0])
+            u = RootedTree(self[1:])
         return t,u
 
     def Gprod(self,alpha,beta,alphaargs=[],betaargs=[]):
@@ -368,65 +320,6 @@ class RootedTree(str):
             s+="+"+str(sympify(alph+'*'+bet))
         return s
 
-    def plot(self,nrows=1,ncols=1,iplot=1,ttitle=''):
-        """
-            Plots the rooted tree.
-
-            *INPUT*: (optional)
-                * nrows, ncols -- number of rows and columns of subplots
-                  in the figure
-                * iplot        -- index of the subplot in which to plot
-                  this tree
-
-            These are only necessary if plotting more than one tree
-            in a single figure using subplot.
-
-            *OUTPUT*: None.
-
-            The plot is created recursively by
-            plotting the root, parsing the subtrees, plotting the 
-            subtrees' roots, and calling _plot_subtree on each child
-        """
-        import matplotlib.pyplot as pl
-        if iplot==1: pl.clf()
-        pl.subplot(nrows,ncols,iplot)
-        pl.hold(True)
-        pl.scatter([0],[0])
-        if self!='T': self._plot_subtree(0,0,1.)
-
-        fs=int(np.ceil(30./nrows))
-        pl.title(ttitle,{'fontsize': fs})
-        pl.xticks([])
-        pl.yticks([])
-        pl.hold(False)
-        pl.axis('off')
-        #pl.show()
-        #pl.ioff()
-
-
-    def _plot_subtree(self,xroot,yroot,xwidth):
-        """
-            Recursively plots subtrees.  Should only be called from plot().
-
-            INPUT:
-                xroot, yroot -- coordinates at which root of this subtree 
-                                is plotted
-                xwidth -- width in which this subtree must fit, in order
-                            to avoid possibly overlapping with others
-        """
-        import matplotlib.pyplot as pl
-        ychild=yroot+1
-        nleaves,subtrees=self._parse_subtrees()
-        nchildren=nleaves+len(subtrees)
-
-        dist=xwidth*(nchildren-1)/2.
-        xchild=np.linspace(xroot-dist,xroot+dist,nchildren)
-        pl.scatter(xchild,ychild*np.ones(nchildren))
-        for i in range(nchildren):
-            pl.plot([xroot,xchild[i]],[yroot,ychild],'-k')
-            if i>nleaves-1:
-                subtrees[i-nleaves]._plot_subtree(xchild[i],ychild,xwidth/3.)
-
 
     def _parse_subtrees(self):
         """ 
@@ -442,24 +335,11 @@ class RootedTree(str):
             returning possibly many copies of 'T', the leaves are just
             returned as a number.
         """
-        from strmanip import get_substring, open_to_close, getint
-        if str(self)=='T' or str(self)=='': return 0,[]
-        pos=0
-        #Count leaves at current level
-        if self[1]=='T':    
-            if self[2]=='^': 
-                nleaves=getint(self[3:])
-            else: nleaves=1
-        else: nleaves=0
-
-        subtrees=[]
-        while pos!=-1:
-            pos=self.find('{',pos+1)
-            if pos!=-1:
-                subtrees.append(RootedTree(get_substring(self,pos)))
-                pos=open_to_close(self,pos)
-
-        return nleaves,subtrees
+        nleaves = self.count( () )
+        subtrees = list(self)
+        while () in subtrees:
+            subtrees.remove( () )
+        return nleaves,tuple(subtrees)
 
     def list_equivalent_trees(self):
         """ 
@@ -489,25 +369,36 @@ class RootedTree(str):
             Generates all 'legal' strings equivalent to the first
             tree, and checks whether the second is in that list.
         """
-        ts=[str(t) for t in self.list_equivalent_trees()]
-        if str(tree2) in ts: return True
+        if (self is None) and (tree2 is None):
+            return True
+        elif (self is None) or (tree2 is None):
+            return False
+        tree1 = list(self)
+        tree2 = list(tree2)
+        if len(tree1) != len(tree2):
+            return False
+        while len(tree1)>0:
+            subtree = tree1[0]
+            if tree1[0] in tree2:
+                tree2.remove(subtree)
+                tree1.remove(subtree)
+            else: return False
+        if len(tree2) == 0:
+            return True
         else: return False
+
 
     def __mul__(self,tree2):
         """ 
             Returns Butcher's product: t*u is the tree obtained by
             attaching the root of u as a child to the root of t. 
+            Note that u*t != t*u.
+            See Butcher, pp. 138-139.
         """
-        from strmanip import getint
-        if self=='T': return RootedTree('{'+tree2+'}')
-        if tree2=='T':  # We're just adding a leaf to self
-            nleaves,subtrees=self._parse_subtrees()
-            if nleaves==0: return RootedTree(self[0]+'T'+self[1:])
-            if nleaves==1: return RootedTree(self[0]+'T^2'+self[2:])
-            if nleaves>1:
-                n = getint(self[3:])
-                return RootedTree(self[0:3]+str(n+1)+self[(3+len(str(n))):])
-        else: return RootedTree(self[:-1]+tree2+'}') # tree2 wasn't just 'T'
+        x = list(self)
+        x.append(tree2)
+        return RootedTree(tuple(x))
+
 #=====================================================
 #End of RootedTree class
 #=====================================================
@@ -670,10 +561,10 @@ def Dprod(tree,alpha):
         >>> Dprod(tree,Emap)
         1/2
     """
-    if tree=='': return 0
-    if tree=='T': return alpha(RootedTree(''))
+    if tree == None: return 0
+    if tree == (): return alpha(None)
     nleaves,subtrees=tree._parse_subtrees()
-    result=alpha(RootedTree('T'))**nleaves
+    result=alpha(RootedTree(()))**nleaves
     for subtree in subtrees:
         result*=alpha(subtree)
     return result
@@ -693,7 +584,7 @@ def Dmap(tree):
     Butcher's function D(t).  Represents differentiation.
     Defined by D(t)=0 except for D('T')=1.
     """
-    return 1*(tree=='T')
+    return 1*(tree==())
 
 def Dmap_str(tree):
     return str(int(tree=='T'))
@@ -725,7 +616,7 @@ def Emap(tree,a=1):
 
         [butcher1997]_
     """
-    return Rational(a**tree.order(),(tree.density()))
+    return Rational(a**order(tree),(density(tree)))
 
 def Emap_str(tree,a=1):
     return str(Rational(a**tree.order(),(tree.density())))
@@ -827,6 +718,125 @@ def recursiveVectors(p,ind='all'):
 
   if ind=='all': return W[p-1]
   else: return W[p-1][ind]
+
+def order(tree):
+    """
+    The order of a rooted tree, denoted $r(t)$, is the number of 
+    vertices in the tree.
+
+    **Examples**::
+
+        >>> from nodepy import rooted_trees as rt
+        >>> tree=rt.RootedTree( (((),()),()) )
+        >>> rt.order(tree)
+        5
+    """
+    return 1 + sum([order(subtree) for subtree in tree])
+
+def density(tree):
+    r"""
+    The density of a rooted tree, denoted by $\\gamma(t)$,
+    is the product of the orders of the subtrees.
+
+    **Examples**::
+
+        >>> from nodepy import rooted_trees as rt
+        >>> tree=rt.RootedTree('{T^2{T{T}}}')
+        >>> tree = ((),(),((),((),)))
+        >>> print tree
+        {T^2{T{T}}}
+        >>> rt.density(tree)
+        56
+
+    **Reference**: 
+
+        - [butcher2003]_ p. 127, eq. 301(c)
+    """
+    gamma=order(tree)
+    for subtree in tree:
+        gamma *= density(subtree)
+    return gamma
+
+def symmetry(tree):
+    r""" 
+    The symmetry $\\sigma(t)$ of a rooted tree is...
+
+    **Examples**::
+
+        >>> from nodepy import rooted_trees as rt
+        >>> tree=rt.RootedTree( ((),(),((),((),))) )
+        >>> tree=rt.RootedTree('{T^2{T{T}}}')
+        >>> tree.symmetry()
+        2
+
+    **Reference**: 
+
+        - [butcher2003]_ p. 127, eq. 301(b)
+    """
+    sigma = 1
+    tree = list(tree)
+    while len(tree)>0:
+        st=tree[0]
+        nst=tree.count(st)
+        sigma*=factorial(nst)*symmetry(st)**nst
+        while st in tree: tree.remove(st)
+    return sigma
+
+
+def plot_tree(tree,nrows=1,ncols=1,iplot=1,ttitle=''):
+    """
+        Plots a rooted tree.
+
+        *INPUT*: (optional)
+            * nrows, ncols -- number of rows and columns of subplots
+              in the figure
+            * iplot        -- index of the subplot in which to plot
+              this tree
+
+        These are only necessary if plotting more than one tree
+        in a single figure using subplot.
+
+        *OUTPUT*: None.
+
+        The plot is created recursively by
+        plotting the root, parsing the subtrees, plotting the 
+        subtrees' roots, and calling _plot_subtree on each child
+    """
+    import matplotlib.pyplot as plt
+
+    if iplot==1: plt.clf()
+    plt.subplot(nrows,ncols,iplot)
+    plt.hold(True)
+    plt.scatter([0],[0])
+    if tree != (): _plot_subtree(tree,0,0,1.)
+
+    fs=int(np.ceil(30./nrows))
+    plt.title(ttitle,{'fontsize': fs})
+    plt.hold(False)
+    plt.axis('off')
+
+
+def _plot_subtree(subtree,xroot,yroot,xwidth):
+    """
+        Recursively plots subtrees.  Should only be called from plot().
+
+        INPUT:
+            xroot, yroot -- coordinates at which root of this subtree 
+                            is plotted
+            xwidth -- width in which this subtree must fit, in order
+                        to avoid possibly overlapping with others
+    """
+    import matplotlib.pyplot as plt
+    ychild=yroot+1
+    nchildren = len(subtree)
+
+    dist=xwidth*(nchildren-1)/2.
+    xchild=np.linspace(xroot-dist,xroot+dist,nchildren)
+    plt.scatter(xchild,ychild*np.ones(nchildren))
+    for i,subsubtree in enumerate(subtree):
+        plt.plot([xroot,xchild[i]],[yroot,ychild],'-k')
+        if subsubtree != ():
+            _plot_subtree(subsubtree,xchild[i],ychild,xwidth/3.)
 
 
 #=====================================================
