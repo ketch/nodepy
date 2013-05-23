@@ -3,6 +3,7 @@ from sympy import factorial, sympify, Rational
 from utils import permutations
 
 leaf = ()
+empty_tree = (0,)
 
 #=====================================================
 class RootedTree(tuple):
@@ -108,7 +109,7 @@ class RootedTree(tuple):
                 >>> print tree
                 {T^2{T{T}}}
         """
-        if self == (0,):
+        if self == empty_tree:
             return ''
         elif self == ():
             return 'T'
@@ -170,7 +171,7 @@ class RootedTree(tuple):
             **Reference**: 
                 [butcher2003]_ pp. 275-276
         """
-        if self == (0,): return [None],[0]
+        if self == empty_tree: return [None],[0]
         if self == ():   return [RootedTree( () )],[1]
         t,u=self._factor()
         if extraargs:
@@ -300,7 +301,7 @@ class RootedTree(tuple):
         s=0
         for i in range(len(trees)):
             s+=factors[i]*beta(trees[i],*betaargs)
-        s+=alpha(self,*alphaargs)*beta(RootedTree( (0,) ),*betaargs)
+        s+=alpha(self,*alphaargs)*beta(RootedTree( empty_tree ),*betaargs)
         return s
 
     def Gprod_str(self,alpha,beta,alphaargs=[],betaargs=[]):
@@ -372,14 +373,15 @@ class RootedTree(tuple):
             Generates all 'legal' strings equivalent to the first
             tree, and checks whether the second is in that list.
         """
-        if (self is None) and (tree2 is None):
-            return True
-        elif (self is None) or (tree2 is None):
+        if len(self) != len(tree2):
             return False
+        if len(self)==1: # Special case: empty tree
+            if (self[0] is 0) and (tree2[0] is 0):
+                return True
+            elif (self[0] is 0) or (tree2[0] is 0):
+                return False
         tree1 = list(self)
         tree2 = list(tree2)
-        if len(tree1) != len(tree2):
-            return False
         while len(tree1)>0:
             subtree = tree1[0]
             if tree1[0] in tree2:
@@ -476,9 +478,8 @@ def list_trees(p,ind='all'):
     W.append([RootedTree(( ( (), ), ))])
     for i in range(3,p):
         #Construct R[i]
-        R.append( ( (), )*(i-1) )
+        R.append([ ( (), )*(i-1) ])
         for w in W[i-1]:
-            print R, i
             R[i].append(w)
         #Construct W[i]
         #l=0:
@@ -498,33 +499,33 @@ def list_trees(p,ind='all'):
                         for Rn in R[n][lowlim:]:
                             ps = ( (), )*l
                             W[i].append(RootedTree( ( ps,Rm,Rn, ) ))
-#        for l in range(0,i-5): #level 3
-#            for n in range(2,i-l-3):
-#                for m in range(2,i-l-n-1):
-#                    s=i-m-n-l
-#                    if m<=n and n<=s: #Avoid duplicate conditions
-#                        for Rm in R[m]:
-#                            lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
-#                            for Rn in R[n][lowlim:]:
-#                                lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
-#                                for Rs in R[s][lowlim2:]:
-#                                    ps=_powerString("T",l,powchar="^")
-#                                    W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+"}"))
-#        for l in range(0,i-7): #level 4
-#            for n in range(2,i-l-5):
-#                for m in range(2,i-l-n-3):
-#                    for s in range(2,i-l-n-m-1):
-#                        t=i-s-m-n-l
-#                        if s<=t and n<=s and m<=n: #Avoid duplicate conditions
-#                            for Rm in R[m]:
-#                                lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
-#                                for Rn in R[n][lowlim:]:
-#                                    lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
-#                                    for Rs in R[s][lowlim2:]:
-#                                        lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
-#                                        for Rt in R[t]:
-#                                            ps=_powerString("T",l,powchar="^")
-#                                            W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+Rt+"}"))
+        for l in range(0,i-5): #level 3
+            for n in range(2,i-l-3):
+                for m in range(2,i-l-n-1):
+                    s=i-m-n-l
+                    if m<=n and n<=s: #Avoid duplicate conditions
+                        for Rm in R[m]:
+                            lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+                            for Rn in R[n][lowlim:]:
+                                lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+                                for Rs in R[s][lowlim2:]:
+                                    ps = ( (), )*l
+                                    W[i].append(RootedTree( ( ps,Rm,Rn,Rs, ) ))
+        for l in range(0,i-7): #level 4
+            for n in range(2,i-l-5):
+                for m in range(2,i-l-n-3):
+                    for s in range(2,i-l-n-m-1):
+                        t=i-s-m-n-l
+                        if s<=t and n<=s and m<=n: #Avoid duplicate conditions
+                            for Rm in R[m]:
+                                lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+                                for Rn in R[n][lowlim:]:
+                                    lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+                                    for Rs in R[s][lowlim2:]:
+                                        lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
+                                        for Rt in R[t]:
+                                            ps = ( (), )*l
+                                            W[i].append(RootedTree( ( ps,Rm,Rn,Rs,Rt ) ))
     # The recursion above generates all trees except the 'blooms'
     # Now add the blooms:
     W[0].append(RootedTree( () ))
@@ -564,7 +565,7 @@ def Dprod(tree,alpha):
         >>> Dprod(tree,Emap)
         1/2
     """
-    if tree == (0,): return 0
+    if tree == empty_tree: return 0
     if tree == (): return alpha(None)
     nleaves,subtrees=tree._parse_subtrees()
     result=alpha(RootedTree(()))**nleaves
@@ -734,7 +735,7 @@ def order(tree):
         >>> rt.order(tree)
         5
     """
-    if tree == (0,): return 0
+    if tree == empty_tree: return 0
     return 1 + sum([order(subtree) for subtree in tree])
 
 def density(tree):
@@ -756,7 +757,7 @@ def density(tree):
 
         - [butcher2003]_ p. 127, eq. 301(c)
     """
-    if tree == (0,): return 0
+    if tree == empty_tree: return 0
     gamma=order(tree)
     for subtree in tree:
         gamma *= density(subtree)
