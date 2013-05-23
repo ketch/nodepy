@@ -173,7 +173,6 @@ class RootedTree(tuple):
         if self == (0,): return [None],[0]
         if self == ():   return [RootedTree( () )],[1]
         t,u=self._factor()
-        print self, t, u, t*u==self
         if extraargs:
             l1,f1=t.lamda(alpha,*extraargs)
             l2,f2=u.lamda(alpha,*extraargs)
@@ -291,7 +290,7 @@ class RootedTree(tuple):
             **Examples**::
 
                 >>> from nodepy import rt
-                >>> tree = rt.RootedTree('{T{T}}')
+                >>> tree = rt.RootedTree(( (),((),)))
                 >>> tree.Gprod(rt.Emap,Dmap)
                 1/2
 
@@ -301,7 +300,7 @@ class RootedTree(tuple):
         s=0
         for i in range(len(trees)):
             s+=factors[i]*beta(trees[i],*betaargs)
-        s+=alpha(self,*alphaargs)*beta(RootedTree(None),*betaargs)
+        s+=alpha(self,*alphaargs)*beta(RootedTree( (0,) ),*betaargs)
         return s
 
     def Gprod_str(self,alpha,beta,alphaargs=[],betaargs=[]):
@@ -470,26 +469,26 @@ def list_trees(p,ind='all'):
     **Reference**: [albrecht1996]_
     """
 
-    if p==0: return [RootedTree('')]
+    if p==0: return [RootedTree((0))]
     W=[[],[]] #This way indices agree with Albrecht
     R=[[],[]]
-    R.append([RootedTree("{T}")])
-    W.append([RootedTree("{{T}}")])
+    R.append([RootedTree(( (), ))])
+    W.append([RootedTree(( ( (), ), ))])
     for i in range(3,p):
         #Construct R[i]
-        ps=_powerString("T",i-1,powchar="^")
-        R.append([RootedTree("{"+ps+"}")])
+        R.append( ( (), )*(i-1) )
         for w in W[i-1]:
+            print R, i
             R[i].append(w)
         #Construct W[i]
         #l=0:
-        W.append([RootedTree("{"+R[i][0]+"}")])
+        W.append([RootedTree(( R[i][0], ))])
         for r in R[i][1:]:
-            W[i].append(RootedTree("{"+r+"}"))
+            W[i].append(RootedTree( ( r, ) ))
         for l in range(1,i-1): #level 1
             for r in R[i-l]:
-                ps=_powerString("T",l,powchar="^")
-                W[i].append(RootedTree("{"+ps+r+"}"))
+                ps = ( (), )*l
+                W[i].append(RootedTree( ( ps,r, ) ))
         for l in range(0,i-3): #level 2
             for n in range(2,i-l-1):
                 m=i-n-l
@@ -497,41 +496,41 @@ def list_trees(p,ind='all'):
                     for Rm in R[m]:
                         lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
                         for Rn in R[n][lowlim:]:
-                            ps=_powerString("T",l,powchar="^")
-                            W[i].append(RootedTree("{"+ps+Rm+Rn+"}"))
-        for l in range(0,i-5): #level 3
-            for n in range(2,i-l-3):
-                for m in range(2,i-l-n-1):
-                    s=i-m-n-l
-                    if m<=n and n<=s: #Avoid duplicate conditions
-                        for Rm in R[m]:
-                            lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
-                            for Rn in R[n][lowlim:]:
-                                lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
-                                for Rs in R[s][lowlim2:]:
-                                    ps=_powerString("T",l,powchar="^")
-                                    W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+"}"))
-        for l in range(0,i-7): #level 4
-            for n in range(2,i-l-5):
-                for m in range(2,i-l-n-3):
-                    for s in range(2,i-l-n-m-1):
-                        t=i-s-m-n-l
-                        if s<=t and n<=s and m<=n: #Avoid duplicate conditions
-                            for Rm in R[m]:
-                                lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
-                                for Rn in R[n][lowlim:]:
-                                    lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
-                                    for Rs in R[s][lowlim2:]:
-                                        lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
-                                        for Rt in R[t]:
-                                            ps=_powerString("T",l,powchar="^")
-                                            W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+Rt+"}"))
+                            ps = ( (), )*l
+                            W[i].append(RootedTree( ( ps,Rm,Rn, ) ))
+#        for l in range(0,i-5): #level 3
+#            for n in range(2,i-l-3):
+#                for m in range(2,i-l-n-1):
+#                    s=i-m-n-l
+#                    if m<=n and n<=s: #Avoid duplicate conditions
+#                        for Rm in R[m]:
+#                            lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+#                            for Rn in R[n][lowlim:]:
+#                                lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+#                                for Rs in R[s][lowlim2:]:
+#                                    ps=_powerString("T",l,powchar="^")
+#                                    W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+"}"))
+#        for l in range(0,i-7): #level 4
+#            for n in range(2,i-l-5):
+#                for m in range(2,i-l-n-3):
+#                    for s in range(2,i-l-n-m-1):
+#                        t=i-s-m-n-l
+#                        if s<=t and n<=s and m<=n: #Avoid duplicate conditions
+#                            for Rm in R[m]:
+#                                lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+#                                for Rn in R[n][lowlim:]:
+#                                    lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+#                                    for Rs in R[s][lowlim2:]:
+#                                        lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
+#                                        for Rt in R[t]:
+#                                            ps=_powerString("T",l,powchar="^")
+#                                            W[i].append(RootedTree("{"+ps+Rm+Rn+Rs+Rt+"}"))
     # The recursion above generates all trees except the 'blooms'
     # Now add the blooms:
-    W[0].append(RootedTree("T"))
+    W[0].append(RootedTree( () ))
     for i in range(1,p):
-        ps=_powerString("T",i,powchar="^")
-        W[i].append(RootedTree("{"+ps+"}"))
+        ps = ( (), )*i
+        W[i].append(RootedTree( ps ))
   
     if ind=='all': return W[p-1]
     else: return W[p-1][ind]
@@ -757,6 +756,7 @@ def density(tree):
 
         - [butcher2003]_ p. 127, eq. 301(c)
     """
+    if tree == (0,): return 0
     gamma=order(tree)
     for subtree in tree:
         gamma *= density(subtree)
