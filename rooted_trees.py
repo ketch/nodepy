@@ -63,7 +63,7 @@ class RootedTree(tuple):
             >>> tree=rt.RootedTree('{T^2{T{T}}{T}}')
             >>> tree.order()
             9
-            >>> tree.density()
+           >>> tree.density()
             144
             >>> tree.symmetry()
             2
@@ -90,15 +90,15 @@ class RootedTree(tuple):
                     - Accept any leaf ordering, but convert it to our convention
                     - convention for ordering of subtrees?
         """
-        if rep is str:
+        if rep is tuple:
+            self = rep
+        elif rep is str:
             if any([strg[i] not in '{}T^1234567890' for i in range(len(strg))]):
                 raise Exception('Not a valid rooted tree string (illegal character)')
             op,cl=strg.count('{'),strg.count('}')
             if op!=cl or (op+cl>0 and (strg[0]!='{' or strg[-1]!='}')):
                 raise Exception('Not a valid rooted tree string')
             self=str_to_tuple(rep) # This still needs to be implemented
-        elif rep is tuple:
-            self = rep
 
     def __str__(self):
         """
@@ -108,7 +108,9 @@ class RootedTree(tuple):
                 >>> print tree
                 {T^2{T{T}}}
         """
-        if self == ():
+        if self == (0,):
+            return ''
+        elif self == ():
             return 'T'
         nleaves = self.count( () )
         if nleaves > 1:
@@ -168,8 +170,8 @@ class RootedTree(tuple):
             **Reference**: 
                 [butcher2003]_ pp. 275-276
         """
-        if self == None: return [None],[0]
-        if self == ():   return [RootedTree(())],[1]
+        if self == (0,): return [None],[0]
+        if self == ():   return [RootedTree( () )],[1]
         t,u=self._factor()
         print self, t, u, t*u==self
         if extraargs:
@@ -299,7 +301,7 @@ class RootedTree(tuple):
         s=0
         for i in range(len(trees)):
             s+=factors[i]*beta(trees[i],*betaargs)
-        s+=alpha(self,*alphaargs)*beta(RootedTree(""),*betaargs)
+        s+=alpha(self,*alphaargs)*beta(RootedTree(None),*betaargs)
         return s
 
     def Gprod_str(self,alpha,beta,alphaargs=[],betaargs=[]):
