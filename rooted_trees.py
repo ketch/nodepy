@@ -1,6 +1,12 @@
 import numpy as np
 from sympy import factorial, sympify, Rational
 from utils import permutations
+import sympy
+
+n = sympy.Symbol('n')
+e = sympy.MatrixSymbol('e', n, 1)
+#I = sympy.MatrixSymbol('I', n, n)
+zero = sympy.ZeroMatrix(n, 1)
 
 leaf = ()
 empty_tree = (0,)
@@ -171,8 +177,19 @@ class RootedTree(tuple):
             **Reference**: 
                 [butcher2003]_ pp. 275-276
         """
-        if self == empty_tree: return [None],[0]
-        if self == ():   return [RootedTree( () )],[1]
+        # Do we need both versions?
+        # Do we need to check for zeros?
+        if self == empty_tree: 
+            if hasattr(alpha,'is_vecfun'):
+                return [None],[zero]
+            else:
+                return [None],[0]
+        if self == ():   
+            if hasattr(alpha,'is_vecfun'):
+                return [RootedTree( () )],[e]
+            else:
+                return [RootedTree( () )],[1]
+
         t,u=self._factor()
         if extraargs:
             l1,f1=t.lamda(alpha,*extraargs)
@@ -183,14 +200,20 @@ class RootedTree(tuple):
             l2,f2=u.lamda(alpha)
             alphau=alpha(u)
         tprod=l1
-        fprod=[alphau*f1i for f1i in f1 if f1!=0]
+        if hasattr(alpha,'is_vecfun'):
+            fprod=[sympy.hadamard_product(alphau,f1i) for f1i in f1 if f1!=zero]
+        else:
+            fprod=[alphau*f1i for f1i in f1 if f1!=0]
         #FOIL:
         for i in range(len(l1)):
             if f1!=0:
                 for j in range(len(l2)):
                     if f2!=0:
                         tprod.append(l1[i]*l2[j])
-                        fprod.append(f1[i]*f2[j])
+                        if hasattr(alpha,'is_vecfun'):
+                            fprod.append(sympy.hadamard_product(f1[i],f2[j]))
+                        else:
+                            fprod.append(f1[i]*f2[j])
         return tprod,fprod
 
     def lamda_str(self,alpha,extraargs=[]):
@@ -298,9 +321,10 @@ class RootedTree(tuple):
             **Reference**: [butcher2003]_ p. 276, Thm. 386A 
         """
         trees,factors=self.lamda(alpha,*alphaargs)
-        s=0
+        s = zero
         for i in range(len(trees)):
             s+=factors[i]*beta(trees[i],*betaargs)
+        #print alpha(self,*alphaargs).shape,beta(RootedTree( empty_tree ),*betaargs).shape
         s+=alpha(self,*alphaargs)*beta(RootedTree( empty_tree ),*betaargs)
         return s
 
@@ -343,7 +367,7 @@ class RootedTree(tuple):
         subtrees = list(self)
         while () in subtrees:
             subtrees.remove( () )
-        return nleaves,tuple(subtrees)
+        return nleaves,tuple([RootedTree(subtree) for subtree in subtrees])
 
     def list_equivalent_trees(self):
         """ 
@@ -565,13 +589,20 @@ def Dprod(tree,alpha):
         >>> Dprod(tree,Emap)
         1/2
     """
-    if tree == empty_tree: return 0
+    from sympy import hadamard_product
+    if tree == empty_tree: return e*0
     if tree == (): return alpha(None)
     nleaves,subtrees=tree._parse_subtrees()
-    result=alpha(RootedTree(()))**nleaves
-    for subtree in subtrees:
-        result*=alpha(subtree)
-    return result
+    tmp = alpha(RootedTree(()))
+    #result=alpha(RootedTree(()))**nleaves
+    if nleaves>0:
+        result = hadamard_product(*([tmp]*nleaves))
+    else:
+        result = e
+    if subtrees:
+        return sympy.hadamard_product(*map(alpha, subtrees))
+    else:
+        return result
 
 def Dprod_str(tree,alpha):
     if tree=='': return '0'

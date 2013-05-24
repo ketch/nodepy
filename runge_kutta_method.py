@@ -55,6 +55,11 @@ import numpy as np
 import snp
 import sympy
 
+n = sympy.Symbol('n')
+A = sympy.MatrixSymbol('A', n, n)
+c = sympy.MatrixSymbol('c', n, 1)
+b = sympy.MatrixSymbol('b', n, 1)
+e = sympy.MatrixSymbol('e', n, 1)
 
 #=====================================================
 class RungeKuttaMethod(GeneralLinearMethod):
@@ -1886,9 +1891,8 @@ def elementary_weight(tree):
     """
     #raise Exception('This function does not work correctly; use the _str version')
     import rooted_trees as rt
-    from sympy import symbols
-    b=symbols('b',commutative=False)
-    ew=b*tree.Gprod(RKeta,rt.Dmap)
+    RKeta.is_vecfun = True
+    ew=b.T*tree.Gprod(RKeta,rt.Dmap)
     return ew
 
 def elementary_weight_str(tree,style='python'):
@@ -1920,13 +1924,12 @@ def elementary_weight_str(tree,style='python'):
     return ewstr
 
 def RKeta(tree):
-    from sympy.physics.quantum import TensorProduct
     #raise Exception('This function does not work correctly; use the _str version')
-    from rooted_trees import Dprod
-    from sympy import symbols
-    if tree=='':  return symbols('e',commutative=False)
-    if tree=='T': return symbols('c',commutative=False)
-    return TensorProduct(symbols('A',commutative=False),Dprod(tree,RKeta))
+    from rooted_trees import Dprod, leaf, empty_tree
+    from sympy import hadamard_product
+    if tree == empty_tree:  return e
+    if tree == leaf:        return c
+    return A*Dprod(tree,RKeta)
 
 def RKeta_str(tree):
     """
