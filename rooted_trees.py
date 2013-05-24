@@ -445,7 +445,7 @@ def plot_all_trees(p,title='str'):
     for tree in forest:
         if title=='str': ttitle=tree
         else: ttitle=''
-        tree.plot(nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
+        plot_tree(tree,nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
     fig=pl.figure(1)
     pl.setp(fig,facecolor='white')
     return fig
