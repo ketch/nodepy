@@ -499,7 +499,7 @@ def list_trees(p,ind='all'):
     W=[[],[]] #This way indices agree with Albrecht
     R=[[],[]]
     R.append([RootedTree(( (), ))])
-    W.append([RootedTree(( ( (), ), ))])
+    W.append([RootedTree( ( ( (), ), ) )])
     for i in range(3,p):
         #Construct R[i]
         R.append([ ( (), )*(i-1) ])
@@ -513,7 +513,7 @@ def list_trees(p,ind='all'):
         for l in range(1,i-1): #level 1
             for r in R[i-l]:
                 ps = ( (), )*l
-                W[i].append(RootedTree( ( ps,r, ) ))
+                W[i].append(RootedTree(  ps+(r,) ))
         for l in range(0,i-3): #level 2
             for n in range(2,i-l-1):
                 m=i-n-l
@@ -522,7 +522,7 @@ def list_trees(p,ind='all'):
                         lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
                         for Rn in R[n][lowlim:]:
                             ps = ( (), )*l
-                            W[i].append(RootedTree( ( ps,Rm,Rn, ) ))
+                            W[i].append(RootedTree( ps+(Rm,)+(Rn,) ))
         for l in range(0,i-5): #level 3
             for n in range(2,i-l-3):
                 for m in range(2,i-l-n-1):
@@ -534,7 +534,7 @@ def list_trees(p,ind='all'):
                                 lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
                                 for Rs in R[s][lowlim2:]:
                                     ps = ( (), )*l
-                                    W[i].append(RootedTree( ( ps,Rm,Rn,Rs, ) ))
+                                    W[i].append(RootedTree( ps+(Rm,)+(Rn,)+(Rs,)  ))
         for l in range(0,i-7): #level 4
             for n in range(2,i-l-5):
                 for m in range(2,i-l-n-3):
@@ -549,7 +549,7 @@ def list_trees(p,ind='all'):
                                         lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
                                         for Rt in R[t]:
                                             ps = ( (), )*l
-                                            W[i].append(RootedTree( ( ps,Rm,Rn,Rs,Rt ) ))
+                                            W[i].append(RootedTree( ps+(Rm,)+(Rn,)+(Rs,)+(Rt) ) )
     # The recursion above generates all trees except the 'blooms'
     # Now add the blooms:
     W[0].append(RootedTree( () ))
