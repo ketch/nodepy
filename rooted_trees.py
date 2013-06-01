@@ -34,11 +34,15 @@ class RootedTree(tuple):
         returns a list of all trees of a given order::
 
             >>> from nodepy import *
-            >>> for p in range(4): print rt.list_trees(p)
-            ['']
-            ['T']
-            ['{T}']
-            ['{{T}}', '{T^2}']
+            >>> for p in range(4): 
+            ...     f = rt.list_trees(p)
+            ...     for t in f:
+            ...         print t,
+            ...     print 
+            <BLANKLINE>
+            T
+            {T}
+            {{T}} {T^2}
             
         Note that the tree of order 0 is indicated by an empty string.
         
@@ -67,25 +71,29 @@ class RootedTree(tuple):
         **Examples**::
 
             >>> from nodepy import rooted_trees as rt
-            >>> tree=rt.RootedTree('{T^2{T{T}}{T}}')
-            >>> tree.order()
+            >>> tree=rt.RootedTree( ( (), (), ( (), ( (), )), ( (), )) )
+            >>> print tree
+            {T^2{T{T}}{T}}
+            >>> order(tree)
             9
-           >>> tree.density()
+            >>> density(tree)
             144
-            >>> tree.symmetry()
+            >>> symmetry(tree)
             2
 
         Topologically equivalent trees are considered equal::
 
-            >>> tree2=RootedTree('{T^2{T}{T{T}}}')
+            >>> tree2=RootedTree( ( (), (), ( (), ), ( (), ( (), ))) )
+            >>> print tree2
+            {T^2{T}{T{T}}}
             >>> tree2==tree
             True
 
         We can generate Python code to evaluate the elementary weight
         corresponding to a given tree for a given class of methods::
 
-            >>> rk.elementary_weight_str(tree)
-            'dot(b,dot(A,c)*dot(A,c*dot(A,c))*c**2)'
+            >>> rk.elementary_weight(tree)
+            b'*(c.*c.*(A*A*c).*c.*(A*c).*e)
 
         **References**:  
             #. [butcher2003]_
@@ -111,7 +119,7 @@ class RootedTree(tuple):
         """
             Examples::
 
-                >>> tree=rt.RootedTree( ((),(),((),((),))) )
+                >>> tree=RootedTree( ((),(),((),((),))) )
                 >>> print tree
                 {T^2{T{T}}}
         """
@@ -172,7 +180,7 @@ class RootedTree(tuple):
                 >>> print tree
                 {T{T}}
                 >>> tree.lamda(rt.Emap)
-                ([(), (()), ((())), (()), ((), ()), ((()), ())], [1/2, 1, 1, 1/2, 1, 1])
+                ([(), ((),), (((),),), ((),), ((), ()), (((),), ())], [1/2, 1, 1, 1/2, 1, 1])
 
             **Reference**: 
                 [butcher2003]_ pp. 275-276
@@ -324,7 +332,6 @@ class RootedTree(tuple):
         s = zero
         for i in range(len(trees)):
             s+=factors[i]*beta(trees[i],*betaargs)
-        #print alpha(self,*alphaargs).shape,beta(RootedTree( empty_tree ),*betaargs).shape
         s+=alpha(self,*alphaargs)*beta(RootedTree( empty_tree ),*betaargs)
         return s
 
@@ -495,7 +502,7 @@ def list_trees(p,ind='all'):
     **Reference**: [albrecht1996]_
     """
 
-    if p==0: return [RootedTree((0))]
+    if p==0: return [RootedTree((0,))]
     W=[[],[]] #This way indices agree with Albrecht
     R=[[],[]]
     R.append([RootedTree(( (), ))])
@@ -585,7 +592,9 @@ def Dprod(tree,alpha):
     **Examples**::
 
         >>> from nodepy import rt
-        >>> tree = rt.RootedTree('{T{T}}')
+        >>> tree = rt.RootedTree( ( (), ( (), )) )
+        >>> print tree
+        {T{T}}
         >>> Dprod(tree,Emap)
         1/2
     """
@@ -641,7 +650,9 @@ def Emap(tree,a=1):
     **Examples**::
 
         >>> from nodepy import rooted_trees as rt
-        >>> tree=rt.RootedTree('{T^2{T{T}}}')
+        >>> tree=rt.RootedTree( ( (), (), ( (), ( (), ))) )
+        >>> print tree
+        {T^2{T{T}}}
         >>> rt.Emap(tree)
         1/56
         >>> rt.Emap(tree,a=2)
@@ -777,8 +788,7 @@ def density(tree):
     **Examples**::
 
         >>> from nodepy import rooted_trees as rt
-        >>> tree=rt.RootedTree('{T^2{T{T}}}')
-        >>> tree = ((),(),((),((),)))
+        >>> tree = rt.RootedTree( ((),(),((),((),))) )
         >>> print tree
         {T^2{T{T}}}
         >>> rt.density(tree)
@@ -802,8 +812,9 @@ def symmetry(tree):
 
         >>> from nodepy import rooted_trees as rt
         >>> tree=rt.RootedTree( ((),(),((),((),))) )
-        >>> tree=rt.RootedTree('{T^2{T{T}}}')
-        >>> tree.symmetry()
+        >>> print tree
+        {T^2{T{T}}}
+        >>> rt.symmetry(tree)
         2
 
     **Reference**: 
