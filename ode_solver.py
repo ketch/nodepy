@@ -8,7 +8,7 @@ class ODESolver(object):
     def __step__(self):
         raise NotImplementedError
 
-    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',x=None,diagnostics=False):
+    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',x=None,diagnostics=False,use_butcher=False):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -62,8 +62,8 @@ class ODESolver(object):
             if dt is None: dt=(T-t0)/N
             while t[-1]<T:
                 if t[-1]+dt>T: dt=T-t[-1]
-                if x is not None: u.append(numself.__step__(f,t,u,dt,x=x))
-                else: u.append(numself.__step__(f,t,u,dt))
+                if x is not None: u.append(numself.__step__(f,t,u,dt,x=x,use_butcher=use_butcher))
+                else: u.append(numself.__step__(f,t,u,dt,use_butcher=use_butcher))
                 t.append(t[-1]+dt)
 
         else:                   # Error-control mode
@@ -76,7 +76,7 @@ class ODESolver(object):
             if dt is None: print 'ERROR: Must specify initial timestep for error-control mode'
             while t[-1]<T:
                 if t[-1]+dt>T: dt=T-t[-1]
-                unew,errest = numself.__step__(f,t,u,dt,errest=True,x=x)
+                unew,errest = numself.__step__(f,t,u,dt,errest=True,x=x,use_butcher=use_butcher)
                 if errest<=errtol:      # Step accepted
                     u.append(unew)
                     t.append(t[-1]+dt)

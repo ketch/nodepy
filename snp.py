@@ -35,13 +35,13 @@ def tri(n,mode='exact'):
 
 def solve(A,b):
     if A.dtype==object:
-        Asym=sympy.matrices.Matrix(A)
-        bsym=sympy.matrices.Matrix(b)
+        Asym=sympy.Matrix(A)
+        bsym=sympy.Matrix(b)
         # Silly sympy makes row vectors when we want a column vector:
         if bsym.shape[0]==1:
             bsym = bsym.T
-        if Asym.is_lower(): # Take advantage of structure to solve quickly
-            xsym=sympy.matrices.zeros(b.shape)
+        if Asym.is_lower: # Take advantage of structure to solve quickly
+            xsym=sympy.zeros(b.shape)
             if len(b.shape)==1:
                 xsym = Asym.lower_triangular_solve(bsym)
             else:

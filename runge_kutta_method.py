@@ -702,15 +702,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
         import sympy
         z = sympy.var('z')
         s = len(self)
-        I = sympy.matrices.eye(s)
+        I = sympy.eye(s)
         
         v = 1 - self.alpha.sum(1)
-        vstar = sympy.matrices.Matrix(v[:-1]).T
+        vstar = sympy.Matrix(v[:-1]).T
         v_mp1 = sympy.Rational(v[-1])
-        alpha_star = sympy.matrices.Matrix(self.alpha[:-1,:])
-        beta_star = sympy.matrices.Matrix(self.beta[:-1,:])
-        alpha_mp1 = sympy.matrices.Matrix(self.alpha[-1,:])
-        beta_mp1 = sympy.matrices.Matrix(self.beta[-1,:])
+        alpha_star = sympy.Matrix(self.alpha[:-1,:])
+        beta_star = sympy.Matrix(self.beta[:-1,:])
+        alpha_mp1 = sympy.Matrix(self.alpha[-1,:])
+        beta_mp1 = sympy.Matrix(self.beta[-1,:])
         p1 = (alpha_mp1 + z*beta_mp1)*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
         p1 = p1[0] + v_mp1
         return p1
@@ -1448,13 +1448,13 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         import sympy
         z = sympy.var('z')
-        I = sympy.matrices.eye(s)
+        I = sympy.eye(s)
 
-        alpha_star = sympy.matrices.Matrix(alpha[0:-1,:])
-        beta_star  = sympy.matrices.Matrix(beta[0:-1,:])
+        alpha_star = sympy.Matrix(alpha[0:-1,:])
+        beta_star  = sympy.Matrix(beta[0:-1,:])
 
         apbz_star = alpha_star + beta_star*z
-        apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
+        apbz = sympy.Matrix(alpha[-1,:]+z*beta[-1,:])
 
         thet = (I-apbz_star).T.upper_triangular_solve(apbz.T)
 
@@ -1690,7 +1690,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         return s
 
 
-    def __step__(self,f,t,u,dt,x=None,errest=False):
+    def __step__(self,f,t,u,dt,x=None,errest=False,use_butcher=False):
         """
             Take a time step on the ODE u'=f(t,u).
             Just like the corresponding method for RKMs, but
@@ -1708,42 +1708,44 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
             The implementation here is wasteful in terms of storage.
         """
+        if not self.alphahat is None:
+            use_butcher = True
+
 	
 	m=len(self)
-	if np.size(self.alphahat)>1:
-		init = u[-1]		# Initial values
-		size = np.size(init)
-		uhat = np.zeros(size)
-		y = [np.zeros((size)) for i in range(m+1)]      # Define y to be a matrix of m+1 rows and size columns
-		fy = [np.zeros((size)) for i in range(m)]       # Define fy
-		y[0][:]=init	       # Initialize y[0]
-		if x is not None: fy[0][:]=f(t[-1],y[0][:],x)
-        	else: fy[0][:]=f(t[-1],y[0][:])
-		for i in range(1,m+1):
-	    	    for j in range(i):
-                	y[i]+=(-self.alpha[i,j])*init+self.alpha[i,j]*y[j]+dt*self.beta[i,j]*fy[j]
-	    	    y[i] += init # Needed this bcoz it can't be inside running sum as it can get duplicated
-	    	    if i<m :
-	                if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:],x)
-	                else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:])
-		unew = y[m][:]
-	
-		if errest:
-		    #error = dt*sum([(self.b[j]-self.bhat[j])*fy[j] for j in range(m)])
-		    if dt<1e-10:
-			print dt
-		    fy = np.array(fy).reshape(np.shape(fy)[0],np.shape(fy)[1]);
-		    y = np.array(y).reshape(np.shape(y)[0],np.shape(y)[1]);
-		    for i in range(size):
-			if size==1: # For single ODE problems
-                            uhat[i]=(1-np.sum(self.alphahat[-1,:]))*init+np.sum(self.alphahat[-1,:]*y[0:-1,i])+dt*np.sum(self.betahat[-1,:]*fy[:,i])
-		        else: # System of ODEs
-			    uhat[i]=(1-np.sum(self.alphahat[-1,:]))*init[i]+np.sum(self.alphahat[-1,:]*y[0:-1,i])+dt*np.sum(self.betahat[-1,:]*fy[:,i])
-		    uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
-                    return unew, np.max(np.abs(unew-uhat))
-        	else: return unew  
+        if not use_butcher:             # Use Shu-Osher coefficients
+            v = 1 - self.alpha.sum(1)
+            init = u[-1]		# Initial values
+            size = np.size(init)
+            uhat = np.zeros(size)
+            y = [np.zeros((size)) for i in range(m+1)]      # Define y to be a matrix of m+1 rows and size columns
+            fy = [np.zeros((size)) for i in range(m)]       # Define fy
+            y[0][:]=init	       # Initialize y[0]
+            if x is not None: fy[0][:]=f(t[-1],y[0][:],x)
+            else: fy[0][:]=f(t[-1],y[0][:])
+            for i in range(1,m+1):
+                y[i] = v[i]*init
+                for j in range(i):
+                    y[i] += self.alpha[i,j]*y[j] + dt*self.beta[i,j]*fy[j]
+                if i<m:
+                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:],x)
+                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:])
+            unew = y[m][:]
+    
+            if errest:
+                #error = dt*sum([(self.b[j]-self.bhat[j])*fy[j] for j in range(m)])
+                if dt<1e-10:
+                    print dt, t[-1]
+                fy = np.array(fy).reshape(np.shape(fy)[0],np.shape(fy)[1]);
+                y = np.array(y).reshape(np.shape(y)[0],np.shape(y)[1]);
+                uhat = (1-np.sum(self.alphahat[-1,:]))*init
+                for j in range(m):
+                    uhat += self.alphahat[-1,j]*y[j] + dt*self.betahat[-1,j]*fy[j]
+                #uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
+                return unew, np.max(np.abs(unew-uhat))
+            else: return unew  
 
-	else:
+	else:                           # Use Butcher coefficients
             y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
             if x is not None: fy=[f(t[-1],y[0],x)]
             else: fy=[f(t[-1],y[0])]
@@ -3348,14 +3350,14 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         else:
             v = 1 - alpha.sum(1)
 
-        alpha_star=sympy.matrices.Matrix(alpha[:-1,:])
-        beta_star=sympy.matrices.Matrix(beta[:-1,:])
-        I = sympy.matrices.eye(s)
+        alpha_star=sympy.Matrix(alpha[:-1,:])
+        beta_star=sympy.Matrix(beta[:-1,:])
+        I = sympy.eye(s)
 
         v_mp1 = v[-1]
-        vstar = sympy.matrices.Matrix(v[:-1]).T
-        alpha_mp1 = sympy.matrices.Matrix(alpha[-1,:])
-        beta_mp1 = sympy.matrices.Matrix(beta[-1,:])
+        vstar = sympy.Matrix(v[:-1]).T
+        alpha_mp1 = sympy.Matrix(alpha[-1,:])
+        beta_mp1 = sympy.Matrix(beta[-1,:])
 
         if formula == 'det':
             xsym = I - alpha_star - z*beta_star + vstar/v_mp1 * (alpha_mp1+z*beta_mp1)
@@ -3373,7 +3375,7 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
 
         elif formula == 'pow': # Power series
             apbz_star = alpha_star + beta_star*z
-            apbz = sympy.matrices.Matrix(alpha_mp1+z*beta_mp1)
+            apbz = sympy.Matrix(alpha_mp1+z*beta_mp1)
 
             # Compute (I-(alpha + z beta)^(-1) = I + (alpha + z beta) + (alpha + z beta)^2 + ... + (alpha + z beta)^(s-1)
             # This is coded for Shu-Osher coefficients
@@ -3418,7 +3420,7 @@ def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
         # Symbolic calculation
         import sympy
         z = sympy.var('z')
-        I = sympy.matrices.eye(s)
+        I = sympy.eye(s)
 
         if explicit:
             v = 1 - alpha[:,1:].sum(1)
@@ -3427,11 +3429,11 @@ def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
         else:
             v = 1 - alpha.sum(1)
 
-        alpha_star = sympy.matrices.Matrix(alpha[:-1,:])
-        beta_star  = sympy.matrices.Matrix(beta[:-1,:])
+        alpha_star = sympy.Matrix(alpha[:-1,:])
+        beta_star  = sympy.Matrix(beta[:-1,:])
 
         apbz_star = alpha_star + beta_star*z
-        apbz = sympy.matrices.Matrix(alpha[-1,:]+z*beta[-1,:])
+        apbz = sympy.Matrix(alpha[-1,:]+z*beta[-1,:])
 
         if formula == 'pow':
             apbz_power = I
