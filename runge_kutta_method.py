@@ -2776,8 +2776,8 @@ def DC_pair(s,theta=0.,grid='eq'):
 
 def DC(s,theta=0,grid='eq'):
     """ Spectral deferred correction methods.
-        For now, based on explicit Euler and equispaced points.
-        TODO: generalize base method and grid.
+        For now, based on explicit Euler.
+        This version assumes the number of nodes and iterations are the same.
 
         **Input**: s -- number of grid points & number of correction iterations
 
@@ -2834,6 +2834,68 @@ def DC(s,theta=0,grid='eq'):
 
     name='DC'+str(s)*2
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=s+1).dj_reduce()
+
+
+def DC_general(nnodes,niterations,theta=0,grid='eq'):
+    """ Spectral deferred correction methods.
+        For now, based on explicit Euler and equispaced points.
+        This version allows the number of nodes and iterations to be different.
+
+        **Input**: s -- number of grid points & number of correction iterations
+
+        **Output**: A ExplicitRungeKuttaMethod
+
+        Note that the number of stages is NOT equal to s.  The order
+        is equal to s+1.
+
+        **Examples**::
+            
+        **References**: 
+
+            #. [dutt2000]_
+            #. [gottlieb2009]_
+    """
+
+    # Choose the grid:
+    if grid=='eq':
+        #t=np.linspace(0.,1.,s+1) # Equispaced
+        t=snp.arange(nnodes+1)/nnodes # Equispaced
+    elif grid=='cheb':
+        t=0.5*(np.cos(np.arange(0,nnodes+1)*np.pi/nnodes)+1.)  #Chebyshev
+        t=t[::-1]
+    dt=np.diff(t)
+
+    m=nnodes
+    alpha=snp.zeros([nnodes*niterations+m+1,nnodes*niterations+m])
+    beta=snp.zeros([nnodes*niterations+m+1,nnodes*niterations+m])
+
+    w=dcweights(t)       #Get the quadrature weights for our grid
+                         #w[i,j] is the weight of node i for the integral
+                         #over [x_j,x_j+1]
+
+    #first iteration (k=1)
+    for i in range(1,nnodes+1):
+        alpha[i,i-1]=1
+        beta[i,i-1]=dt[i-1]
+
+    #subsequent iterations:
+    for k in range(1,niterations+1):
+        beta[nnodes*k+1,0]=w[0,0]
+        for i in range(1,nnodes+1):
+            alpha[nnodes*k+1,0]=1
+            beta[nnodes*k+1,nnodes*(k-1)+i]=w[i,0]
+
+        for m in range(1,nnodes):
+            alpha[nnodes*k+m+1,nnodes*k+m] = 1
+            beta[nnodes*k+m+1,nnodes*k+m] = theta
+            beta[nnodes*k+m+1,0]=w[0,m]
+            for i in range(1,nnodes+1):
+                beta[nnodes*k+m+1,nnodes*(k-1)+i]=w[i,m]
+                if i==m:
+                    beta[nnodes*k+m+1,nnodes*(k-1)+i]-=theta
+
+    name='DC'+str(nnodes)+','+str(niterations)
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name).dj_reduce()
 
 
 #============================================================
