@@ -1243,7 +1243,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         to RungeKuttaMethod, but also includes time-stepping and
         a few other functions.
     """
-    def __step__(self,f,t,u,dt,x=None,errest=False):
+    def __step__(self,f,t,u,dt,x=None,errest=False,use_butcher=False):
         """
             Take a time step on the ODE u'=f(t,u).
 
