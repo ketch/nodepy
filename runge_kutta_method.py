@@ -1538,9 +1538,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> ssp2 = rk.SSPRK2(6)
                 >>> ssp2.maximum_internal_amplification()
-                1.0974050096180772
+                (1.0974050096180772, 0.83333333333333337)
                 >>> ssp2.maximum_internal_amplification(use_butcher=True)
-                2.0370511185806568
+                (2.0370511185806568, 0.0)
         """
         from utils import find_plot_bounds
 
@@ -1710,7 +1710,6 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         """
         if not self.alphahat is None:
             use_butcher = True
-
 	
 	m=len(self)
         if not use_butcher:             # Use Shu-Osher coefficients
@@ -2627,7 +2626,7 @@ def RKC1(m,epsilon=0):
     x=sympy.Symbol('x')
     Tm=sympy.special.polynomials.chebyshevt_poly(m,x)
 
-    w0=one+epsilon/m**2
+    w0=one+sympy.Rational(epsilon,m**2)
     w1=sympy.Rational(Tm.subs(x,w0),Tm.diff().subs(x,w0))
 
     alpha=snp.zeros([m+1,m])
@@ -2698,7 +2697,7 @@ def RKC2(m,epsilon=0):
     x=sympy.Symbol('x')
     Tm=sympy.special.polynomials.chebyshevt_poly(m,x)
 
-    w0=one+epsilon/m**2
+    w0=one+sympy.Rational(epsilon,m**2)
     w1=sympy.Rational(Tm.diff().subs(x,w0),Tm.diff(x,2).subs(x,w0))
 
     alpha=snp.zeros([m+1,m])
