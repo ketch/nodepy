@@ -1661,7 +1661,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         numself = super(ExplicitRungeKuttaPair,self).__num__()
         if self.A.dtype==object:
             numself.bhat=np.array(self.bhat,dtype=np.float64)
-        if hasattr(self,'alphahat'):
+        if self.alphahat is not None:
             numself.alphahat=np.array(self.alphahat,dtype=np.float64)
             numself.betahat=np.array(self.betahat,dtype=np.float64)
         return numself
@@ -1708,7 +1708,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
             The implementation here is wasteful in terms of storage.
         """
-        if not self.alphahat is None:
+        if self.alphahat is None:
             use_butcher = True
 	
 	m=len(self)
