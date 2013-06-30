@@ -1243,7 +1243,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         to RungeKuttaMethod, but also includes time-stepping and
         a few other functions.
     """
-    def __step__(self,f,t,u,dt,x=None,errest=False):
+    def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):
         """
             Take a time step on the ODE u'=f(t,u).
 
@@ -1258,21 +1258,43 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
             The implementation here is wasteful in terms of storage.
         """
-        m=len(self)
-        y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
-        if x is not None: fy=[f(t[-1],y[0],x)]
-        else: fy=[f(t[-1],y[0])]
-        for i in range(1,m):
-            y.append(u[-1]+0)
-            for j in range(i):
-                y[i]+=self.A[i,j]*dt*fy[j]
-            if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
-            else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
-        if m==1: i=0 #fix just for one-stage methods
-        if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
-        else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
-        unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])
-        return unew
+        if self.alphahat is None:
+            use_butcher = True
+
+	m=len(self)
+        u_old = u[-1]		# Initial value
+        size = np.size(u_old)
+        y = [np.zeros((size)) for i in range(m+1)]
+        fy = [np.zeros((size)) for i in range(m)]
+
+        # First stage
+        y[0][:]=u_old
+        if x is not None: fy[0][:]=f(t[-1],y[0],x)
+        else: fy[0][:]=f(t[-1],y[0])
+
+        if use_butcher:                 # Use Butcher coefficients
+            for i in range(1,m):        # Compute stage i
+                y[i][:] = u_old
+                for j in range(i):
+                    y[i] += self.A[i,j]*dt*fy[j]
+                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
+            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+ 
+        else:             # Use Shu-Osher coefficients
+            v = 1 - self.alpha.sum(1)
+            for i in range(1,m+1):
+                y[i] = v[i]*u_old
+                for j in range(i):
+                    y[i] += self.alpha[i,j]*y[j] + dt*self.beta[i,j]*fy[j]
+                if i<m:
+                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
+            u_new = y[m]
+    
+        return u_new
+
+
 
     def imaginary_stability_interval(self,mode='exact',eps=1.e-14):
         r"""
@@ -1690,7 +1712,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         return s
 
 
-    def __step__(self,f,t,u,dt,x=None,errest=False,use_butcher=False):
+    def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):
         """
             Take a time step on the ODE u'=f(t,u).
             Just like the corresponding method for RKMs, but
@@ -1708,63 +1730,54 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
             The implementation here is wasteful in terms of storage.
         """
-        if not self.alphahat is None:
+        if self.alphahat is None:
             use_butcher = True
 
-	
 	m=len(self)
-        if not use_butcher:             # Use Shu-Osher coefficients
+        u_old = u[-1]		# Initial value
+        size = np.size(u_old)
+        y = [np.zeros((size)) for i in range(m+1)]
+        fy = [np.zeros((size)) for i in range(m)]
+
+        # First stage
+        y[0][:]=u_old
+        if x is not None: fy[0][:]=f(t[-1],y[0],x)
+        else: fy[0][:]=f(t[-1],y[0])
+
+        if use_butcher:                 # Use Butcher coefficients
+            for i in range(1,m):        # Compute stage i
+                y[i][:] = u_old
+                for j in range(i):
+                    y[i] += self.A[i,j]*dt*fy[j]
+                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
+            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+            if estimate_error:
+                u_hat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
+ 
+        else:             # Use Shu-Osher coefficients
             v = 1 - self.alpha.sum(1)
-            init = u[-1]		# Initial values
-            size = np.size(init)
-            uhat = np.zeros(size)
-            y = [np.zeros((size)) for i in range(m+1)]      # Define y to be a matrix of m+1 rows and size columns
-            fy = [np.zeros((size)) for i in range(m)]       # Define fy
-            y[0][:]=init	       # Initialize y[0]
-            if x is not None: fy[0][:]=f(t[-1],y[0][:],x)
-            else: fy[0][:]=f(t[-1],y[0][:])
             for i in range(1,m+1):
-                y[i] = v[i]*init
+                y[i] = v[i]*u_old
                 for j in range(i):
                     y[i] += self.alpha[i,j]*y[j] + dt*self.beta[i,j]*fy[j]
                 if i<m:
-                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:],x)
-                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i][:])
-            unew = y[m][:]
+                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
+            u_new = y[m]
     
-            if errest:
-                #error = dt*sum([(self.b[j]-self.bhat[j])*fy[j] for j in range(m)])
+            if estimate_error:
+                u_hat = np.zeros(size)
                 if dt<1e-10:
-                    print dt, t[-1]
-                fy = np.array(fy).reshape(np.shape(fy)[0],np.shape(fy)[1]);
-                y = np.array(y).reshape(np.shape(y)[0],np.shape(y)[1]);
-                uhat = (1-np.sum(self.alphahat[-1,:]))*init
+                    print "Warning: very small step size: ", dt, t[-1]
+                u_hat = (1-np.sum(self.alphahat[-1,:]))*u_old
                 for j in range(m):
-                    uhat += self.alphahat[-1,j]*y[j] + dt*self.betahat[-1,j]*fy[j]
-                #uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
-                return unew, np.max(np.abs(unew-uhat))
-            else: return unew  
+                    u_hat += self.alphahat[-1,j]*y[j] + dt*self.betahat[-1,j]*fy[j]
 
-	else:                           # Use Butcher coefficients
-            y=[u[-1]+0] # by adding zero we get a copy; is there a better way?
-            if x is not None: fy=[f(t[-1],y[0],x)]
-            else: fy=[f(t[-1],y[0])]
-            for i in range(1,m):
-                y.append(u[-1]+0)
-                for j in range(i):
-                    y[i]+=self.A[i,j]*dt*fy[j]
-                if x is not None: fy.append(f(t[-1]+self.c[i]*dt,y[i],x))
-                else: fy.append(f(t[-1]+self.c[i]*dt,y[i]))
-	    if m==1: i=0 #fix just for one-stage methods
-            if x is not None: fy[i]=f(t[-1]+self.c[i]*dt,y[-1],x)
-            else: fy[i]=f(t[-1]+self.c[i]*dt,y[-1])
-            unew=u[-1]+dt*sum([self.b[j]*fy[j] for j in range(m)])	
-            if errest:
-		#print dt
-                uhat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
-                return unew, np.max(np.abs(unew-uhat))
-            else: return unew
-
+        if estimate_error:
+            return u_new, np.max(np.abs(u_new-u_hat))
+        else: 
+            return u_new
 
     def error_metrics(self,q=None,p=None):
         r"""Return full set of error metrics
