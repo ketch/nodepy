@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='nodepy',
-      version='0.4',
+      version='0.5',
       package_dir={'nodepy': ''},
       packages=['nodepy'],
       py_modules = ['runge_kutta_method', 'linear_multistep_method', 'rooted_trees',
