@@ -34,6 +34,10 @@ def tri(n,mode='exact'):
     return x
 
 def solve(A,b):
+    """Solve Ax = b.  
+        If A holds exact values, solve exactly using sympy.
+        Otherwise, solve in floating-point using numpy.
+    """
     if A.dtype==object:
         Asym=sympy.Matrix(A)
         bsym=sympy.Matrix(b)
@@ -42,11 +46,7 @@ def solve(A,b):
             bsym = bsym.T
         if Asym.is_lower: # Take advantage of structure to solve quickly
             xsym=sympy.zeros(b.shape)
-            if len(b.shape)==1:
-                xsym = Asym.lower_triangular_solve(bsym)
-            else:
-                for i in range(bsym.shape[1]): # Have to do 1 column at a time
-                    xsym[:,i] = Asym.lower_triangular_solve(bsym[:,i])
+            xsym = Asym.lower_triangular_solve(bsym)
         else: # This is slower:
             xsym = Asym.LUsolve(bsym)
 

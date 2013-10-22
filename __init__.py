@@ -2,7 +2,7 @@
 NodePy (Numerical ODE solvers in Python) is...
 """
 
-__version__="0.4"
+__version__="0.5"
 
 import sys
 mypath= '/Users/ketch/Research/Projects/nodepy'
