@@ -172,7 +172,7 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
     return h
 
 
-def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
+def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
                 color=('w','b'),filled=True,subplot=None):
     r""" Plot the order star of a rational function
         i.e. the set
@@ -187,6 +187,13 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
             - color   -- color to use for this plot
             - filled  -- if true, order star is filled in (solid); otherwise it is outlined
     """
+    # Convert coefficients to floats for speed
+    if p.coeffs.dtype=='object':
+        p = np.poly1d([float(c) for c in p.coeffs])
+    if q.coeffs.dtype=='object':
+        q = np.poly1d([float(c) for c in q.coeffs])
+
+
     import matplotlib.pyplot as plt
     x=np.linspace(bounds[0],bounds[1],N)
     y=np.linspace(bounds[2],bounds[3],N)
@@ -200,6 +207,7 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5],
         plt.clf()
     plt.contourf(X,Y,R,[0,1,1.e299],colors=color)
     plt.hold(True)
+    if plotroots: plt.plot(np.real(p.r),np.imag(p.r),'ok')
     plt.plot([0,0],[bounds[2],bounds[3]],'--k')
     plt.plot([bounds[0],bounds[1]],[0,0],'--k')
     plt.axis('Image')
@@ -228,9 +236,9 @@ def taylor(p):
     r"""
         Return the Taylor polynomial of the exponential, up to order p.
     """
-    from scipy import factorial
+    from sympy import factorial
 
-    coeffs=1./factorial(np.arange(p+1))
+    coeffs = np.array( [1./factorial(k) for k in range(p+1) ] )
 
     return np.poly1d(coeffs[::-1])
 
