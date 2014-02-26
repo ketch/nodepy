@@ -47,17 +47,25 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
 
     mr = min(pmqr,ppqr)
 
-    # Check whether it is stable between 0 and mr
-    # This could fail in the case of double roots
     if mr == np.inf:
-        z = 1j/20.
+        z = 1j/2.
     else:
-        z = mr*1j/20.
+        z = mr*1j/2.
 
-    if np.abs(p(z)/q(z))<=1:
-        return mr
-    else:
-        return 0
+    val = 1
+    while val==1:
+        # Check whether it is stable between 0 and mr
+        # This could fail in the case of double roots
+        val = np.abs(p(z)/q(z))
+        if val<1:
+            return mr
+        elif val==1:
+            z = z/2.
+        else:
+            return 0
+        if np.abs(z)<1.e-10:
+            print "unable to determine"
+            return -1
 
 
 def real_stability_interval(p,q=None,eps=1.e-12):

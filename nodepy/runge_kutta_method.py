@@ -1258,7 +1258,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
             The implementation here is wasteful in terms of storage.
         """
-        if self.alphahat is None:
+        if self.alpha is None:
             use_butcher = True
 
 	m=len(self)
@@ -2809,7 +2809,6 @@ def DC(s,theta=0,grid='eq'):
 
     # Choose the grid:
     if grid=='eq':
-        #t=np.linspace(0.,1.,s+1) # Equispaced
         t=snp.arange(s+1)/s # Equispaced
     elif grid=='cheb':
         t=0.5*(np.cos(np.arange(0,s+1)*np.pi/s)+1.)  #Chebyshev
@@ -2845,7 +2844,7 @@ def DC(s,theta=0,grid='eq'):
                 if i==m:
                     beta[s*k+m+1,s*(k-1)+i]-=theta
 
-    name='DC'+str(s)*2
+    name='Deferred correction method of order '+str(s+1)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=s+1).dj_reduce()
 
 
