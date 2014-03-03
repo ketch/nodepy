@@ -1167,9 +1167,39 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         return gamma, alpha, alphatilde
 
+    def resplit(self,r,tol=1.e-15):
+        import numpy as np
+        s = len(self)
+        I = np.eye(s+1)
+        gamma, alpha_up = self.canonical_shu_osher_form(r)
+        alpha_down = 0*alpha_up
+        
+        for i in range(5):
+            print i, r
+
+            aup, aum = sign_split(alpha_up)
+            adp, adm = sign_split(alpha_down)
+
+            G = np.linalg.inv(I + 2*(aum + adm))
+            alpha_up = np.dot(G,aup+adm)
+            alpha_down = np.dot(G,aum+adp)
+            gamma = np.dot(G,gamma)
+
+            if self.is_explicit():
+                gamma, alpha_up, alpha_down = redistribute_gamma(gamma, alpha_up, alpha_down)
+
+            if alpha_up.min()>=-tol and gamma.min()>=-tol and alpha_down.min()>=-tol: 
+                break
+
+            #if i==4:
+            #    print np.where(alpha_up<-tol)
+            #    print np.where(alpha_down<-tol)
+
+        return gamma, alpha_up, alpha_down
+
 
     def is_splittable(self,r,tol=1.e-15):
-        d,alpha,alphatilde=self.split(r,tol=tol)
+        d,alpha,alphatilde=self.resplit(r,tol=tol)
         if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: 
             return True
         else: 
@@ -1183,7 +1213,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         from utils import bisect
 
         r=bisect(0,rmax,acc,tol,self.is_splittable)
-        d,alpha,alphatilde=self.split(r,tol=tol)
+        d,alpha,alphatilde=self.resplit(r,tol=tol)
         return r,d,alpha,alphatilde
 
     #============================================================
@@ -1234,6 +1264,20 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """True if method is "First Same As Last"."""
         if np.all(self.A[-1,:]==self.b): return True
         else: return False
+
+
+def sign_split(alpha):
+    alpha_plus  =  alpha*(alpha>0).astype(int)
+    alpha_minus = -alpha*(alpha<0).astype(int)
+    return alpha_plus, alpha_minus
+
+def redistribute_gamma(gamma, alpha_up, alpha_down):
+        alpha_up[1:,0] += gamma[1:]/2.
+        alpha_down[1:,0] += gamma[1:]/2.
+        gamma[1:] = 0.
+
+        return gamma, alpha_up, alpha_down
+
 
 #=====================================================
 class ExplicitRungeKuttaMethod(RungeKuttaMethod):
@@ -2336,6 +2380,16 @@ def RK22_family(gamma):
     b=snp.array([one-gamma,gamma])
     return ExplicitRungeKuttaMethod(A,b)
 
+def RK33_family_2(b3):
+    from sympy import Rational
+    one = Rational(1,1)
+
+    A=snp.array([[0,0,0],[2*one/3,0,0],[2*one/3-one/(4*b3), one/(4*b3),0]])
+    b=snp.array([one/4-b3, 3*one/4, b3])
+    return ExplicitRungeKuttaMethod(A,b)
+
+
+
 def RK44_family(w):
     """ 
         Construct a 4-stage fourth order Runge-Kutta method 
@@ -2762,17 +2816,18 @@ def dcweights(x):
     """
 
     #Form the vanderMonde matrix:
+    N = len(x)
     A=np.vander(x).T
     A=A[::-1,:]
-    F=0*A
-    n=snp.arange(len(x))+1
-    for i in range(len(x)-1):
+    F=snp.zeros((N,N))
+    n=snp.arange(N)+1
+    for i in range(N-1):
         a=x[i]; b=x[i+1]
         f=(b**n-a**n)/n
         F[:,i]=f
     w=snp.solve(A,F)
 
-    return w
+    return w[:,:-1]
 
 def DC_pair(s,theta=0.,grid='eq'):
 
@@ -2787,7 +2842,73 @@ def DC_pair(s,theta=0.,grid='eq'):
     return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[bhat_ind],name=name).dj_reduce()
 
 
-def DC(s,theta=0,grid='eq'):
+def DC(s,theta=0,grid='eq',n_correction=None):
+    """ Spectral deferred correction methods.
+        For now, based on explicit Euler and equispaced points.
+        TODO: generalize base method and grid.
+
+        **Input**: s -- number of grid points (minus one) & number of correction iterations
+
+        **Output**: A ExplicitRungeKuttaMethod
+
+        Note that the number of stages is NOT equal to s.  The order
+        is equal to s+1.
+
+        **Examples**::
+            
+        **References**: 
+
+            #. [dutt2000]_
+            #. [gottlieb2009]_
+    """
+    if n_correction == None:
+        n_correction = s
+
+    # Choose the grid:
+    if grid=='eq':
+        #t=np.linspace(0.,1.,s+1) # Equispaced
+        t=snp.arange(s+1)/s # Equispaced
+    elif grid=='cheb':
+        t=0.5*(np.cos(np.arange(0,s+1)*np.pi/s)+1.)  #Chebyshev
+        t=t[::-1]
+    dt=np.diff(t)
+
+    #m=s
+    #alpha=snp.zeros([s**2+m+1,s**2+m])
+    #beta=snp.zeros([s**2+m+1,s**2+m])
+    alpha=snp.zeros([s*(n_correction+1)+1,s*(n_correction+1)])
+    beta=snp.zeros([s*(n_correction+1)+1,s*(n_correction+1)])
+
+    w=dcweights(t)       #Get the quadrature weights for our grid
+                         #w[i,j] is the weight of node i for the integral
+                         #over [x_j,x_j+1]
+
+    # Predictor (just Euler steps)
+    for i in range(1,s+1):
+        alpha[i,i-1] = 1
+        beta[i,i-1]  = dt[i-1]
+
+    # Correction iterations:
+    for k in range(1,n_correction+1):
+        alpha[s*k+1,  0] = 1
+        beta[ s*k+1,  0] = w[0,0]
+
+        for i in range(1,s+1):
+            beta[s*k+1,s*(k-1)+i] = w[i,0]
+
+        for m in range(2,s+1):
+            alpha[s*k+m,s*k+m-1] = 1
+            beta[ s*k+m,s*k+m-1] = theta
+            beta[ s*k+m,      0] = w[0,m-1]
+            for i in range(1,s+1):
+                beta[s*k+m,s*(k-1)+i] = w[i,m-1]
+                if i==m-1:
+                    beta[s*k+m,s*(k-1)+i] -= theta
+
+    name='DC'+str(s)*2
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=s+1).dj_reduce()
+
+def DC_alt(s,theta=0,grid='eq'):
     """ Spectral deferred correction methods.
         For now, based on explicit Euler and equispaced points.
         TODO: generalize base method and grid.
@@ -2824,26 +2945,27 @@ def DC(s,theta=0,grid='eq'):
                          #w[i,j] is the weight of node i for the integral
                          #over [x_j,x_j+1]
 
-    #first iteration (k=1)
+    # Predictor (just Euler steps)
     for i in range(1,s+1):
-        alpha[i,i-1]=1
-        beta[i,i-1]=dt[i-1]
+        alpha[i,i-1] = 1
+        beta[i,i-1]  = dt[i-1]
 
-    #subsequent iterations:
+    # Correction iterations:
     for k in range(1,s+1):
-        beta[s*k+1,0]=w[0,0]
+        alpha[s*k+1,  0] = 1
+        beta[ s*k+1,  0] = w[0,0]
+
         for i in range(1,s+1):
-            alpha[s*k+1,0]=1
-            beta[s*k+1,s*(k-1)+i]=w[i,0]
+            beta[s*k+1,s*(k-1)+i] = w[i,0]
 
         for m in range(1,s):
-            alpha[s*k+m+1,s*k+m] = 1
-            beta[s*k+m+1,s*k+m] = theta
-            beta[s*k+m+1,0]=w[0,m]
+            alpha[s*k+m+1,0] = 1
+            beta[ s*k+m+1,s*k+m] = theta
+            beta[ s*k+m+1,    0] = w[0,m]
             for i in range(1,s+1):
-                beta[s*k+m+1,s*(k-1)+i]=w[i,m]
+                beta[s*k+m+1,s*(k-1)+i] = w[i,m]
                 if i==m:
-                    beta[s*k+m+1,s*(k-1)+i]-=theta
+                    beta[s*k+m+1,s*(k-1)+i] -= theta
 
     name='DC'+str(s)*2
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=s+1).dj_reduce()
