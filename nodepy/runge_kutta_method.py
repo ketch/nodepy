@@ -2772,7 +2772,7 @@ def dcweights(x):
         F[:,i]=f
     w=snp.solve(A,F)
 
-    return w
+    return w[:,:-1]
 
 def DC_pair(s,theta=0.,grid='eq'):
 
@@ -2837,12 +2837,12 @@ def DC(s,theta=0,grid='eq'):
 
         for m in range(1,s):
             alpha[s*k+m+1,s*k+m] = 1
-            beta[s*k+m+1,s*k+m] = theta
+            beta[s*k+m+1,s*k+m] = theta*dt[m]
             beta[s*k+m+1,0]=w[0,m]
             for i in range(1,s+1):
                 beta[s*k+m+1,s*(k-1)+i]=w[i,m]
                 if i==m:
-                    beta[s*k+m+1,s*(k-1)+i]-=theta
+                    beta[s*k+m+1,s*(k-1)+i]-=theta*dt[m]
 
     name='Deferred correction method of order '+str(s+1)
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=s+1).dj_reduce()
