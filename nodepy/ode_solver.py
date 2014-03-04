@@ -73,7 +73,9 @@ class ODESolver(object):
             errestold = errtol
             errest=1.
 
-            while t[-1]<T:
+            maxsteps = 5000
+            for istep in range(maxsteps):
+                if t[-1]>=T: break
                 if t[-1]+dt>T: dt=T-t[-1]
                 unew,errest = numself.__step__(f,t,u,dt,estimate_error=True,x=x,use_butcher=use_butcher)
                 if errest<=errtol:      # Step accepted
@@ -95,6 +97,8 @@ class ODESolver(object):
                 else: print 'Unrecognized time step controller type'
 
                 dt = dt * min(facmax,max(facmin,kappa*facopt))
+            if istep==maxsteps-1:
+                print 'Maximum number of steps reached; giving up.'
 
         if diagnostics==False: 
             return t,u
