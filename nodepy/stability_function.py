@@ -12,7 +12,8 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
             >>> rk4.imaginary_stability_interval()
             2.8284271247461903
     """
-    if q is None: q = np.poly1d([1.])
+    if q is None: 
+        q = np.poly1d([1.])
 
     c = p.c[::-1].copy()
     c[1::2] = 0      # Zero the odd coefficients to get real part
@@ -48,6 +49,9 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
     mr = min(pmqr,ppqr)
 
     if mr == np.inf:
+        # Stability region boundary does not touch/cross the imaginary axis
+        # If it's explicit, it must be unstable for all imaginary values
+        if len(q.coeffs==1): return 0
         z = 1j/2.
     else:
         z = mr*1j/2.
@@ -55,7 +59,7 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
     val = 1
     while val==1:
         # Check whether it is stable between 0 and mr
-        # This could fail in the case of double roots
+        # This could be wrong if the stability boundary is tangent to the imaginary axis at mr
         val = np.abs(p(z)/q(z))
         if val<1:
             return mr
@@ -64,8 +68,8 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
         else:
             return 0
         if np.abs(z)<1.e-10:
-            print "unable to determine"
-            return -1
+            print "Warning: unable to determine exact imaginary stability interval"
+            return mr
 
 
 def real_stability_interval(p,q=None,eps=1.e-12):
