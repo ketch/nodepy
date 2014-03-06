@@ -3382,8 +3382,8 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
 
         elif formula == 'lts': # lower_triangular_solve
             p1 = (alpha_mp1 + z*beta_mp1)*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
-            p1 = p1[0].expand()+v_mp1
-            p1 = p1.as_poly(z).all_coeffs()
+            p1 = sympy.poly(p1[0])+v_mp1
+            p1 = p1.all_coeffs()
 
         elif formula == 'pow': # Power series
             apbz_star = alpha_star + beta_star*z
@@ -3401,9 +3401,9 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
             p1 = apbz*Imapbz_inv
 
             p1 = p1*vstar
-            p1 = p1[0].expand()+v_mp1
+            p1 = sympy.poly(p1[0])+v_mp1
+            p1 = p1.all_coeffs()
             
-            p1 = p1.as_poly(z).all_coeffs()
 
         else:
             raise Exception("Unknown value of 'formula'")
