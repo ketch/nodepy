@@ -73,7 +73,7 @@ class ODESolver(object):
             errestold = errtol
             errest=1.
 
-            maxsteps = 5000
+            maxsteps = 7500
             for istep in range(maxsteps):
                 if t[-1]>=T: break
                 if t[-1]+dt>T: dt=T-t[-1]

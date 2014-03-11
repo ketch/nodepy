@@ -1768,8 +1768,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
     
             if estimate_error:
                 u_hat = np.zeros(size)
-                if dt<1e-10:
-                    print "Warning: very small step size: ", dt, t[-1]
+                #if dt<1e-10:
+                    #print "Warning: very small step size: ", dt, t[-1]
                 u_hat = (1-np.sum(self.alphahat[-1,:]))*u_old
                 for j in range(m):
                     u_hat += self.alphahat[-1,j]*y[j] + dt*self.betahat[-1,j]*fy[j]
@@ -2976,6 +2976,8 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
     if shuosher:
         return alpha, beta
     else:
+        if base == 'midpoint':
+            p = 2*p
         return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
 
 def extrap_pair(p, base='euler', seq='harmonic'):
@@ -3248,7 +3250,7 @@ def relative_accuracy_efficiency(rk1,rk2,mode='float',tol=1.e-14):
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
 
-def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14):
+def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14,p=None):
     r"""
     Compute the accuracy efficiency of method rk1.
 
@@ -3268,7 +3270,8 @@ def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14):
         0.5264921944121389
     """
     
-    p=rk1.order(mode=mode,tol=tol)
+    if p is None:
+        p=rk1.order(mode=mode,tol=tol)
     A1=rk1.principal_error_norm(mode=mode,tol=tol)
     if parallel:
         # If we consider parallelization then we divide by number of parallel stages
