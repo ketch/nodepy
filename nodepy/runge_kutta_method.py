@@ -863,7 +863,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         p,q=self.__num__().stability_function(mode='float')
 
         fig = stability_function.plot_stability_region(p,q,N,color,filled,bounds,
-                    plotroots,alpha,scalefac)
+                    plotroots,alpha,scalefac,fignum)
 
         ax = fig.get_axes()
         if longtitle:
