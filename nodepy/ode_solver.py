@@ -8,7 +8,7 @@ class ODESolver(object):
     def __step__(self):
         raise NotImplementedError
 
-    def __call__(self,ivp,t0=0,N=5000,dt=0.01,errtol=None,controllertype='P',x=None,diagnostics=False,use_butcher=False):
+    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',x=None,diagnostics=False,use_butcher=False):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
