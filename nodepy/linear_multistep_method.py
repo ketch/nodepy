@@ -343,7 +343,7 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
         for method in (self.method1,self.method2):
             p = 0
             while True:
-                if method._satisfies_order_conditions(p1+1,tol):
+                if method._satisfies_order_conditions(p+1,tol):
                     p = p + 1
                 else:
                     orders.append(p)
