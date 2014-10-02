@@ -12,7 +12,7 @@ def normalize(*arrays):
     For symbolic arrays, converts all non-symbolic entries to sympy types.
     """
     for array in arrays:
-        if array==None: continue
+        if array is None: continue
         if array.dtype==object:
             onedarray=array.reshape(-1)
             for i,elem in enumerate(onedarray):

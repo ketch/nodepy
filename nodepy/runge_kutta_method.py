@@ -2787,7 +2787,7 @@ def DC_pair(s,theta=0.,grid='eq'):
     return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[bhat_ind],name=name).dj_reduce()
 
 
-def DC(s,theta=0,grid='eq'):
+def DC(s,theta=0,grid='eq',num_corr=None):
     """ Spectral deferred correction methods.
         For now, based on explicit Euler and equispaced points.
         TODO: generalize base method and grid.
@@ -2806,6 +2806,8 @@ def DC(s,theta=0,grid='eq'):
             #. [dutt2000]_
             #. [gottlieb2009]_
     """
+    if num_corr is None:
+        num_corr = s
 
     # Choose the grid:
     if grid=='eq':
@@ -2813,11 +2815,18 @@ def DC(s,theta=0,grid='eq'):
     elif grid=='cheb':
         t=0.5*(np.cos(np.arange(0,s+1)*np.pi/s)+1.)  #Chebyshev
         t=t[::-1]
+    elif grid=='gauss':
+        # Not working yet; these nodes don't include the endpoints
+        Toff = 0.5/np.sqrt(1.-(2.*np.arange(1,m))**(-2.))
+        T = np.diag(Toff,1) + np.diag(Toff,-1)
+        t, junk = np.linalg.eig(T)
+        t.sort()
+        t = (t+1.)/2.
+
     dt=np.diff(t)
 
-    m=s
-    alpha=snp.zeros([s**2+m+1,s**2+m])
-    beta=snp.zeros([s**2+m+1,s**2+m])
+    alpha=snp.zeros([s*(num_corr+1)+1,s*(num_corr+1)])
+    beta=snp.zeros([s*(num_corr+1)+1,s*(num_corr+1)])
 
     w=dcweights(t)       #Get the quadrature weights for our grid
                          #w[i,j] is the weight of node i for the integral
@@ -2825,11 +2834,11 @@ def DC(s,theta=0,grid='eq'):
 
     #first iteration (k=1)
     for i in range(1,s+1):
-        alpha[i,i-1]=1
-        beta[i,i-1]=dt[i-1]
+        alpha[i,i-1] = 1
+        beta[i ,i-1] = dt[i-1]
 
     #subsequent iterations:
-    for k in range(1,s+1):
+    for k in range(1,num_corr+1):
         beta[s*k+1,0]=w[0,0]
         for i in range(1,s+1):
             alpha[s*k+1,0]=1
