@@ -560,11 +560,11 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
 
     if lstype=='2S' or lstype=='2S*' or lstype=='3S*':
         if has_emb:
-            meth = LowStorageRungeKuttaPair(beta_sub,gamma,delta,lstype,bhat=bhat)
+            meth = TwoSRungeKuttaPair(beta_sub,gamma,delta,lstype,bhat=bhat)
         else:
-            meth = LowStorageRungeKuttaMethod(beta_sub,gamma,delta,lstype)
+            meth = TwoSRungeKuttaMethod(beta_sub,gamma,delta,lstype)
     elif lstype=='2S_pair' or lstype=='3S*_pair':
-        meth = LowStorageRungeKuttaPair(beta_sub,gamma,delta,lstype)
+        meth = TwoSRungeKuttaPair(beta_sub,gamma,delta,lstype)
 
     ord = meth.order()
     if lstype=='2S_pair': 

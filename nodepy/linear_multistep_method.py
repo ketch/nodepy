@@ -305,7 +305,7 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
 
         `\alpha_k y_{n+k} + \alpha_{k-1} y_{n+k-1} + ... + \alpha_0 y_n
         = h ( \beta_k f_{n+k} + ... + \beta_0 f_n 
-          + \gamma_k f_{n+k} + ... + \gamma_0 f_n )
+        + \gamma_k f_{n+k} + ... + \gamma_0 f_n )`
 
         Methods are automatically normalized so that \alpha_k=1.
 

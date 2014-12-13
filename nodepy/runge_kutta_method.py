@@ -31,7 +31,7 @@
          | 0    1
 
 * Many methods are naturally implemented in some Shu-Osher form different
-  from the Butcher form:
+  from the Butcher form::
 
     >>> ssp42 = SSPRK2(4)
     >>> ssp42.print_shu_osher()
@@ -212,13 +212,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return s
 
     def print_shu_osher(self):
-        """
-        Pretty-prints the Shu-Osher arrays in the form
+        r"""
+        Pretty-prints the Shu-Osher arrays in the form::
 
-          |        |
-        c | \alpha | \beta
-        __________________
-          | amp1   | bmp1
+              |        |
+            c | \alpha | \beta
+            ______________________
+              | amp1   | bmp1
 
         where amp1, bmp1 represent the last rows of `\alpha,\beta`.
         """
@@ -729,7 +729,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             $$`\\phi(z) = 1 + b^T (I-zA)^{-1} e$$
 
-            where $e$ is a column vector with all entries equal to one.
+            where `e` is a column vector with all entries equal to one.
 
             This function constructs the numerator and denominator of the 
             stability function of a Runge-Kutta method.
@@ -744,6 +744,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             'formula' option).  These only affect
             the speed, and only matter if the computation is symbolic.
             They are:
+
               - 'lts': SymPy's lower_triangular_solve
               - 'det': ratio of determinants
               - 'pow': power series
@@ -891,7 +892,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - filled  -- if true, order star is filled in (solid); otherwise it is outlined
         """
         import matplotlib.pyplot as pl
-        p,q=self.__num__().stability_function()
+        p,q=self.__num__().stability_function(mode='float')
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))

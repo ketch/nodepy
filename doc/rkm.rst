@@ -183,16 +183,16 @@ Low-Storage Runge-Kutta methods
 
 2S/3S methods
 --------------------
-.. autoclass:: nodepy.low_storage_rk.LowStorageRungeKuttaMethod
+.. autoclass:: nodepy.low_storage_rk.TwoSRungeKuttaMethod
    :noindex:
 
 2S/3S embedded pairs
 --------------------
-.. autoclass:: nodepy.low_storage_rk.LowStorageRungeKuttaPair
+.. autoclass:: nodepy.low_storage_rk.TwoSRungeKuttaPair
    :noindex:
 
-2R/3R embedded pairs
+2R/3R methods
 --------------------
-.. autoclass:: nodepy.low_storage_rk.TwoRRungeKuttaPair
+.. autoclass:: nodepy.low_storage_rk.TwoRRungeKuttaMethod
    :noindex:
 
