@@ -12,7 +12,7 @@ def normalize(*arrays):
     For symbolic arrays, converts all non-symbolic entries to sympy types.
     """
     for array in arrays:
-        if array==None: continue
+        if array is None: continue
         if array.dtype==object:
             onedarray=array.reshape(-1)
             for i,elem in enumerate(onedarray):
@@ -45,7 +45,7 @@ def solve(A,b):
         if bsym.shape[0]==1:
             bsym = bsym.T
         if Asym.is_lower: # Take advantage of structure to solve quickly
-            xsym=sympy.zeros(b.shape)
+            xsym=sympy.zeros(*b.shape)
             xsym = Asym.lower_triangular_solve(bsym)
         else: # This is slower:
             xsym = Asym.LUsolve(bsym)

@@ -25,7 +25,10 @@
 """
 from general_linear_method import GeneralLinearMethod
 import numpy as np
+import sympy
 import snp
+
+
 
 #=====================================================
 class LinearMultistepMethod(GeneralLinearMethod):
@@ -45,9 +48,9 @@ class LinearMultistepMethod(GeneralLinearMethod):
             #. [butcher2003]_
     """
     def __init__(self,alpha,beta,name='Linear multistep method'):
-        self.beta=beta/(alpha[-1])
-        self.alpha=alpha/(alpha[-1])
-        self.name=name
+        self.beta  = beta /alpha[-1]
+        self.alpha = alpha/alpha[-1]
+        self.name = name
 
     def __num__(self):
         """
@@ -174,7 +177,6 @@ class LinearMultistepMethod(GeneralLinearMethod):
         """
         import matplotlib.pyplot as plt
         from utils import find_plot_bounds
-        numself = self.__num__()
         rho, sigma = self.__num__().characteristic_polynomials()
         mag = lambda z : _root_condition(rho-z*sigma)
         vmag = np.vectorize(mag)
@@ -289,7 +291,130 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
     def __len__(self):
         return len(self.alpha)
+
+
+#=====================================================
+class AdditiveLinearMultistepMethod(GeneralLinearMethod):
+#=====================================================
+    r"""
+        Method for solving equations of the form
+
+        `y'(t) = f(y) + g(y)`
+
+        The method takes the form
+
+        `\alpha_k y_{n+k} + \alpha_{k-1} y_{n+k-1} + ... + \alpha_0 y_n
+        = h ( \beta_k f_{n+k} + ... + \beta_0 f_n 
+        + \gamma_k f_{n+k} + ... + \gamma_0 f_n )`
+
+        Methods are automatically normalized so that \alpha_k=1.
+
+        The usual reference for these is Ascher, Ruuth, and Whetton.
+        But we follow a different notation (as just described).
+    """
+    def __init__(self, alpha, beta, gamma, name='Additive linear multistep method'):
+        self.beta  = beta /alpha[-1]
+        self.gamma = gamma/alpha[-1]
+        self.alpha = alpha/alpha[-1]
+        self.name = name
+        self.method1 = LinearMultistepMethod(alpha, beta)
+        self.method2 = LinearMultistepMethod(alpha, gamma)
+
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        import copy
+        numself = copy.deepcopy(self)
+        if self.alpha.dtype == object:
+            numself.alpha = np.array(self.alpha, dtype=np.float64)
+            numself.beta  = np.array(self.beta,  dtype=np.float64)
+            numself.gamma = np.array(self.gamma, dtype=np.float64)
+        return numself
+
+    def order(self,tol=1.e-10):
+        r""" Return the order of the local truncation error of an additive
+             linear multistep method.  The output is the minimum of the
+             order of the component methods.
+        """
+        orders = []
+        for method in (self.method1,self.method2):
+            p = 0
+            while True:
+                if method._satisfies_order_conditions(p+1,tol):
+                    p = p + 1
+                else:
+                    orders.append(p)
+                    break
+
+        return min(orders)
+
+
+    def plot_imex_stability_region(self,N=100,N2=1000,color='r',filled=True, alpha=1.,fignum=None):
+        r""" 
+            **Input**: (all optional)
+                - N       -- Number of gridpoints to use in each direction
+                - bounds  -- limits of plotting region
+                - color   -- color to use for this plot
+                - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+        """
+        import matplotlib.pyplot as plt
+        rho, sigma1 = self.method1.__num__().characteristic_polynomials()
+        rho, sigma2 = self.method2.__num__().characteristic_polynomials()
+        mag = lambda a, b : _max_root(rho - a*sigma1 - 1j*b*sigma2)
+        vmag = np.vectorize(mag)
+        bounds = [-10, 1, -5, 5]
+
+        y = np.linspace(bounds[2],bounds[3],N)
+        Y = np.tile(y[:,np.newaxis],(1,N))
+        x = np.linspace(bounds[0],bounds[1],N)
+        X = np.tile(x,(N,1))
+        Z = X+Y*1j
+
+        R = vmag(X,Y)
+
+        h = plt.figure(fignum)
+        plt.hold(True)
+        if filled:
+            plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
+        else:
+            plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
+        plt.contour(X,Y,R,np.linspace(0,1,10),colors='k')
+        plt.title('IMEX Stability Region for '+self.name)
+        plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+        plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+        plt.axis(bounds)
+        plt.hold(False)
+        return h
+
+    def stiff_damping_factor(self,epsilon=1.e-7):
+        r"""
+        Return the magnitude of the largest root at z=-inf.
+        This routine just computes a numerical approximation
+        to the true value (with absolute accuracy epsilon).
+        """
+        rho, sigma1 = self.method1.__num__().characteristic_polynomials()
+        rho, sigma2 = self.method2.__num__().characteristic_polynomials()
+        mag = lambda a, b : _max_root(rho - a*sigma1 - 1j*b*sigma2)
+
+        f=[]
+        z=-1.
+        f.append(mag(z,0))
+        while True:
+            z = z*10.
+            f.append(mag(z,0))
+            if np.abs(f[-1]-f[-2]) < epsilon:
+                return f[-1]
+            if len(f)>100:
+                print f
+                raise Exception('Unable to compute stiff damping factor: slow convergence')
+
+
 #======================================================
+def _max_root(p):
+    return max(np.abs(p.r))
 
 def _root_condition(p,tol=1.e-13):
     r""" True if the polynomial `p` has all roots inside
@@ -461,7 +586,8 @@ def elm_ssp2(k):
     return LinearMultistepMethod(alpha,beta,name=name)
 
 def sand_cc(s):
-    r""" Construct Sand's circle-contractive method of order `p=2(s+1)`.
+    r""" Construct Sand's circle-contractive method of order `p=2(s+1)`
+         that uses `2^s + 1` steps.
 
     **Examples**::
 
@@ -501,6 +627,34 @@ def sand_cc(s):
         alpha[j] = 2*beta[j]*tau_sum
     return LinearMultistepMethod(alpha,beta,'Sand circle-contractive')
         
+def arw2(gam,c):
+    r"""Returns the second order IMEX multistep method based on the
+    parametrization in Section 3.2 of Ascher, Ruuth, & Spiteri.  The parameters
+    are gam and c.  Known methods are obtained with the following values:
+
+        (1/2,0):   CNAB
+        (1/2,1/8): MCNAB
+        (0,1):     CNLF
+        (1,0):     SBDF
+
+    **Examples**::
+
+        >>> from nodepy import lm
+        >>> import sympy
+        >>> CNLF = lm.arw2(0,sympy.Rational(1))
+        >>> CNLF.order()
+        2
+        >>> CNLF.method1.ssp_coefficient()
+        1
+        >>> CNLF.method2.ssp_coefficient()
+        0
+    """
+    half = sympy.Rational(1,2)
+    alpha = snp.array([gam-half,-2*gam,gam+half])
+    beta  = snp.array([c/2,1-gam-c,gam+c/2]) #implicit part
+    gamma = snp.array([-gam,gam+1,0]) #explicit part
+    return AdditiveLinearMultistepMethod(alpha,beta,gamma,'ARW2('+str(gam)+','+str(c)+')')
+
 
 def loadLMM(which='All'):
     """ 
@@ -513,14 +667,17 @@ def loadLMM(which='All'):
         >>> ebdf5.is_zero_stable()
         True
     """
-    import snp
-    import sympy
-
     LM={}
     #================================================
-    alpha=snp.array([-12,75,-200,300,-300,137])/sympy.Rational(137,1)
-    beta=snp.array([60,-300,600,-600,300,0])/sympy.Rational(137,1)
-    LM['eBDF5']=LinearMultistepMethod(alpha,beta,'eBDF 5')
+    alpha = snp.array([-12,75,-200,300,-300,137])/sympy.Rational(137,1)
+    beta = snp.array([60,-300,600,-600,300,0])/sympy.Rational(137,1)
+    LM['eBDF5'] = LinearMultistepMethod(alpha,beta,'eBDF 5')
+    #================================================
+    theta = sympy.Rational(1,2)
+    alpha = snp.array([-1,1])
+    beta = snp.array([1-theta,theta])
+    gamma = snp.array([1,0])
+    LM['ET112'] = AdditiveLinearMultistepMethod(alpha,beta,gamma,'Euler-Theta')
     #================================================
     if which=='All':
         return LM

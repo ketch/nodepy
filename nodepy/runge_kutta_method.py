@@ -31,7 +31,7 @@
          | 0    1
 
 * Many methods are naturally implemented in some Shu-Osher form different
-  from the Butcher form:
+  from the Butcher form::
 
     >>> ssp42 = SSPRK2(4)
     >>> ssp42.print_shu_osher()
@@ -212,13 +212,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return s
 
     def print_shu_osher(self):
-        """
-        Pretty-prints the Shu-Osher arrays in the form
+        r"""
+        Pretty-prints the Shu-Osher arrays in the form::
 
-          |        |
-        c | \alpha | \beta
-        __________________
-          | amp1   | bmp1
+              |        |
+            c | \alpha | \beta
+            ______________________
+              | amp1   | bmp1
 
         where amp1, bmp1 represent the last rows of `\alpha,\beta`.
         """
@@ -729,7 +729,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             $$`\\phi(z) = 1 + b^T (I-zA)^{-1} e$$
 
-            where $e$ is a column vector with all entries equal to one.
+            where `e` is a column vector with all entries equal to one.
 
             This function constructs the numerator and denominator of the 
             stability function of a Runge-Kutta method.
@@ -744,6 +744,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             'formula' option).  These only affect
             the speed, and only matter if the computation is symbolic.
             They are:
+
               - 'lts': SymPy's lower_triangular_solve
               - 'det': ratio of determinants
               - 'pow': power series
@@ -891,7 +892,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - filled  -- if true, order star is filled in (solid); otherwise it is outlined
         """
         import matplotlib.pyplot as pl
-        p,q=self.__num__().stability_function()
+        p,q=self.__num__().stability_function(mode='float')
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))
@@ -2787,7 +2788,7 @@ def DC_pair(s,theta=0.,grid='eq'):
     return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[bhat_ind],name=name).dj_reduce()
 
 
-def DC(s,theta=0,grid='eq'):
+def DC(s,theta=0,grid='eq',num_corr=None):
     """ Spectral deferred correction methods.
         For now, based on explicit Euler and equispaced points.
         TODO: generalize base method and grid.
@@ -2806,6 +2807,8 @@ def DC(s,theta=0,grid='eq'):
             #. [dutt2000]_
             #. [gottlieb2009]_
     """
+    if num_corr is None:
+        num_corr = s
 
     # Choose the grid:
     if grid=='eq':
@@ -2813,11 +2816,18 @@ def DC(s,theta=0,grid='eq'):
     elif grid=='cheb':
         t=0.5*(np.cos(np.arange(0,s+1)*np.pi/s)+1.)  #Chebyshev
         t=t[::-1]
+    elif grid=='gauss':
+        # Not working yet; these nodes don't include the endpoints
+        Toff = 0.5/np.sqrt(1.-(2.*np.arange(1,m))**(-2.))
+        T = np.diag(Toff,1) + np.diag(Toff,-1)
+        t, junk = np.linalg.eig(T)
+        t.sort()
+        t = (t+1.)/2.
+
     dt=np.diff(t)
 
-    m=s
-    alpha=snp.zeros([s**2+m+1,s**2+m])
-    beta=snp.zeros([s**2+m+1,s**2+m])
+    alpha=snp.zeros([s*(num_corr+1)+1,s*(num_corr+1)])
+    beta=snp.zeros([s*(num_corr+1)+1,s*(num_corr+1)])
 
     w=dcweights(t)       #Get the quadrature weights for our grid
                          #w[i,j] is the weight of node i for the integral
@@ -2825,11 +2835,11 @@ def DC(s,theta=0,grid='eq'):
 
     #first iteration (k=1)
     for i in range(1,s+1):
-        alpha[i,i-1]=1
-        beta[i,i-1]=dt[i-1]
+        alpha[i,i-1] = 1
+        beta[i ,i-1] = dt[i-1]
 
     #subsequent iterations:
-    for k in range(1,s+1):
+    for k in range(1,num_corr+1):
         beta[s*k+1,0]=w[0,0]
         for i in range(1,s+1):
             alpha[s*k+1,0]=1
