@@ -45,7 +45,7 @@ def solve(A,b):
         if bsym.shape[0]==1:
             bsym = bsym.T
         if Asym.is_lower: # Take advantage of structure to solve quickly
-            xsym=sympy.zeros(b.shape)
+            xsym=sympy.zeros(*b.shape)
             xsym = Asym.lower_triangular_solve(bsym)
         else: # This is slower:
             xsym = Asym.LUsolve(bsym)
