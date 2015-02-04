@@ -1145,7 +1145,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return gamma, alpha, alphatilde
 
     def split(self,r,tol=1.e-15):
-        import numpy as np
         s=len(self)
         I=np.eye(s+1)
         d,P=self.canonical_shu_osher_form(r)
@@ -1169,21 +1168,48 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return gamma, alpha, alphatilde
 
 
-    def is_splittable(self,r,tol=1.e-15):
-        d,alpha,alphatilde=self.split(r,tol=tol)
+    def resplit(self,r,tol=1.e-15,max_iter=5):
+        s = len(self)
+        I = np.eye(s+1)
+        gamma, alpha_up = self.canonical_shu_osher_form(r)
+        alpha_down = 0*alpha_up
+
+        for i in range(max_iter):
+            aup, aum = sign_split(alpha_up)
+            adp, adm = sign_split(alpha_down)
+
+            G = np.linalg.inv(I + 2*(aum + adm))
+            alpha_up = np.dot(G,aup+adm)
+            alpha_down = np.dot(G,aum+adp)
+            gamma = np.dot(G,gamma)
+
+            if self.is_explicit():
+                gamma, alpha_up, alpha_down = redistribute_gamma(gamma, alpha_up, alpha_down)
+
+            if alpha_up.min()>=-tol and gamma.min()>=-tol and alpha_down.min()>=-tol:
+                break
+
+        return gamma, alpha_up, alpha_down
+
+
+    def is_splittable(self,r,tol=1.e-15,iterate=True):
+        if iterate:
+            d,alpha,alphatilde=self.resplit(r,tol=tol)
+        else:
+            d,alpha,alphatilde=self.split(r,tol=tol)
         if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: 
             return True
         else: 
             return False
 
-    def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13):
+    def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13,iterate=True):
         r"""
             Return the optimal (possibly?) downwind splitting of the method
             along with the optimal downwind SSP coefficient.
         """
         from utils import bisect
 
-        r=bisect(0,rmax,acc,tol,self.is_splittable)
+        r=bisect(0,rmax,acc,tol,self.is_splittable,params={'iterate':iterate})
         d,alpha,alphatilde=self.split(r,tol=tol)
         return r,d,alpha,alphatilde
 
@@ -1235,6 +1261,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """True if method is "First Same As Last"."""
         if np.all(self.A[-1,:]==self.b): return True
         else: return False
+
+def sign_split(alpha):
+    alpha_plus  =  alpha*(alpha>0).astype(int)
+    alpha_minus = -alpha*(alpha<0).astype(int)
+    return alpha_plus, alpha_minus
+
+def redistribute_gamma(gamma, alpha_up, alpha_down):
+        alpha_up[1:,0] += gamma[1:]/2.
+        alpha_down[1:,0] += gamma[1:]/2.
+        gamma[1:] = 0.
+
+        return gamma, alpha_up, alpha_down
+
 
 #=====================================================
 class ExplicitRungeKuttaMethod(RungeKuttaMethod):
