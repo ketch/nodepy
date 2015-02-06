@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/ketch/nodepy.png)](https://travis-ci.org/ketch/nodepy)
+[![Coverage Status](https://coveralls.io/repos/ketch/nodepy/badge.svg)](https://coveralls.io/r/ketch/nodepy)
 
 # Overview
 
