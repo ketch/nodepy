@@ -1008,7 +1008,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         from utils import bisect
         p,q=self.stability_function()
-        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,q)
+        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p=q)
         return r
 
     def numerator_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
@@ -1019,7 +1019,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         from utils import bisect
         p,q=self.stability_function()
-        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
+        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p=p)
         return r
 
 
@@ -1260,7 +1260,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if algorithm == 'LP':
             r=bisect(0,rmax,acc,tol,self.lp_perturb)
         elif algorithm == 'split':
-            r=bisect(0,rmax,acc,tol,self.is_splittable,params={'iterate':iterate})
+            r=bisect(0,rmax,acc,tol,self.is_splittable,iterate=iterate)
 
         d,alpha,alphatilde=self.split(r,tol=tol)
         return r,d,alpha,alphatilde
@@ -1436,7 +1436,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             raise NotImplementedError(
                     'Not yet implemented for rational functions')
         else:
-            r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p)
+            r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p=p)
         return r
 
     def is_explicit(self):
