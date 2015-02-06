@@ -1105,8 +1105,51 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return d,P
 
     #==========================================
-    #The next three functions are experimental!
+    # Optimal (downwind) perturbations
     #==========================================
+    def lp_perturb(self,r,tol=None):
+        r"""Find a perturbation via linear programming.
+
+        Use linear programming to determine if there exists
+        a perturbation of this method with radius of absolute
+        monotonicity at least `r`.
+
+        The linear program to be solved is
+        \begin{align}
+            (I-2\alpha^{down}_r)\alpha_r + \alpha^{down}_r & = (\alpha^{up}_r ) \ge 0 \\
+            (I-2\alpha^{down}_r)v_r & = \gamma_r \ge 0.
+        \end{align}
+
+        This function requires cvxpy.
+        """
+        import cvxpy as cvx
+
+        if not self.is_explicit():
+            # We could find explicit perturbations for implicit methods,
+            # but is that useful?
+            raise Exception("LP perturbation algorithm works only for explicit methods.")
+
+        s = len(self)
+        alpha_down = cvx.Variable(s+1,s+1)
+        objective = cvx.Minimize(sum(alpha_down))
+
+        I = np.eye(s+1)
+        e = np.ones(s+1)
+        v_r, alpha_r = self.canonical_shu_osher_form(r)
+
+        constraints = [(I-2*alpha_down)*alpha_r + alpha_down >= 0,
+                       (I-2*alpha_down)*v_r >= 0,
+                       alpha_down >= 0]
+
+        # Constrain perturbation to be explicit
+        for i in range(alpha_down.shape.rows):
+            for j in range(i,alpha_down.shape.cols):
+                constraints.append(alpha_down[i,j] == 0)
+
+        problem = cvx.Problem(objective, constraints)
+        status = problem.solve()
+        return (status == 0)
+
 
     def ssplit(self,r,P_signs=None,delta=None):
         """Sympy exact version of split()
@@ -1145,7 +1188,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return gamma, alpha, alphatilde
 
     def split(self,r,tol=1.e-15):
-        import numpy as np
         s=len(self)
         I=np.eye(s+1)
         d,P=self.canonical_shu_osher_form(r)
@@ -1169,21 +1211,57 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return gamma, alpha, alphatilde
 
 
-    def is_splittable(self,r,tol=1.e-15):
-        d,alpha,alphatilde=self.split(r,tol=tol)
+    def resplit(self,r,tol=1.e-15,max_iter=5):
+        s = len(self)
+        I = np.eye(s+1)
+        gamma, alpha_up = self.canonical_shu_osher_form(r)
+        alpha_down = 0*alpha_up
+
+        for i in range(max_iter):
+            aup, aum = sign_split(alpha_up)
+            adp, adm = sign_split(alpha_down)
+
+            G = np.linalg.inv(I + 2*(aum + adm))
+            alpha_up = np.dot(G,aup+adm)
+            alpha_down = np.dot(G,aum+adp)
+            gamma = np.dot(G,gamma)
+
+            if self.is_explicit():
+                gamma, alpha_up, alpha_down = redistribute_gamma(gamma, alpha_up, alpha_down)
+
+            if alpha_up.min()>=-tol and gamma.min()>=-tol and alpha_down.min()>=-tol:
+                break
+
+        return gamma, alpha_up, alpha_down
+
+
+    def is_splittable(self,r,tol=1.e-15,iterate=True):
+        if iterate:
+            d,alpha,alphatilde=self.resplit(r,tol=tol)
+        else:
+            d,alpha,alphatilde=self.split(r,tol=tol)
         if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: 
             return True
         else: 
             return False
 
-    def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13):
+    def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13,
+                                    algorithm='split',iterate=True):
         r"""
-            Return the optimal (possibly?) downwind splitting of the method
+            Return the optimal downwind splitting of the method
             along with the optimal downwind SSP coefficient.
+
+            The default algorithm (split with iteration) is not
+            provably correct.  The LP algorithm is.  See the paper
+            (Higueras & Ketcheson) for more details.
         """
         from utils import bisect
 
-        r=bisect(0,rmax,acc,tol,self.is_splittable)
+        if algorithm == 'LP':
+            r=bisect(0,rmax,acc,tol,self.lp_perturb)
+        elif algorithm == 'split':
+            r=bisect(0,rmax,acc,tol,self.is_splittable,params={'iterate':iterate})
+
         d,alpha,alphatilde=self.split(r,tol=tol)
         return r,d,alpha,alphatilde
 
@@ -1235,6 +1313,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """True if method is "First Same As Last"."""
         if np.all(self.A[-1,:]==self.b): return True
         else: return False
+
+def sign_split(alpha):
+    alpha_plus  =  alpha*(alpha>0).astype(int)
+    alpha_minus = -alpha*(alpha<0).astype(int)
+    return alpha_plus, alpha_minus
+
+def redistribute_gamma(gamma, alpha_up, alpha_down):
+        alpha_up[1:,0] += gamma[1:]/2.
+        alpha_down[1:,0] += gamma[1:]/2.
+        gamma[1:] = 0.
+
+        return gamma, alpha_up, alpha_down
+
 
 #=====================================================
 class ExplicitRungeKuttaMethod(RungeKuttaMethod):
