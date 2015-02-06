@@ -3561,8 +3561,7 @@ def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
             thet = (apbz*Imapbz_inv).applyfunc(sympy.expand)
 
         elif formula == 'lts':
-
-            thet = (I-apbz_star).T.upper_triangular_solve(apbz.T)
+            thet = (I-apbz_star).T.upper_triangular_solve(apbz)
             thet = thet.applyfunc(sympy.expand_mul)
 
     # Don't consider perturbations to first stage:
