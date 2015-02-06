@@ -2,7 +2,14 @@ language: python
 python:
   - "2.7"
 
+before_install:
+  - pip install coverage
+  - pip install python-coveralls
+
 install:
   - "pip install . --use-mirrors"
 
-script: python nodepy/runge_kutta_method.py
+script: nosetests --with-doctest --with-coverage --cover-package=nodepy;
+
+after_success:
+  - coveralls
