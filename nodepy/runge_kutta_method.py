@@ -3380,9 +3380,9 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         I = sympy.eye(s)
 
         v_mp1 = v[-1]
-        vstar = sympy.Matrix(v[:-1]).T
-        alpha_mp1 = sympy.Matrix(alpha[-1,:])
-        beta_mp1 = sympy.Matrix(beta[-1,:])
+        vstar = sympy.Matrix(v[:-1])
+        alpha_mp1 = sympy.Matrix(alpha[-1,:]).T
+        beta_mp1 = sympy.Matrix(beta[-1,:]).T
 
         if formula == 'det':
             xsym = I - alpha_star - z*beta_star + vstar/v_mp1 * (alpha_mp1+z*beta_mp1)
@@ -3394,7 +3394,7 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
             q1 = q1.as_poly(z).all_coeffs()
 
         elif formula == 'lts': # lower_triangular_solve
-            p1 = (alpha_mp1 + z*beta_mp1)*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
+            p1 = (alpha_mp1 + z*beta_mp1)*((I-alpha_star-z*beta_star).lower_triangular_solve(vstar))
             p1 = sympy.poly(p1[0])+v_mp1
             p1 = p1.all_coeffs()
 
