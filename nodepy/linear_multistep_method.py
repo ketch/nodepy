@@ -424,7 +424,7 @@ def _root_condition(p,tol=1.e-13):
     **Examples**::
 
         >>> from nodepy import lm
-        >>> p = np.poly1d((1,2.5,2,0.5))
+        >>> p = np.poly1d((1,0.4,2,0.5))
         >>> lm._root_condition(p)
         False
     """
