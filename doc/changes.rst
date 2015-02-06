@@ -1,6 +1,26 @@
 
 .. _changes:
 
+What's new in Version 0.6
+==========================
+Version 0.6 is a relatively small update, which includes the following:
+
+- Computation of optimal perturbations (splittings) of Runge-Kutta methods
+- Additive linear multistep methods
+- More accurate calculation of imaginary stability intervals
+- Rational coefficients for more of the built-in RK methods
+- Faster computation of stability polynomials
+- More general deferred correction methods
+- Fixed major bug in deferred correction method construction
+- Continuous integration via Travis-CI
+- Added information on citing nodepy
+- Corrections to the documentation
+- Updates for compatitibility with sympy 0.7.6
+- Fixed bug involving non-existence of alphahat attribute
+- minor bug fixes
+
+
+
 What's new in Version 0.5
 ==========================
 Version 0.5 is a relatively small update, which includes the following:

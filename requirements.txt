@@ -1,2 +1,2 @@
 numpy>=1.6
-sympy>=0.7.1
+sympy>=0.7.6
