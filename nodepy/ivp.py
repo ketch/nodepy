@@ -19,8 +19,8 @@ This module implements the initial value problem as a class.
     # Integrate this problem with a Runge-Kutta method
     >>> rk4 = rk.loadRKM('RK44')
     >>> t,y = rk4(myivp)
-    >>> y[-1]
-    2.0611536225268342e-09
+    >>> y[-1][0] # doctest: +ELLIPSIS
+    2.06115362252...e-09
 """
 import numpy as np
 

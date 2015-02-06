@@ -9,8 +9,8 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
 
             >>> from nodepy import rk
             >>> rk4 = rk.loadRKM('RK44')
-            >>> rk4.imaginary_stability_interval()
-            2.8284271247461903
+            >>> rk4.imaginary_stability_interval() #doctest: +ELLIPSIS
+            2.8284271247...
     """
     if q is None: 
         q = np.poly1d([1.])

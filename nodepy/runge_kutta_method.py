@@ -1397,8 +1397,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
-                >>> rk4.imaginary_stability_interval()
-                2.8284271247461903
+                >>> rk4.imaginary_stability_interval() # doctest: +ELLIPSIS
+                2.8284271247461...
         """
         import stability_function
         p,q=self.stability_function(mode=mode)
@@ -3339,8 +3339,8 @@ def relative_accuracy_efficiency(rk1,rk2,mode='float',tol=1.e-14):
         >>> from nodepy import rk
         >>> dp5 = rk.loadRKM('DP5')
         >>> f45 = rk.loadRKM('Fehlberg45')
-        >>> rk.relative_accuracy_efficiency(dp5,f45)
-        1.2222911649987864
+        >>> rk.relative_accuracy_efficiency(dp5,f45) # doctest: +ELLIPSIS
+        1.22229116499...
     """
 
     p=rk1.order(mode=mode,tol=tol)
@@ -3367,8 +3367,8 @@ def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14,p=None):
         Accuracy efficiency of Dormand-Prince
         >>> from nodepy import rk
         >>> dp5 = rk.loadRKM('DP5')
-        >>> rk.accuracy_efficiency(dp5)
-        0.5264921944121389
+        >>> rk.accuracy_efficiency(dp5) # doctest: +ELLIPSIS
+        0.5264921944121...
     """
     
     if p is None:
