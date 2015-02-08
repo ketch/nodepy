@@ -1130,13 +1130,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
             raise Exception("LP perturbation algorithm works only for explicit methods.")
 
         s = len(self)
-        alpha_down = cvx.Variable(s+1,s+1)
-        objective = cvx.Minimize(sum(alpha_down))
-
         I = np.eye(s+1)
-        e = np.ones(s+1)
+
         v_r, alpha_r = self.canonical_shu_osher_form(r)
 
+        alpha_down = cvx.Variable(s+1,s+1)
+        objective = cvx.Minimize(sum(alpha_down))
         constraints = [(I-2*alpha_down)*alpha_r + alpha_down >= 0,
                        (I-2*alpha_down)*v_r >= 0,
                        alpha_down >= 0]
@@ -1314,17 +1313,21 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if np.all(self.A[-1,:]==self.b): return True
         else: return False
 
-def sign_split(alpha):
-    alpha_plus  =  alpha*(alpha>0).astype(int)
-    alpha_minus = -alpha*(alpha<0).astype(int)
-    return alpha_plus, alpha_minus
+def sign_split(M):
+    """Given a matrix M, return two matrices.  The first contains the
+       positive entries of M; the second contains the negative entries of M,
+       multiplied by -1.
+    """
+    M_plus  =  M*(M>0).astype(int)
+    M_minus = -M*(M<0).astype(int)
+    return M_plus, M_minus
 
 def redistribute_gamma(gamma, alpha_up, alpha_down):
-        alpha_up[1:,0] += gamma[1:]/2.
-        alpha_down[1:,0] += gamma[1:]/2.
-        gamma[1:] = 0.
+    alpha_up[1:,0] += gamma[1:]/2.
+    alpha_down[1:,0] += gamma[1:]/2.
+    gamma[1:] = 0.
 
-        return gamma, alpha_up, alpha_down
+    return gamma, alpha_up, alpha_down
 
 
 #=====================================================
