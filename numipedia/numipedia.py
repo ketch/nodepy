@@ -42,7 +42,7 @@ def write_method_page(method,fname='test.html',template_file='method_template.ht
     import matplotlib.pyplot as plt
 
     # Plot stability region.
-    plot_file = method.shortname+'.pdf'
+    plot_file = method.shortname+'.png'
     fig = method.plot_stability_region(to_file=plot_file,longtitle=False)
     plt.close()
 
