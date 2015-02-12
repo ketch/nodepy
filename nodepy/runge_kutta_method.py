@@ -20,7 +20,7 @@
 
     >>> RK=loadRKM()
     >>> RK.keys()
-    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'Merson43', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'DP8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
+    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'Merson43', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'PD8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
 
     >>> print RK['Mid22']
     Midpoint Runge-Kutta
@@ -189,22 +189,22 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def latex(self):
         """A laTeX representation of the Butcher arrays."""
-        from sympy.printing import latex
+        from snp import printable
         s= r'\begin{align}'
         s+='\n'
         s+=r'  \begin{array}{c|'
         s+='c'*len(self)
         s+='}\n'
         for i in range(len(self)):
-            s+=latex(self.c[i])
+            s+=printable(self.c[i])
             for j in range(len(self)):
-                s+=' & '+latex(self.A[i,j])
+                s+=' & '+printable(self.A[i,j])
             s+=r'\\'
             s+='\n'
         s+=r'\hline'
         s+='\n'
         for j in range(len(self)):
-            s+=' & '+latex(self.b[j])
+            s+=' & '+printable(self.b[j])
         s+='\n'
         s+=r'\end{array}'
         s+=r'\end{align}'
@@ -1809,25 +1809,25 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
     def latex(self):
         """A laTeX representation of the Butcher arrays."""
-        from sympy.printing import latex
+        from snp import printable
         s= r'\begin{align}'
         s+='\n'
         s+=r'  \begin{array}{c|'
         s+='c'*len(self)
         s+='}\n'
         for i in range(len(self)):
-            s+=latex(self.c[i])
+            s+=printable(self.c[i])
             for j in range(len(self)):
-                s+=' & '+latex(self.A[i,j])
+                s+=' & '+printable(self.A[i,j])
             s+=r'\\'
             s+='\n'
         s+=r'\hline'
         s+='\n'
         for j in range(len(self)):
-            s+=' & '+latex(self.b[j])
+            s+=' & '+printable(self.b[j])
         s+=r'\\' + '\n'
         for j in range(len(self)):
-            s+=' & '+latex(self.bhat[j])
+            s+=' & '+printable(self.bhat[j])
         s+='\n'
         s+=r'\end{array}'
         s+=r'\end{align}'
@@ -2181,7 +2181,7 @@ def loadRKM(which='All'):
         'SSP22':      Trapezoidal rule 2nd-order
         'DP5':        Dormand-Prince 5th-order
 	'CMR6':       Calvo et al.'s 6(5) method
-	'DP8':        Prince-Dormand 8th-order and 7th-order pair
+	'PD8':        Prince-Dormand 8th-order and 7th-order pair
         'Fehlberg45': 5th-order part of Fehlberg's pair
         'Lambert65':
 
@@ -2380,7 +2380,8 @@ def loadRKM(which='All'):
         [3*one/40,0,9*one/40,0,0,0,0,0,0],[86727015*one/196851553,-60129073*one/52624712,957436434*one/1378352377,83886832*one/147842441,0,0,0,0,0],[-86860849*one/45628967,111022885*one/25716487,108046682*one/101167669,-141756746*one/36005461,73139862*one/60170633,0,0,0,0],[77759591*one/16096467,-49252809*one/6452555,-381680111*one/51572984,879269579*one/66788831,-90453121*one/33722162,111179552*one/157155827,0,0,0],[237564263*one/39280295,-100523239*one/10677940,-265574846*one/27330247,317978411*one/18988713,-124494385*one/35453627,86822444*one/100138635,-12873523*one/724232625,0,0],[17572349*one/289262523,0*one,57513011*one/201864250,15587306*one/354501571,71783021*one/234982865,29672000*one/180480167,65567621*one/127060952,-79074570*one/210557597,0]])
     b=np.array([17572349*one/289262523, 0*one, 57513011*one/201864250, 15587306*one/354501571, 71783021*one/234982865, 29672000*one/180480167, 65567621*one/127060952, -79074570*one/210557597, 0])
     bhat=np.array([15231665*one/510830334, 0, 59452991*one/116050448, -28398517*one/122437738, 56673824*one/137010559, 68003849*one/426673583, 7097631*one/37564021, -71226429*one/583093742, 1*one/20])
-    RK['CMR6']=ExplicitRungeKuttaPair(A,b,bhat,name='Calvo 6(5)')
+    RK['CMR6']=ExplicitRungeKuttaPair(A.astype('float64'),b,bhat,name='Calvo 6(5)',
+                                      shortname='Calvo 6(5) pair')
     #================================================
     A=np.array([[0,0,0,0,0,0,0,0],[one/6,0,0,0,0,0,0,0],[2*one/27,4*one/27,0,0,0,0,0,0],
         [183*one/1372,-162*one/343,1053*one/1372,0,0,0,0,0],
@@ -2407,15 +2408,21 @@ def loadRKM(which='All'):
                 [403863854*one/491063109,0,0,-5068492393*one/434740067,-411421997*one/543043805,652783627*one/914296604,11173962825*one/925320556,-13158990841*one/6184727034,3936647629*one/1978049680,-160528059*one/685178525,248638103*one/1413531060,0,0]])
     b=np.array([14005451*one/335480064,0,0,0,0,-59238493*one/1068277825,181606767*one/758867731,561292985*one/797845732,-1041891430*one/1371343529,760417239*one/1151165299,118820643*one/751138087,-528747749*one/2220607170,1*one/4])
     bhat=np.array([13451932*one/455176623,0,0,0,0,-808719846*one/976000145,1757004468*one/5645159321,656045339*one/265891186,-3867574721*one/1518517206,465885868*one/322736535,53011238*one/667516719,2*one/45,0])
-    RK['DP8']=ExplicitRungeKuttaPair(A.astype('float64'),b.astype('float64'),bhat.astype('float64'),name='Prince-Dormand 8(7)')
+    RK['PD8']=ExplicitRungeKuttaPair(A.astype('float64'),b.astype('float64'),
+                                     bhat.astype('float64'),
+                                     name='Prince-Dormand 8(7)',
+                                     shortname='Prince-Dormand 8(7) Pair')
     #================================================
     A=np.array([[0,0,0,0,0,0,0], [0.392382208054010,0,0,0,0,0,0],
-                [0.310348765296963 ,0.523846724909595 ,0,0,0,0,0],[0.114817342432177 ,0.248293597111781 ,0,0,0,0,0],
+                [0.310348765296963 ,0.523846724909595 ,0,0,0,0,0],
+                [0.114817342432177 ,0.248293597111781 ,0,0,0,0,0],
                 [0.136041285050893 ,0.163250087363657 ,0,0.557898557725281 ,0,0,0],
                 [0.135252145083336 ,0.207274083097540 ,-0.180995372278096 ,0.326486467604174 ,0.348595427190109 ,0,0],
                 [0.082675687408986 ,0.146472328858960 ,-0.160507707995237 ,0.161924299217425 ,0.028864227879979 ,0.070259587451358 ,0]])
     b=np.array([0.110184169931401 ,0.122082833871843 ,-0.117309105328437 ,0.169714358772186, 0.143346980044187, 0.348926696469455, 0.223054066239366])
-    RK['SSP75']=ExplicitRungeKuttaMethod(A,b,name='SSP75',description='From Ruuth-Spiteri paper',shortname='SSP75')
+    RK['SSP75']=ExplicitRungeKuttaMethod(A,b,name='SSP75',
+                                         description='From Ruuth-Spiteri paper',
+                                         shortname='SSPRK75')
     #================================================
     A=np.array([[0,0,0,0,0,0,0,0],[0.276409720937984 ,0,0,0,0,0,0,0],[0.149896412080489 ,0.289119929124728 ,0,0,0,0,0,0],
                 [0.057048148321026 ,0.110034365535150 ,0.202903911101136 ,0,0,0,0,0],
@@ -2424,7 +2431,9 @@ def loadRKM(which='All'):
                 [0.111048724765050 ,0.214190579933444 ,0.116299126401843 ,0.223170535417453 ,-0.037093067908355 ,0.228338214162494 ,0,0],
                 [0.071096701602448 ,0.137131189752988 ,0.154859800527808 ,0.043090968302309 ,-0.163751550364691 ,0.044088771531945 ,0.102941265156393 ,0]])
     b=np.array([0.107263534301213 ,0.148908166410810 ,0.105268730914375 ,0.124847526215373 ,-0.068303238298102 ,0.127738462988848 ,0.298251879839231 ,0.156024937628252 ])
-    RK['SSP85']=ExplicitRungeKuttaMethod(A,b,name='SSP85',description='From Ruuth-Spiteri paper',shortname='SSP85')
+    RK['SSP85']=ExplicitRungeKuttaMethod(A,b,name='SSP85',
+                                         description='From Ruuth-Spiteri paper',
+                                         shortname='SSPRK85')
     #================================================
     A=np.array([[0,0,0,0,0,0,0,0,0],[0.234806766829933 ,0,0,0,0,0,0,0,0],
                 [0.110753442788106 ,0.174968893063956 ,0,0,0,0,0,0,0],
@@ -2435,7 +2444,9 @@ def loadRKM(which='All'):
                 [0.114111232336224 ,0.180273547308430 ,0.132484700103381 ,0.107410821979346 ,-0.129172321959971 ,0.133393675559324 ,0.175516798122502 ,0,0],
                 [0.096188287148324 ,0.151958780732981 ,0.111675915818310 ,0.090540280530361 ,-0.108883798219725 ,0.112442122530629 ,0.147949153045843 ,0.312685695043563 ,0]])
     b=np.array([0.088934582057735 ,0.102812792947845 ,0.111137942621198 ,0.158704526123705 ,-0.060510182639384 ,0.197095410661808 ,0.071489672566698 ,0.151091084299943 ,0.179244171360452 ])
-    RK['SSP95']=ExplicitRungeKuttaMethod(A,b,name='SSP95',description='From Ruuth-Spiteri paper',shortname='SSP95')
+    RK['SSP95']=ExplicitRungeKuttaMethod(A,b,name='SSP95',
+                                         description='From Ruuth-Spiteri paper',
+                                         shortname='SSPRK95')
 
     if which=='All':
         return RK

@@ -82,3 +82,18 @@ def simplify(x):
     shape = x.shape
     x = map(sympy.simplify,x.reshape(-1))
     return np.reshape(x,shape)
+
+def printable(num,digits=3,return_zero=False):
+    if num==0:
+        if return_zero: return '0'
+        else: return ''
+    # Surprisingly, sympy does not handle these cases
+    elif num == np.inf:
+        return r'\infty'
+    elif num == -np.inf:
+        return r'-\infty'
+    if isinstance(num,float):
+        return '%.3f' % num
+    else:
+        from sympy.printing import latex
+        return latex(num)

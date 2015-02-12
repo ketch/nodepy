@@ -1,0 +1,197 @@
+<html>
+<head>
+<style>
+* {
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+body {
+  font-family: sans-serif;
+}
+
+/* ---- button ---- */
+
+.button {
+  display: inline-block;
+  padding: 0.5em 1.0em;
+  background: #EEE;
+  border: none;
+  border-radius: 7px;
+  background-image: linear-gradient( to bottom, hsla(0, 0%, 0%, 0), hsla(0, 0%, 0%, 0.2) );
+  color: #222;
+  font-family: sans-serif;
+  font-size: 16px;
+  text-shadow: 0 1px white;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #8CF;
+  text-shadow: 0 1px hsla(0, 0%, 100%, 0.5);
+  color: #222;
+}
+
+.button:active,
+.button.is-checked {
+  background-color: #28F;
+}
+
+.button.is-checked {
+  color: white;
+  text-shadow: 0 -1px hsla(0, 0%, 0%, 0.8);
+}
+
+.button:active {
+  box-shadow: inset 0 1px 10px hsla(0, 0%, 0%, 0.8);
+}
+
+/* ---- button-group ---- */
+
+.button-group:after {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+.button-group .button {
+  float: left;
+  border-radius: 0;
+  margin-left: 0;
+  margin-right: 1px;
+}
+
+.button-group .button:first-child { border-radius: 0.5em 0 0 0.5em; }
+.button-group .button:last-child { border-radius: 0 0.5em 0.5em 0; }
+
+/* ---- isotope ---- */
+
+.isotope {
+  background: #DDD;
+  max-width: 1200px;
+}
+
+/* clear fix */
+.isotope:after {
+  content: '';
+  display: block;
+  clear: both;
+}
+
+/* ui group */
+
+.ui-group {
+  display: inline-block;
+}
+
+.ui-group h3 {
+  display: inline-block;
+  vertical-align: top;
+  line-height: 32px;
+  margin-right: 0.2em;
+  font-size: 16px;
+}
+
+.ui-group .button-group {
+  display: inline-block;
+  margin-right: 20px;
+}
+
+/* method */
+
+.method {
+  display: inline-block;
+  padding: 0.5em 1.0em;
+  background: #ABC;
+  border: none;
+  border-radius: 2px;
+  background-image: linear-gradient( to bottom, hsla(0, 0%, 0%, 0), hsla(0, 0%, 0%, 0.2) );
+  color: #222;
+  font-family: serif;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 10px;
+}
+
+.method a{
+  text-decoration: none
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Numerical integrators</h1>
+
+<ul>
+</ul>
+
+<div id="filters">
+
+  <p><input type="text" id="quicksearch" placeholder="Search" /></p>
+
+  <div class="ui-group">
+    <h3>Type</h3>
+    <div class="button-group js-radio-button-group" data-filter-group="imex">
+      <button class="button is-checked" data-filter="">any</button>
+      <button class="button" data-filter=".explicit">Explicit</button>
+      <button class="button" data-filter=".implicit">Implicit</button>
+      <button class="button" data-filter=".diagonally-implicit">Diagonally implicit</button>
+    </div>
+  </div>
+
+  <div class="ui-group">
+    <h3>Embedded pair</h3>
+    <div class="button-group js-radio-button-group" data-filter-group="Pair">
+      <button class="button is-checked" data-filter="">any</button>
+      <button class="button" data-filter=".pair">Yes</button>
+      <button class="button" data-filter=".not-pair">No</button>
+    </div>
+  </div>
+
+  <div class="ui-group">
+    <h3>Order</h3>
+    <div class="button-group js-radio-button-group" data-filter-group="order">
+      <button class="button is-checked" data-filter="">any</button>
+      <button class="button" data-filter=".order-1">1</button>
+      <button class="button" data-filter=".order-2">2</button>
+      <button class="button" data-filter=".order-3">3</button>
+      <button class="button" data-filter=".order-4">4</button>
+      <button class="button" data-filter=".order-5">5</button>
+      <button class="button" data-filter=".order-6">6</button>
+    </div>
+  </div>
+
+  <div class="ui-group">
+    <h3>SSP</h3>
+    <div class="button-group js-radio-button-group" data-filter-group="SSP">
+      <button class="button is-checked" data-filter="">any</button>
+      <button class="button" data-filter=".ssp">SSP</button>
+      <button class="button" data-filter=".not-ssp">not SSP</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="sorts" class="button-group">
+    <button class="button is-checked" data-sort-value="original-order">original order</button>
+    <button class="button" data-sort-value="name">name</button>
+    <button class="button" data-sort-value="order">order</button>
+    <button class="button" data-sort-value="stages">stages</button>
+</div>
+
+
+<div class="isotope">
+
+    % for name, clstr in class_str.iteritems():
+    <div class="${clstr}"><a href="${name}.html">${name}</a></div>
+    % endfor
+</div>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="isotope.pkgd.js"></script>
+<script type="text/javascript" src="test.js"></script>
+</body>
+</html>
