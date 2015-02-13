@@ -20,7 +20,7 @@
 
     >>> RK=loadRKM()
     >>> RK.keys()
-    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'Merson43', 'SSP33', 'MTE22', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'PD8', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
+    ['BE', 'SSP75', 'Lambert65', 'Fehlberg45', 'FE', 'Merson43', 'SSP33', 'MTE22', 'PD8', 'SSP95', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'Heun33', 'SSP22', 'DP5', 'LobattoIIIC4', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'SSP104', 'LobattoIIIA2', 'GL2', 'GL3', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
 
     >>> print RK['Mid22']
     Midpoint Runge-Kutta
