@@ -22,14 +22,19 @@ def write_numipedia():
 
     write_index_page(methods)
 
+    path = './methods/'
+
     for key,method in methods.iteritems():
         fname = method.shortname+'.html'
         print fname
-        write_method_page(method, fname=fname)
+        s = method_page(method, fname=fname)
+
+        outfile = open(path+fname,'w')
+        outfile.write(s)
+        outfile.close()
 
 
-
-def write_method_page(method,fname='test.html',template_file='method_template.html'):
+def method_page(method,fname='test.html',template_file='method_template.html'):
     """
     Writes an HTML page for a specified method, using the template file.
     Uses mako to do simple substitutions.
@@ -43,7 +48,7 @@ def write_method_page(method,fname='test.html',template_file='method_template.ht
     import matplotlib.pyplot as plt
 
     # Plot stability region.
-    plot_file = method.shortname+'.png'
+    plot_file = './methods/'+method.shortname+'.png'
     fig = method.plot_stability_region(to_file=plot_file,longtitle=False)
     plt.close()
 
@@ -59,19 +64,15 @@ def write_method_page(method,fname='test.html',template_file='method_template.ht
         method.info = method.mtype
 
     mytemplate = Template(filename=template_file)
-    s = mytemplate.render(name=method.name,
+    return mytemplate.render(name=method.name,
                           desc=method.info,
-                          plot_file=plot_file,
+                          plot_file=plot_file[1:],
                           butcher=method.latex(),
                           stabfun=stabfun,
                           amrad=tex(method.absolute_monotonicity_radius()),
                           order = tex(method.__num__().order()),
                           stage_order = tex(method.__num__().stage_order())
                           )
-
-    outfile = open(fname,'w')
-    outfile.write(s)
-    outfile.close()
 
 
 def write_index_page(methods,fname='index.html',template_file='index_template.html'):
