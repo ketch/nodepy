@@ -47,10 +47,13 @@ class LinearMultistepMethod(GeneralLinearMethod):
             #. [hairer1993]_ Chapter III
             #. [butcher2003]_
     """
-    def __init__(self,alpha,beta,name='Linear multistep method'):
+    def __init__(self,alpha,beta,name='Linear multistep method',shortname='LMM',
+                 description=''):
         self.beta  = beta /alpha[-1]
         self.alpha = alpha/alpha[-1]
         self.name = name
+        self.shortname = shortname
+        self.info = description
 
     def __num__(self):
         """
@@ -118,6 +121,16 @@ class LinearMultistepMethod(GeneralLinearMethod):
         ii=snp.arange(len(self.alpha))
         return abs(sum(ii**p*self.alpha-p*self.beta*ii**(p-1)))<tol
 
+    def absolute_monotonicity_radius(self):
+        return self.ssp_coefficient()
+
+    @property
+    def p(self):
+        return self.order()
+
+    def latex(self):
+        return ''
+
     def ssp_coefficient(self):
         r""" Return the SSP coefficient of the method.
 
@@ -147,7 +160,8 @@ class LinearMultistepMethod(GeneralLinearMethod):
                     for j in range(len(self.alpha)-1) if self.beta[j]!=0])
 
 
-    def plot_stability_region(self,N=100,N2=1000,color='r',filled=True, alpha=1.):
+    def plot_stability_region(self,N=100,bounds=None,color='r',filled=True, alpha=1.,
+                              to_file=False,longtitle=False):
         r""" 
             The region of absolute stability of a linear multistep method is
             the set
@@ -180,7 +194,15 @@ class LinearMultistepMethod(GeneralLinearMethod):
         rho, sigma = self.__num__().characteristic_polynomials()
         mag = lambda z : _root_condition(rho-z*sigma)
         vmag = np.vectorize(mag)
-        bounds = find_plot_bounds(vmag,guess=(-10,1,-5,5),N=101)
+
+        z = self._boundary_locus()
+        if bounds is None:
+            # Use boundary locus to decide plot region
+            realmax, realmin = np.max(np.real(z)), np.min(np.real(z))
+            imagmax, imagmin = np.max(np.imag(z)), np.min(np.imag(z))
+            deltar, deltai = realmax-realmin, imagmax-imagmin
+            bounds = (realmin-deltar/5.,realmax+deltar/5.,
+                      imagmin-deltai/5.,imagmax+deltai/5.)
 
         y=np.linspace(bounds[2],bounds[3],N)
         Y=np.tile(y[:,np.newaxis],(1,N))
@@ -190,20 +212,31 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
         R=1.5-vmag(Z)
 
-        z = self._boundary_locus()
 
         if filled:
             plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
         else:
             plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
-        plt.title('Absolute Stability Region for '+self.name)
+
+        fig = plt.gcf()
+        ax = fig.get_axes()
+        if longtitle:
+            plt.setp(ax,title='Absolute Stability Region for '+self.name)
+        else:
+            plt.setp(ax,title='Stability region')
+
         plt.hold(True)
         plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
         plt.axis(bounds)
         plt.hold(False)
+
+        if to_file:
+            plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
+
         plt.draw()
+        return fig
 
     def plot_boundary_locus(self,N=1000):
         r"""Plot the boundary locus, which is
@@ -352,7 +385,7 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
         return min(orders)
 
 
-    def plot_imex_stability_region(self,N=100,N2=1000,color='r',filled=True, alpha=1.,fignum=None):
+    def plot_imex_stability_region(self,N=100,color='r',filled=True, alpha=1.,fignum=None):
         r""" 
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction
@@ -482,8 +515,8 @@ def Adams_Bashforth(k):
         for i in range(0,j+1):
             betaj[k-i-1]=(-one)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
         beta=beta+betaj
-    name=str(k)+'-step Adams-Bashforth method'
-    return LinearMultistepMethod(alpha,beta,name=name)
+    name=str(k)+'-step Adams-Bashforth'
+    return LinearMultistepMethod(alpha,beta,name=name,shortname='AB'+str(k))
 
 def Adams_Moulton(k):
     r""" 
@@ -523,8 +556,8 @@ def Adams_Moulton(k):
             betaj[k-i]=(-1)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
             #betaj[k-i]=(-1.)**i*comb(j,i)*gamma[j]
         beta=beta+betaj
-    name=str(k)+'-step Adams-Moulton method'
-    return LinearMultistepMethod(alpha,beta,name=name)
+    name=str(k)+'-step Adams-Moulton'
+    return LinearMultistepMethod(alpha,beta,name=name,shortname='AM'+str(k))
 
 def backward_difference_formula(k):
     r""" 
@@ -560,8 +593,8 @@ def backward_difference_formula(k):
         for i in range(0,j+1):
             alphaj[k-i]=(-1)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
         alpha=alpha+alphaj
-    name=str(k)+'-step BDF method'
-    return LinearMultistepMethod(alpha,beta,name=name)
+    name=str(k)+'-step BDF'
+    return LinearMultistepMethod(alpha,beta,name=name,shortname='BDF'+str(k))
 
 def elm_ssp2(k):
     r"""
