@@ -2551,7 +2551,8 @@ def SSPRK2(m):
     beta=alpha/r
     alpha[m,0]=one/m
     name='SSPRK('+str(m)+',2)'
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    shortname='SSPRK'+str(m)+'2'
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
 
 
 def SSPRK3(m):
@@ -2594,7 +2595,7 @@ def SSPRK3(m):
     beta=alpha/r
     alpha[n*(n+1)/2,(n-1)*(n-2)/2]=n/(2*n-one)
     name='SSPRK'+str(m)+'3'
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
 
 
 
@@ -2644,7 +2645,7 @@ def SSPRKm(m):
     alpha[m,1:m-1]=alph[m,1:m-1]
     alpha[m,0] = 1-sum(alpha[m,1:])
     name='SSPRK'+str(m)*2
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
 
 def SSPIRK1(m):
     """ Construct the m-stage, first order unconditionally SSP 
@@ -2671,7 +2672,7 @@ def SSPIRK1(m):
     A=snp.tri(m)/m
     b=snp.ones(m)/m
     name='SSPIRK'+str(m)+'1'
-    return RungeKuttaMethod(A,b,name=name)
+    return RungeKuttaMethod(A,b,name=name,shortname=name)
 
 
 def SSPIRK2(m):
@@ -2707,7 +2708,7 @@ def SSPIRK2(m):
     beta=alpha/r
     for i in range(m): beta[i,i]=Rational(1,r)
     name='SSPIRK'+str(m)+'2'
-    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
 
 
 def SSPIRK3(m):
@@ -2745,7 +2746,7 @@ def SSPIRK3(m):
     beta=alpha/r
     for i in range(m): beta[i,i]=Rational(1,2)*(1-sqrt(Rational(m-1,m+1)))
     name='SSPIRK'+str(m)+'3'
-    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    return RungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
 
 
 #============================================================
@@ -2819,8 +2820,9 @@ def RKC1(m,epsilon=0):
         beta[j,j-1]=mut[j]
         beta[j,0]=gamt[j]
 
-    name='RKC'+str(m)+'1'
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    shortname='RKC'+str(m)+'1'
+    name = 'Runge-Kutta-Chebyshev ('+str(m)+',1)'
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=shortname)
 
 
 def RKC2(m,epsilon=0):
@@ -2893,8 +2895,9 @@ def RKC2(m,epsilon=0):
         beta[j,j-1]=mut[j]
         beta[j,0]=gamt[j]
 
-    name='RKC'+str(m)+'2'
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name)
+    shortname='RKC'+str(m)+'2'
+    name = 'Runge-Kutta-Chebyshev ('+str(m)+',2)'
+    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=shortname)
 
 #============================================================
 # Spectral deferred correction methods
@@ -2928,8 +2931,12 @@ def DC_pair(s,theta=0.,grid='eq'):
         bhat_ind = -1
     else:
         bhat_ind = -3
-    name='Deferred Correction pair of order '+str(s+1)+'('+str(s)+')'
-    return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[bhat_ind],name=name).dj_reduce()
+    if theta == 0:
+        name='Picard '+str(s+1)+'('+str(s)+')'
+        shortname = 'Picard'+str(s+1)+str(s)
+    else:
+        name='Deferred Correction '+str(s+1)+'('+str(s)+')'
+    return ExplicitRungeKuttaPair(A=dc.A,b=dc.b,bhat=dc.A[bhat_ind],name=name,shortname=shortname).dj_reduce()
 
 
 def DC(s,theta=0,grid='eq',num_corr=None):
@@ -3163,12 +3170,14 @@ def extrap_pair(p, base='euler', seq='harmonic'):
     betahat[-1,-1] = 0
 
     if base == 'euler':
-        name='Euler extrapolation pair of order '+str(p)+'('+str(p-1)+')'
+        name='Euler extrapolation '+str(p)+'('+str(p-1)+')'
+        shortname='Euler_extrapolation_'+str(p)+str(p-1)
         order = (p,p-1)
     elif base == 'midpoint':
-        name='Midpoint extrapolation pair of order '+str(2*p)+'('+str(2*(p-1))+')'
+        name='Midpoint extrapolation '+str(2*p)+'('+str(2*(p-1))+')'
+        shortname='Midpoint_extrapolation_'+str(p)+str(p-1)
         order = (2*p,2*(p-1))
-    return ExplicitRungeKuttaPair(alpha=alpha1, beta=beta1, alphahat=alphahat, betahat=betahat, name=name, order=order).dj_reduce()
+    return ExplicitRungeKuttaPair(alpha=alpha1, beta=beta1, alphahat=alphahat, betahat=betahat, name=name, shortname=shortname, order=order).dj_reduce()
 
    
 
