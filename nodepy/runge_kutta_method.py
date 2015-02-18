@@ -2840,7 +2840,7 @@ def RKC2(m,epsilon=0):
             Load the 4-stage method:
             >>> RKC42=RKC2(4)
             >>> print RKC42
-            RKC42
+            Runge-Kutta-Chebyshev (4,2)
             <BLANKLINE>
              0      |
              1/5    | 1/5
@@ -3175,7 +3175,7 @@ def extrap_pair(p, base='euler', seq='harmonic'):
         order = (p,p-1)
     elif base == 'midpoint':
         name='Midpoint extrapolation '+str(2*p)+'('+str(2*(p-1))+')'
-        shortname='Midpoint_extrapolation_'+str(p)+str(p-1)
+        shortname='Midpoint_extrapolation_'+str(2*p)+str(2*(p-1))
         order = (2*p,2*(p-1))
     return ExplicitRungeKuttaPair(alpha=alpha1, beta=beta1, alphahat=alphahat, betahat=betahat, name=name, shortname=shortname, order=order).dj_reduce()
 
