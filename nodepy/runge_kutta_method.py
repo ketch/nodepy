@@ -2767,7 +2767,7 @@ def RKC1(m,epsilon=0):
             Load the 4-stage method:
             >>> RKC41=RKC1(4)
             >>> print RKC41
-            RKC41
+            Runge-Kutta-Chebyshev (4,1)
             <BLANKLINE>
              0    |
              1/16 | 1/16
@@ -3169,11 +3169,11 @@ def extrap_pair(p, base='euler', seq='harmonic'):
     betahat[-1,:-1] = beta2[-1,:]
     betahat[-1,-1] = 0
 
-    if base == 'euler':
+    if base.lower() == 'euler':
         name='Euler extrapolation '+str(p)+'('+str(p-1)+')'
         shortname='Euler_extrapolation_'+str(p)+str(p-1)
         order = (p,p-1)
-    elif base == 'midpoint':
+    elif base.lower() == 'midpoint':
         name='Midpoint extrapolation '+str(2*p)+'('+str(2*(p-1))+')'
         shortname='Midpoint_extrapolation_'+str(2*p)+str(2*(p-1))
         order = (2*p,2*(p-1))
