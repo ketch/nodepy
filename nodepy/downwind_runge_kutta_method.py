@@ -25,7 +25,7 @@ Class for Downwind Runge-Kutta methods, and various functions related to them.
 
 
 REFERENCES:
-    [higueras2005]_
+    [higueras2005,Ketcheson2010]_
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
