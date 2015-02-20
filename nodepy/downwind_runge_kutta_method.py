@@ -1,9 +1,28 @@
 """
 Class for Downwind Runge-Kutta methods, and various functions related to them.
 
-AUTHOR: David Ketcheson (03-10-2010)
+**Examples**::
 
-EXAMPLES:
+    >>> from nodepy import downwind_runge_kutta_method as dwrk
+
+* Load a method::
+
+    >>> dw2 = dwrk.opt_dwrk(8)
+    >>> print dw2 # doctest: +NORMALIZE_WHITESPACE
+    downwind Runge-Kutta Method
+    <BLANKLINE>
+     0.750 |  2.875         |         2.125
+     0.875 |  3.000         |         2.125
+    _______|_________________________________
+           |  3.000  0.125 |          2.125
+
+* Check some of its properties::
+
+    >>> dw2.order()
+    2
+    >>> dw2.absolute_monotonicity_radius()
+    7.999999999992724
+
 
 REFERENCES:
     [higueras2005]_
@@ -164,14 +183,6 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         # Need an exception here if rhi==rmax
 
 #================================================================
-
-def loadDWRK(which='All'):
-    r"""
-        Load some particular DWRK method.
-    """
-    DWRK={}
-    if which=='All': return TSRK
-    else: return TSRK[which]
 
 def opt_dwrk(r):
     #a11=(r**2-2*r-2)/(2.*r)
