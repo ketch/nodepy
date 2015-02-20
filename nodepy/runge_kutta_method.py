@@ -9,6 +9,7 @@
 
 * Check its order of accuracy::
 
+    >>> ssp104.order()
     4
 
 * Find its radius of absolute monotonicity::
