@@ -1,18 +1,35 @@
 """
 Class for two-step Runge-Kutta methods, and various functions related to them.
 
-AUTHOR: David Ketcheson (08-30-2008)
+This module is extremely experimental and some parts may be incompatible
+with the rest of nodepy.
 
-EXAMPLES:
+**Examples**::
 
-REFERENCES:
+    >>> from nodepy import twostep_runge_kutta_method as tsrk
+
+* Load methods::
+
+    >>> tsrk4 = tsrk.loadTSRK('order4')
+    >>> tsrk5 = tsrk.loadTSRK('order5')
+
+* Check their order of accuracy::
+
+    >>> tsrk4.order()
+    4
+    >>> tsrk5.order(tol=1.e-3)
+    5
+
+
+**References**:
     [jackiewicz1995,butcher1997,hairer1997]
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import numpy as np
-import rooted_trees as tt
+import rooted_trees as rt
 from strmanip import *
+import snp
 
 #=====================================================
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
@@ -30,6 +47,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
     def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='Type II',name='Two-step Runge-Kutta Method'):
         r"""
             Initialize a 2-step Runge-Kutta method."""
+        d,A,b,Ahat,bhat=snp.normalize(d,A,b,Ahat,bhat)
         self.s = max(np.shape(b))
         self.d,self.theta,self.A,self.b = d,theta,A,b
         self.Ahat,self.bhat=Ahat,bhat
@@ -42,7 +60,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         #    self.Ahat[:,0]=Ahat
         #    self.bhat = np.zeros([self.s,1])
         #    self.bhat[0]=bhat
-        #else: raise TwoStepRungeKuttaError('Unrecognized type')
+        #else: raise Exception('Unrecognized type')
         self.name=name
         self.type=type
 
@@ -72,7 +90,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         """
         from numpy import dot
         d,theta,Ahat,A,bhat,b=self.d,self.theta,self.Ahat,self.A,self.bhat,self.b
-        e=np.ones([len(b),1])
+        e=np.ones(len(b))
         b=b.T; bhat=bhat.T
         c=dot(Ahat+A,e)-d
         code=TSRKOrderConditions(p)
@@ -80,7 +98,6 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         for i in range(len(code)):
             exec('yy='+code[i])
             exec('z[i]='+code[i])
-            #print p,z
         return z
 
 
@@ -102,8 +119,8 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         if self.type=='Type II':
             ahat = np.zeros([self.s,1]); ahat[:,0] = self.Ahat[:,0]
             bh = np.zeros([1,1]); bh[0,0]=self.bhat[0]
-            A=np.hstack([ahat,self.A])
-            A=np.vstack([np.zeros([1,self.s+1]),A])
+            A = np.hstack([ahat,self.A])
+            A = np.vstack([np.zeros([1,self.s+1]),A])
             b =  np.vstack([bh,self.b])
 
         M1=np.linalg.solve(np.eye(self.s)-z*self.A,D)
@@ -235,10 +252,11 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #================================================================
 
 def TSRKOrderConditions(p,ind='all'):
-    forest=tt.list_trees(p)
+    from rooted_trees import Emap_str
+    forest=rt.list_trees(p)
     code=[]
     for tree in forest:
-        code.append(tsrk_elementary_weight_str(tree)+'-'+str(tree.Emap()))
+        code.append(tsrk_elementary_weight_str(tree)+'-'+Emap_str(tree))
         code[-1]=code[-1].replace('--','')
         code[-1]=code[-1].replace('1 ','e ')
         code[-1]=code[-1].replace('1)','e)')
@@ -251,7 +269,7 @@ def tsrk_elementary_weight(tree):
     """
     from sympy import Symbol
     bhat,b,theta=Symbol('bhat',False),Symbol('b',False),Symbol('theta',False)
-    ew=bhat*tree.Gprod(tt.Emap,tt.Gprod,betaargs=[TSRKeta,Dmap],alphaargs=[-1])+b*tree.Gprod(TSRKeta,tt.Dmap)+theta*tree.Emap(-1)
+    ew=bhat*tree.Gprod(rt.Emap,rt.Gprod,betaargs=[TSRKeta,Dmap],alphaargs=[-1])+b*tree.Gprod(TSRKeta,rt.Dmap)+theta*tree.Emap(-1)
     return ew
 
 def tsrk_elementary_weight_str(tree):
@@ -260,8 +278,8 @@ def tsrk_elementary_weight_str(tree):
         for Two-step Runge-Kutta methods
         as numpy-executable strings
     """
-    from rooted_trees import Dmap_str
-    ewstr='dot(bhat,'+tree.Gprod_str(tt.Emap_str,tt.Gprod_str,betaargs=[TSRKeta_str,Dmap_str],alphaargs=[-1])+')+dot(b,'+tree.Gprod_str(TSRKeta_str,tt.Dmap_str)+')+theta*'+str(tree.Emap(-1))
+    from rooted_trees import Dmap_str, Emap_str
+    ewstr='dot(bhat,'+tree.Gprod_str(rt.Emap_str,rt.Gprod_str,betaargs=[TSRKeta_str,Dmap_str],alphaargs=[-1])+')+dot(b,'+tree.Gprod_str(TSRKeta_str,rt.Dmap_str)+')+theta*'+Emap_str(tree,-1)
     ewstr=mysimp(ewstr)
     return ewstr
 
@@ -280,7 +298,7 @@ def TSRKeta_str(tree):
     from rooted_trees import Dprod_str, Emap_str
     if tree=='':  return 'e'
     if tree=='T': return 'c'
-    return '(d*'+str(tree.Emap(-1))+'+dot(Ahat,'+tree.Gprod_str(Emap_str,Dprod_str,betaargs=[TSRKeta_str],alphaargs=[-1])+')'+'+dot(A,'+Dprod_str(tree,TSRKeta_str)+'))'
+    return '(d*'+Emap_str(tree,-1)+'+dot(Ahat,'+tree.Gprod_str(Emap_str,Dprod_str,betaargs=[TSRKeta_str],alphaargs=[-1])+')'+'+dot(A,'+Dprod_str(tree,TSRKeta_str)+'))'
 
 
 #================================================================
@@ -288,15 +306,21 @@ def TSRKeta_str(tree):
 def loadTSRK(which='All'):
     r"""
         Load two particular TSRK methods (From [Jackiewicz1995]_).
+
+        The method of order five satisfies the order conditions only
+        to four or five digits of accuracy.
     """
+    from sympy import Rational
+    one  = Rational(1,1)
+
     TSRK={}
     #================================================
-    d=np.array([[-113./88,-103./88]]).T
-    theta=-4483./8011
-    Ahat=np.array([[1435./352,-479./352],[1917./352,-217./352]])
-    A=np.eye(2)
-    bhat=np.array([[180991./96132,-17777./32044]]).T
-    b=np.array([[-44709./32044,48803./96132]]).T
+    d=np.array([-113*one/88,-103*one/88])
+    theta=-4483*one/8011
+    Ahat=np.array([[1435*one/352,-479*one/352],[1917*one/352,-217*one/352]])
+    A=np.eye(2,dtype=object)
+    bhat=np.array([180991*one/96132,-17777*one/32044])
+    b=np.array([-44709*one/32044,48803*one/96132])
     TSRK['order4']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat)
     #================================================
     d=np.array([-0.210299,-0.0995138])
@@ -309,19 +333,6 @@ def loadTSRK(which='All'):
     if which=='All': return TSRK
     else: return TSRK[which]
 
-
-#=====================================================
-class TwoStepRungeKuttaError(Exception):
-#=====================================================
-    """
-        Exception class for Two-step Runge Kutta methods.
-    """
-    def __init__(self,msg='Two-step Runge Kutta Error'):
-        self.msg=msg
-
-    def __str__(self):
-        return self.msg
-#=====================================================
 
 def load_type2_TSRK(s,p,type='Type II'):
     r"""
