@@ -177,6 +177,18 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
         plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha,linewidths=3)
     if plotroots: plt.plot(np.real(p.r),np.imag(p.r),'ok')
     if len(q)>1: plt.plot(np.real(q.r),np.imag(q.r),'xk')
+
+    # Use Newton's method to find boundary, and plot it
+    if len(q) == 0: #Explicit method
+        theta = np.linspace(0,2*np.pi)
+        z = np.exp(1j*theta)
+        w = np.linspace(-1.,1.)
+        pp = p.deriv()
+        for k in range(20):
+            w = w - (p(w)-z)/pp(w)
+        plt.plot(np.real(w),np.imag(w),'ok')
+
+    # Plot axes
     plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
     plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
     plt.axis('Image')
