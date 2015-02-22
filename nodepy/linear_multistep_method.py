@@ -53,7 +53,15 @@ class LinearMultistepMethod(GeneralLinearMethod):
         self.alpha = alpha/alpha[-1]
         self.name = name
         self.shortname = shortname
-        self.info = description
+        if description is not '':
+            self.info = description
+        else:
+            if self.is_explicit():
+                exp_str = "Explicit"
+            else:
+                exp_str = "Implicit"
+
+            self.info = "%s %d-step method of order %d" % (exp_str, len(self), self.order())
 
     def __num__(self):
         """
@@ -129,7 +137,25 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return self.order()
 
     def latex(self):
-        return ''
+        from sympy import symbols, latex
+        n = symbols('n')
+        from snp import printable
+        k = len(self)
+        alpha_terms = []
+        beta_terms = []
+        for i in range(k+1):
+            subscript = latex(n+k-i)
+            if self.alpha[k-i] != 0:
+                alpha_terms.append(printable(self.alpha[k-i],return_one=False) 
+                                   + ' y_{'+subscript+'}')
+            if self.beta[k-i] != 0:
+                beta_terms.append(printable(self.beta[k-i],return_one=False) 
+                                  +  'h f(y_{'+subscript+'})')
+        lhs = ' + '.join(alpha_terms)
+        rhs = ' + '.join(beta_terms)
+        s = r'\begin{align}'+ ' = '.join([lhs,rhs]) + r'\end{align}'
+        s = s.replace('+ -','-')
+        return s
 
     def ssp_coefficient(self):
         r""" Return the SSP coefficient of the method.
@@ -323,7 +349,8 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return _root_condition(rho,tol)
 
     def __len__(self):
-        return len(self.alpha)
+        r"""Returns the number of steps used."""
+        return len(self.alpha)-1
 
 
 #=====================================================
