@@ -588,7 +588,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             from sympy import simplify
             p=0
             while True:
-                z=self.order_conditions(p+1)
+                z=self.order_condition_residuals(p+1)
                 z = snp.array([simplify(zz) for zz in z])
                 if np.any(abs(z)>tol): break
                 p=p+1
@@ -596,7 +596,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             raise NotImplementedError
         return p
 
-    def order_conditions(self,p):
+    def order_condition_residuals(self,p):
         """
             Generates and evaluates code to test whether a method
             satisfies the order conditions of order p (only).
@@ -631,15 +631,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Generates and evaluates code to test whether a method
             satisfies the effective order q conditions (only).
 
-            Similar with order_conditions(self,p), but at the moment works 
-			only for q <= 4. (enough to find Explicit SSPRK)
+            Similar to order_condition_residuals(self,p), but at the moment
+            works only for q <= 4. (enough to find Explicit SSPRK)
 
-			Currently uses Albrecht's recursion to generate the
-			order conditions. Then based on q and p the effective order
-			conditions are derived.
+            Currently uses Albrecht's recursion to generate the
+            order conditions. Then based on q and p the effective order
+            conditions are derived.
 
-			TODO: Compute the effective order p>=5 conditions based on 
-			Albrecht's recursion approach.
+            TODO: Compute the effective order p>=5 conditions based on 
+            Albrecht's recursion approach.
         """
         from sympy import factorial,Rational
         A,b,c=self.A,self.b,self.c
@@ -660,7 +660,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             exec('z[0]='+code[1]+'-'+'np.dot(b,np.dot(A,c**2))/2.+1/24.')
             exec('z[1]='+code2[0]+'-'+code[1]+'-'+code[2])
         if q>4:
-            raise Exception('At the moment, conditions of effective order five or more are not computed.')
+            raise NotImplementedError('At the moment, conditions of effective order \
+                            five or more are not computed.')
         return z
 
     def stage_order(self,tol=1.e-14):
@@ -2022,6 +2023,15 @@ def elementary_weight(tree):
 
         It's not really a bug since Ax(A**2) does show parentheses,
         but it will make it harder to parse into code.
+
+        **Examples**:
+
+            >>> from nodepy import rk, rt
+            >>> tree = rt.list_trees(2)[0]
+            >>> tree
+            '{T}'
+            >>> rk.elementary_weight(tree)
+            b*c
 
         **References**:
             [butcher2003]_
