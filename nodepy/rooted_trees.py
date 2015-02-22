@@ -515,7 +515,16 @@ class RootedTree(str):
 #=====================================================
 def plot_all_trees(p,title='str'):
 #=====================================================
-    """ Plots all rooted trees of order p """
+    """ Plots all rooted trees of order p.
+
+        **Example**:
+
+        Plot all trees of order 4::
+
+            >>> from nodepy import rt
+            >>> rt.plot_all_trees(4)  # doctest: +ELLIPSIS
+            <matplotlib.figure.Figure object at ...>
+    """
     import matplotlib.pyplot as pl
     forest=list_trees(p)
     nplots=len(forest)
@@ -752,6 +761,15 @@ def recursiveVectors(p,ind='all'):
 
         This code is complete only up to order 12.  We need to extend it 
         by adding more subloops for p>12.
+
+    **Example**
+
+    Count number of conditions for order 12::
+
+        >>> from nodepy import rt
+        >>> v = rt.recursiveVectors(12)
+        >>> print len(v)
+        4769
   """
   if p>12: print 'recursiveVectors is not complete for orders p>12.'
   W=[[],[]]
