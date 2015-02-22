@@ -73,7 +73,7 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
             * [ketcheson2010]_
     """
     def __init__(self,a,b,bhat=None,regs=2,
-            name='2R Runge-Kutta Method',description=''):
+            name='2R Runge-Kutta Method',description='',shortname='LSRK2R',order=None):
         r"""
             Initializes the 2R method by storing the
             low-storage coefficients and computing the Butcher
@@ -113,8 +113,27 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
             self.bhat=bhat
             self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
         self.name=name
+        self.shortname=shortname
         self.info=description
         self.lstype=str(regs)+'R+_pair'
+
+        if order is not None:
+            self._p = order
+        else:
+            self._p = None
+
+        s = self.A.shape[0]
+        if self.A.dtype == object:
+            alpha = snp.normalize(np.zeros((s+1,s),dtype=object))
+            beta = snp.normalize(np.zeros((s+1,s),dtype=object))
+        else:
+            alpha = np.zeros((s+1,s))
+            beta = np.zeros((s+1,s))
+        beta[:-1,:] = self.A.copy()
+        beta[-1,:] = self.b.copy()
+
+        self.alpha=alpha
+        self.beta=beta
 
     def __step__(self,f,t,u,dt,errest=False,x=None):
         """
@@ -192,7 +211,7 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
             * 3S*
     """
     def __init__(self,betavec,gamma,delta,lstype,
-            name='Low-storage Runge-Kutta Method',description=''):
+            name='Low-storage Runge-Kutta Method',description='',shortname='LSRK2S',order=None):
         r"""
             Initializes the low-storage method by storing the
             low-storage coefficients and computing the Butcher
@@ -202,6 +221,7 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
         self.gamma=gamma
         self.delta=delta
         self.lstype=lstype
+        self.shortname=shortname
 
         # Two-register methods
         if lstype=='2S' or lstype=='2S*':
@@ -213,11 +233,6 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
                 beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
-            self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            # Change type of A to float64
-            # This can be a problem if A is symbolic
-            self.A=np.tril(self.A.astype(np.float64),-1)
-            self.c=np.sum(self.A,1)
 
         # Three-register methods
         elif lstype.startswith('3S*'):
@@ -230,13 +245,20 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
                                     gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
                 alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
-            self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            # Change type of A to float64
-            # This can be a problem if A is symbolic
-            self.A=np.tril(self.A.astype(np.float64),-1)
-            self.c=np.sum(self.A,1)
+
+        self.alpha, self.beta = alpha, beta
+        self.A,self.b=shu_osher_to_butcher(alpha,beta)
+        # Change type of A to float64
+        # This can be a problem if A is symbolic
+        self.A=np.tril(self.A.astype(np.float64),-1)
+        self.c=np.sum(self.A,1)
         self.name=name
         self.info=description
+
+        if order is not None:
+            self._p = order
+        else:
+            self._p = None
 
     def __step__(self,f,t,u,dt):
         """
@@ -298,7 +320,7 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
         error estimate, while the 2S_pair/3S_pair methods do.
     """
     def __init__(self,betavec,gamma,delta,lstype,bhat=None,
-            name='Low-storage Runge-Kutta Pair',description=''):
+            name='Low-storage Runge-Kutta Pair',description='',shortname='LSRK2S',order=None):
         """
             Initializes the low-storage pair by storing the
             low-storage coefficients and computing the Butcher
@@ -310,6 +332,7 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
         self.gamma=gamma
         self.delta=delta
         self.lstype=lstype
+        self.shortname=shortname
 
         if lstype=='2S_pair':
             m=len(betavec)-1
@@ -378,7 +401,15 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
             self.c=np.sum(self.A,1)
             self.bhat=bhat
  
+        self.alpha, self.beta = alpha, beta
         self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
+
+        if order is not None:
+            self._p = order
+        else:
+            self._p = None
+        self.alpha = None
+
 
     def __step__(self,f,t,u,dt,errest=False,x=None):
         """
@@ -589,6 +620,7 @@ def load_2R(name):
     regs=2
     if name=='DDAS47':
         fullname='DDAS4()7[2R]'
+        shortname='DDAS47'
         descript='2R Method of Tselios \& Simos (2007)'
         b=np.array([0.0941840925477795334,
                     0.149683694803496998,
@@ -606,6 +638,7 @@ def load_2R(name):
         a=b[:-1]+g
     elif name=='LDDC46':
         fullname='LDDC4()6[2R]'
+        shortname = 'LDDC46'
         b=np.array([0.10893125722541,
                     0.13201701492152,
                     0.38911623225517,
@@ -621,6 +654,7 @@ def load_2R(name):
         a=b[:-1]+g
     elif name=='RK45[2R]C':
         fullname='RK4(3)5[2R+]C'
+        shortname = 'RK452RC'
         descript='A 2R Method of Kennedy et. al.'
         regs=2
         a=np.array([970286171893./4311952581923,
@@ -639,6 +673,7 @@ def load_2R(name):
                        1097981568119./3980877426909])
     elif name=='RK58[3R]C':
         fullname='RK5(4)8[3R+]C'
+        shortname = 'RK583RC'
         descript='A 3R Method of Kennedy et. al.'
         regs=3
         a=np.array([[141236061735./3636543850841,
@@ -672,6 +707,7 @@ def load_2R(name):
                        -3808726110015./23644487528593])
     elif name=='RK59[2R]C':
         fullname='RK5(4)9[2R+]C'
+        shortname = 'RK592RC'
         descript='A 2R Method of Kennedy et. al.'
         regs=2
         a=np.array([1107026461565./5417078080134,
@@ -700,4 +736,4 @@ def load_2R(name):
                          1454774750537./11112645198328,
                          772137014323./4386814405182,
                          277420604269./1857595682219])
-    return TwoRRungeKuttaMethod(a,b,bhat,regs,fullname,description=descript)
+    return TwoRRungeKuttaMethod(a,b,bhat,regs,fullname,description=descript,shortname=shortname)

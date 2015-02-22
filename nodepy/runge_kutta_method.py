@@ -1309,6 +1309,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def is_explicit(self):
         return False
 
+    def is_zero_stable(self):
+        return True
+
     def is_FSAL(self):
         """True if method is "First Same As Last"."""
         if np.all(self.A[-1,:]==self.b): return True

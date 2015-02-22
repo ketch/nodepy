@@ -83,10 +83,14 @@ def simplify(x):
     x = map(sympy.simplify,x.reshape(-1))
     return np.reshape(x,shape)
 
-def printable(num,digits=3,return_zero=False):
+def printable(num,digits=3,return_zero=False,return_one=True):
     if num==0:
         if return_zero: return '0'
         else: return ''
+    elif num==1 and return_one==False:
+        return ''
+    elif num==-1 and return_one==False:
+        return '-'
     # Surprisingly, sympy does not handle these cases
     elif num == np.inf:
         return r'\infty'
