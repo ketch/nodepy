@@ -5,8 +5,20 @@ AUTHOR: David Ketcheson (08-30-2008)
 
 EXAMPLES:
 
+
+	>>> print tsrk.loadTSRK('order4')
+	Two-step Runge-Kutta Method
+	Type II
+	-1.284 | 4.077 -1.361  | 1.000
+	-1.170 | 5.446 -0.616  |        1.000
+	_______|_______________|_______________
+	-0.560 | 1.883 -0.555  |-1.395  0.508
+
+
+
 REFERENCES:
     [jackiewicz1995,butcher1997,hairer1997]
+
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
@@ -167,7 +179,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
 
-    def latex_compact_form(self):
+    def latex(self):
     	"""A laTeX representation of the compact form."""
     	from sympy.printing import latex
 
@@ -210,15 +222,9 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
     	return s
 
 
-    def print_compact_TSRK(self):
+    def __str__(self):
 	r"""
-	In [1]: import nodepy.twostep_runge_kutta_method as tsrk
-
-	In [2]: tsrk4 = tsrk.loadTSRK('order4')
-
-	In [3]: myTSRK = tsrk.TwoStepRungeKuttaMethod(tsrk4.d,tsrk4.theta,tsrk4.A,tsrk4.b,tsrk4.Ahat,tsrk4.bhat)
-
-	In [4]: myTSRK.print_compact_TSRK()
+	>>> print tsrk.loadTSRK('order4')
 	Two-step Runge-Kutta Method
 	Type II
 	-1.284 | 4.077 -1.361  | 1.000
@@ -258,7 +264,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         s+=' |'
         for j in range(len(self)):
                 s+=b[j,0].ljust(colmax+1)
-        print s.rstrip()
+        return s.rstrip()
 
     def spijker_form(self):
         r""" Returns arrays $S,T$ such that the TSRK can be written
