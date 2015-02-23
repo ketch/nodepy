@@ -309,6 +309,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             TODO: Instead check whether methods have the same elementary weights
                   up to some order.
+
+            **Example**:
+
+            Load a method and try do DJ-reduce it::
+
+                >>> from nodepy import rk
+                >>> merson = rk.loadRKM('Merson43')
+                >>> reduced = merson.dj_reduce()
+
+            Check that the two are actually equal::
+
+                >>> print reduced == merson
+                True
         """
         K1=np.vstack([self.A,self.b])
         K2=np.vstack([rkm.A,rkm.b])
@@ -402,7 +415,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rkm._dj_reducible_stages()
                 [1]
 
-                Reduce it by removing stage 1 (the second stage):
+                Reduce it:
                 >>> print rkm.dj_reduce()
                 Runge-Kutta Method
                 <BLANKLINE>                
@@ -427,6 +440,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
             pair of equal stages.  If not, returns False and
             the minimum pairwise difference (in the maximum norm) 
             between rows of A.
+
+            **Examples**::
+
+                Construct a reducible method:
+                >>> from nodepy import rk
+                >>> A=np.array([[1,0],[1,0]])
+                >>> b=np.array([0.5,0.5])
+                >>> rkm = rk.ExplicitRungeKuttaMethod(A,b)
+
+                Check that it is reducible:
+                >>> rkm._hs_reducible_stages()
+                (True, [0, 1])
         """
         m=len(self)
         mindiff=10.
@@ -438,7 +463,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return False, mindiff
 
     def _remove_stage(self,stage):
-        """ Eliminate a stage of a Runge-Kutta method.
+        """ Eliminate a stage of a DJ-reducible Runge-Kutta method.
             Typically used to reduce reducible methods.
 
             Note that stages in the NumPy arrays are indexed from zero,
