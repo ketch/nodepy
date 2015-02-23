@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/ketch/nodepy.png?label=ready&title=Ready)](https://waffle.io/ketch/nodepy)
 [![Build Status](https://travis-ci.org/ketch/nodepy.png)](https://travis-ci.org/ketch/nodepy)
 [![Coverage Status](https://coveralls.io/repos/ketch/nodepy/badge.svg)](https://coveralls.io/r/ketch/nodepy)
 
