@@ -189,28 +189,49 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return numself
 
     def latex(self):
-        """A laTeX representation of the Butcher arrays."""
+        r"""A laTeX representation of the Butcher arrays.
+        
+            **Example**::
+
+            >>> from nodepy import rk
+            >>> merson = rk.loadRKM('Merson43')
+            >>> print merson.latex()
+            \begin{align}
+            \begin{array}{c|ccccc}
+             &  &  &  &  & \\
+            \frac{1}{3} & \frac{1}{3} &  &  &  & \\
+            \frac{1}{3} & \frac{1}{6} & \frac{1}{6} &  &  & \\
+            \frac{1}{2} & \frac{1}{8} &  & \frac{3}{8} &  & \\
+            1 & \frac{1}{2} &  & - \frac{3}{2} & 2 & \\
+            \hline
+             & \frac{1}{6} &  &  & \frac{2}{3} & \frac{1}{6}\\
+             & \frac{1}{10} &  & \frac{3}{10} & \frac{2}{5} & \frac{1}{5}
+            \end{array}
+            \end{align}
+        """
         from snp import printable
-        s= r'\begin{align}'
-        s+='\n'
-        s+=r'  \begin{array}{c|'
+        sep = ' & '
+        s= r'\begin{align}' + '\n'
+        s+=r'\begin{array}{c|'
         s+='c'*len(self)
         s+='}\n'
         for i in range(len(self)):
-            s+=printable(self.c[i])
-            for j in range(len(self)):
-                s+=' & '+printable(self.A[i,j])
-            s+=r'\\'
-            s+='\n'
-        s+=r'\hline'
-        s+='\n'
-        for j in range(len(self)):
-            s+=' & '+printable(self.b[j])
-        s+='\n'
-        s+=r'\end{array}'
-        s+=r'\end{align}'
+            s+=printable(self.c[i]) + sep
+            s += sep.join([printable(aij) for aij in self.A[i,:]])
+            s+=r'\\' + '\n'
+        s+=r'\hline' + '\n'
+        s += sep
+        s += sep.join([printable(bj) for bj in self.b])
+        s+=r'\\' + '\n'
+        if hasattr(self,'bhat'):
+            s += sep
+            s += sep.join([printable(bj) for bj in self.bhat])
+            s += '\n'
+        s += r'\end{array}' + '\n'
+        s += r'\end{align}'
         s=s.replace('- -','')
         return s
+
 
     def print_shu_osher(self):
         r"""
@@ -1809,34 +1830,6 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         s+= '\n'+' '*(colmax+1)+'|'
         for j in range(len(self)):
             s+=bhat[j].ljust(colmax+1)
-        return s
-
-
-    def latex(self):
-        """A laTeX representation of the Butcher arrays."""
-        from snp import printable
-        s= r'\begin{align}'
-        s+='\n'
-        s+=r'  \begin{array}{c|'
-        s+='c'*len(self)
-        s+='}\n'
-        for i in range(len(self)):
-            s+=printable(self.c[i])
-            for j in range(len(self)):
-                s+=' & '+printable(self.A[i,j])
-            s+=r'\\'
-            s+='\n'
-        s+=r'\hline'
-        s+='\n'
-        for j in range(len(self)):
-            s+=' & '+printable(self.b[j])
-        s+=r'\\' + '\n'
-        for j in range(len(self)):
-            s+=' & '+printable(self.bhat[j])
-        s+='\n'
-        s+=r'\end{array}'
-        s+=r'\end{align}'
-        s=s.replace('- -','')
         return s
 
 
