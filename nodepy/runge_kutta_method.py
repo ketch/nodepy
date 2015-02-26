@@ -2276,6 +2276,12 @@ def loadRKM(which='All'):
                 description="The LobattoIIIA method with 2 stages",shortname='LobattoIIIA2')
 
     #================================================
+    A=np.array([[0,0,0],[5*one/24,one/3,-one/24],[one/6, 2*one/3, one/6]])
+    b=np.array([one/6, 2*one/3, one/6])
+    RK['LobattoIIIA3']=RungeKuttaMethod(A,b,name='Lobatto IIIA3',
+                description="The LobattoIIIA method with 3 stages",shortname='LobattoIIIA3')
+
+    #================================================
     A=np.array([[5*one/12,-1*one/12],[3*one/4,1*one/4]])
     b=np.array([3*one/4,1*one/4])
     RK['RadauIIA2']=RungeKuttaMethod(A,b,name='Radau IIA2',
@@ -2289,6 +2295,45 @@ def loadRKM(which='All'):
     RK['RadauIIA3']=RungeKuttaMethod(A,b,name='Radau IIA3',
                 description="The RadauIIA method with 3 stages",shortname='RadauIIA3')
 
+    #================================================
+    # Diagonally implicit methods
+    #================================================
+    # This method is from Hairer & Wanner vol. II p. 100
+    A = np.array([[one/4, 0, 0, 0, 0],
+                  [one/2, one/4, 0, 0, 0],
+                  [17*one/50, -one/25, one/4, 0, 0],
+                  [371*one/1360, -137*one/2720, 15*one/544, one/4, 0],
+                  [25*one/24, -49*one/48, 125*one/16, -85*one/12, one/4]])
+    b = np.squeeze(A[-1,:])
+    bhat = np.array([59*one/48, -17*one/96, 225*one/32, -85*one/12, 0])
+    RK['SDIRK54'] = RungeKuttaMethod(A,b,name='SDIRK 54',
+                        description=r"L-Stable SDIRK method of Hairer & Wanner",
+                        shortname = 'SDIRK54')
+
+    #================================================
+    # This method is from Norsett 1974
+    gamma = one/2 + sqrt(3)/6
+    A = np.array([[gamma, 0],[1-2*gamma, gamma]])
+    b = np.array([half,half])
+    RK['SDIRK23'] = RungeKuttaMethod(A, b, name='SDIRK23',
+                        description=r"3rd-order SDIRK method of Norsett",
+                        shortname = 'SDIRK23')
+
+    #================================================
+    # This method is from Norsett 1974
+    from sympy import pi, cos
+    gamma = one/2 + sqrt(3)/3 * cos(pi/18)
+    A = np.array([[gamma, 0, 0],
+                  [half-gamma, gamma, 0],
+                  [2*gamma, one-4*gamma, gamma]])
+    x = one/(24*(half-gamma)**2)
+    b = np.array([x, 1-2*x, x])
+    RK['SDIRK34'] = RungeKuttaMethod(A, b, name='SDIRK34',
+                        description=r"4th-order SDIRK method of Norsett",
+                        shortname = 'SDIRK34')
+
+    #================================================
+    # SSP methods
     #================================================
     A=np.array([[0,0],[one,0]])
     b=np.array([half,half])
