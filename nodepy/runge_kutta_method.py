@@ -1188,10 +1188,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
                        (I-2*alpha_down)*v_r >= 0,
                        alpha_down >= 0]
 
-        # Constrain perturbation to be explicit
-        for i in range(alpha_down.shape.rows):
-            for j in range(i,alpha_down.shape.cols):
-                constraints.append(alpha_down[i,j] == 0)
+        if self.is_explicit():
+            # Constrain perturbation to be explicit
+            for i in range(alpha_down.shape.rows):
+                for j in range(i,alpha_down.shape.cols):
+                    constraints.append(alpha_down[i,j] == 0)
 
         problem = cvx.Problem(objective, constraints)
         status = problem.solve()
@@ -1273,7 +1274,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             alpha_down = np.dot(G,aum+adp)
             gamma = np.dot(G,gamma)
 
-            if self.is_explicit():
+            if all(self.A[0,:] == 0):
                 gamma, alpha_up, alpha_down = redistribute_gamma(gamma, alpha_up, alpha_down)
 
             if alpha_up.min()>=-tol and gamma.min()>=-tol and alpha_down.min()>=-tol:
@@ -1309,7 +1310,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         elif algorithm == 'split':
             r=bisect(0,rmax,acc,tol,self.is_splittable,iterate=iterate)
 
-        d,alpha,alphatilde=self.split(r,tol=tol)
+        d,alpha,alphatilde=self.resplit(r,tol=tol)
         return r,d,alpha,alphatilde
 
     #============================================================
