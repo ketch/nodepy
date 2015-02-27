@@ -19,8 +19,8 @@ This module implements the initial value problem as a class.
     # Integrate this problem with a Runge-Kutta method
     >>> rk4 = rk.loadRKM('RK44')
     >>> t,y = rk4(myivp)
-    >>> y[-1]
-    2.0611536225268342e-09
+    >>> y[-1][0] # doctest: +ELLIPSIS
+    2.06115362252...e-09
 """
 import numpy as np
 
@@ -42,70 +42,84 @@ class IVP(object):
             Any other problem-specific parameters.
 
     """
-    def __init__(self,f=None,u0=1.,T=1.):
+    def __init__(self, f=None, u0=1., t0=0., T=1., exact=None, desc='', name=''):
         self.u0  = u0
         self.rhs = f
         self.T   = T
+        self.exact = exact
+        self.description = desc
+        self.t0 = t0
+        self.dt0 = 1.e-2 # This doesn't really belong here
+        self.name = name
 
     def __repr__(self):
-        try:
-            return 'Problem Name:  '+self.name+'\n'+'Description:   '+self.description
-        except:
-            try:
-                return 'Problem Name: '+self.name
-            except:
-                return 'No name specified for this problem.'
+        return 'Problem Name:  '+self.name+'\n'+'Description:   '+self.description
 
-def load_ivp(ivpname):
-    """Load some very simple initial value problems."""
-    import numpy as np
+def load_ivp(ivpname='All'):
+    r"""Load some very simple initial value problems.  The following methods
+        are available::
 
-    ivp=IVP()
-    if ivpname=='test':
-        ivp.u0=1.
-        ivp.rhs = lambda t,u: u
-        ivp.exact = lambda t : ivp.u0*np.exp(t)
-        ivp.T = 5.
-        ivp.description = 'The linear scalar test problem'
-    elif ivpname=='zoltan':
-        ivp.u0=1.
-        ivp.rhs = lambda t,u: -100*abs(u)
-        ivp.exact = lambda t : ivp.u0*np.exp(-100*t)
-        ivp.T = 10.
-        ivp.description = 'The linear scalar test problem with abs value'
-    elif ivpname=='nlsin':
-        ivp.u0=1.
-        ivp.rhs = lambda t,u: 4.*u*float(np.sin(t))**3*np.cos(t)
-        ivp.exact = lambda t: ivp.u0*np.exp((np.sin(t))**4)
-        ivp.T = 5.
-        ivp.dt0=1.e-2
-        ivp.description = 'A simple nonlinear scalar problem'
-    elif ivpname=='ode1':
-        ivp.u0=1.
-        ivp.rhs = lambda t,u: 4.*t*np.sqrt(u)
-        ivp.exact = lambda t: (1.+t**2)**2
-        ivp.T = 5.
-    elif ivpname=='ode2':
-        ivp.u0=np.exp(1.)
-        ivp.t0=0.5
-        ivp.rhs = lambda t,u: u/t*np.log(u)
-        ivp.exact = lambda t: np.exp(2.*t)
-        ivp.T = 5.
-    elif ivpname=='2odes':
-        ivp.u0=np.array([1.,1.])
-        ivp.rhs = lambda t,u: np.array([u[0], 2.*u[1]])
-        ivp.exact = lambda t: np.array([np.exp(t), np.exp(2.*t)])
-        ivp.T = 5.
-    elif ivpname=='vdp':
-        ivp.eps=0.1
-        ivp.u0=np.array([2.,-0.65])
-        ivp.rhs = lambda t,u: np.array([u[1], 1./ivp.eps*(-u[0]+(1.-u[0]**2)*u[1])])
-        ivp.T = 5.
-        ivp.dt0=1.e-2
-        ivp.description = 'The van der Pol oscillator'
-    else: print 'Unknown IVP name; returning empty IVP'
-    ivp.name=ivpname
-    return ivp
+        >>> from nodepy import ivp
+        >>> ivps = ivp.load_ivp('all')
+        >>> for problem in ivps.itervalues():
+        ...     print "%s: %s" % (problem.name, problem.description)
+        vdp: Van der Pol oscillator with epsilon = 1/10.
+        ode2: 
+        2odes: 
+        ode1: 
+        nlsin: A simple nonlinear scalar problem
+        zoltan: The linear scalar test problem with abs value
+        test: Dahlquist's test problem; $f(y) = \lambda y$
+    """
+    ivps = {}
+
+    name = 'test'
+    description = r"Dahlquist's test problem; $f(y) = \lambda y$"
+    rhs = lambda t,u: u
+    exact = lambda t : ivp.u0*np.exp(t)
+    ivps[name] = IVP(f=rhs, u0=1., T=5., desc=description, exact=exact, name=name)
+
+    name = 'zoltan'
+    rhs = lambda t,u: -100*abs(u)
+    exact = lambda t : ivp.u0*np.exp(-100*t)
+    description = 'The linear scalar test problem with abs value'
+    ivps[name] = IVP(f=rhs, u0=1., T=10., desc=description, exact=exact, name=name)
+
+    name = 'nlsin'
+    rhs = lambda t,u: 4.*u*float(np.sin(t))**3*np.cos(t)
+    exact = lambda t: ivp.u0*np.exp((np.sin(t))**4)
+    description = 'A simple nonlinear scalar problem'
+    ivps[name] = IVP(f=rhs, u0=1., T=5., desc=description, exact=exact, name=name)
+
+    name = 'ode1'
+    rhs = lambda t,u: 4.*t*np.sqrt(u)
+    exact = lambda t: (1.+t**2)**2
+    ivps[name] = IVP(f=rhs, u0=1., T=5., exact=exact, name=name)
+
+    name = 'ode2'
+    u0=np.exp(1.)
+    rhs = lambda t,u: u/t*np.log(u)
+    exact = lambda t: np.exp(2.*t)
+    ivps[name] = IVP(f=rhs, u0=u0, t0=0.5, T=5., exact=exact, name=name)
+
+    name = '2odes'
+    u0=np.array([1.,1.])
+    rhs = lambda t,u: np.array([u[0], 2.*u[1]])
+    exact = lambda t: np.array([np.exp(t), np.exp(2.*t)])
+    ivps[name] = IVP(f=rhs, u0=u0, T=5., exact=exact, name=name)
+
+    name = 'vdp'
+    eps=0.1
+    u0=np.array([2.,-0.65])
+    rhs = lambda t,u: np.array([u[1], 1./eps*(-u[0]+(1.-u[0]**2)*u[1])])
+    description = 'Van der Pol oscillator with epsilon = 1/10.'
+    ivps[name] = IVP(f=rhs, u0=u0, T=5., exact=exact, name=name, desc=description)
+
+    if ivpname.lower() == 'all':
+        return ivps
+    else:
+        return ivps[ivpname]
+
 
 def detest(testkey):
     """

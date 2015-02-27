@@ -9,8 +9,8 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
 
             >>> from nodepy import rk
             >>> rk4 = rk.loadRKM('RK44')
-            >>> rk4.imaginary_stability_interval()
-            2.8284271247461903
+            >>> rk4.imaginary_stability_interval() #doctest: +ELLIPSIS
+            2.8284271247...
     """
     if q is None: 
         q = np.poly1d([1.])
@@ -150,7 +150,10 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
         m,n = p.order,q.order
         if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
             print 'The stability region is unbounded'
-            bounds = (-10*m,m,-5*m,5*m)
+            if m > 0:
+                bounds = (-10*m,m,-5*m,5*m)
+            else:
+                bounds = (-10,1,-5,5)
         else:
             stable = lambda z : np.abs(p(z)/q(z))<=1.0
             bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))

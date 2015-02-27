@@ -1,0 +1,4 @@
+numpy>=1.6
+sympy>=0.7.6
+matplotlib>=1.2
+networkx>=1.8

@@ -1,4 +1,4 @@
-def bisect(rlo, rhi, acc, tol, fun, params=None):
+def bisect(rlo, rhi, acc, tol, fun, **kwargs):
     """ 
         Performs a bisection search.
 
@@ -7,7 +7,7 @@ def bisect(rlo, rhi, acc, tol, fun, params=None):
     """
     while rhi-rlo>acc:
         r=0.5*(rhi+rlo)
-        if params: isvalid=fun(r,tol,params)
+        if kwargs: isvalid=fun(r,tol,**kwargs)
         else: isvalid=fun(r,tol)
         if isvalid:
             rlo=r

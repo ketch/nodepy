@@ -12,7 +12,7 @@ def normalize(*arrays):
     For symbolic arrays, converts all non-symbolic entries to sympy types.
     """
     for array in arrays:
-        if array==None: continue
+        if array is None: continue
         if array.dtype==object:
             onedarray=array.reshape(-1)
             for i,elem in enumerate(onedarray):
@@ -45,7 +45,7 @@ def solve(A,b):
         if bsym.shape[0]==1:
             bsym = bsym.T
         if Asym.is_lower: # Take advantage of structure to solve quickly
-            xsym=sympy.zeros(b.shape)
+            xsym=sympy.zeros(*b.shape)
             xsym = Asym.lower_triangular_solve(bsym)
         else: # This is slower:
             xsym = Asym.LUsolve(bsym)
@@ -82,3 +82,22 @@ def simplify(x):
     shape = x.shape
     x = map(sympy.simplify,x.reshape(-1))
     return np.reshape(x,shape)
+
+def printable(num,digits=3,return_zero=False,return_one=True):
+    if num==0:
+        if return_zero: return '0'
+        else: return ''
+    elif num==1 and return_one==False:
+        return ''
+    elif num==-1 and return_one==False:
+        return '-'
+    # Surprisingly, sympy does not handle these cases
+    elif num == np.inf:
+        return r'\infty'
+    elif num == -np.inf:
+        return r'-\infty'
+    if isinstance(num,float):
+        return '%.3f' % num
+    else:
+        from sympy.printing import latex
+        return latex(num)
