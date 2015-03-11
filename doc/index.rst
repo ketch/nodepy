@@ -3,9 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-NodePy version 0.5 has just been released!  For a list of changes, see
-:ref:`the changelog <changes>`.
-
 .. contents::
 
 ================

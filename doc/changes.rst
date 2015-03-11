@@ -23,6 +23,8 @@ Version 0.6 is a relatively small update, which includes the following:
 
 What's new in Version 0.5
 ==========================
+*Released: Nov. 4, 2013*
+
 Version 0.5 is a relatively small update, which includes the following:
 
 * More Runge-Kutta methods available in rk.loadRKM(), including the 8(7) Prince-Dormand pair
@@ -43,6 +45,8 @@ Version 0.5 is a relatively small update, which includes the following:
 
 What's new in Version 0.4
 ==========================
+*Released: Aug. 28, 2012*
+
 Version 0.4 of NodePy inclues numerous bug fixes and new features.
 The most significant new feature is the use of exact arithmetic for
 construction and analysis of many methods, using SymPy.  Because exact
