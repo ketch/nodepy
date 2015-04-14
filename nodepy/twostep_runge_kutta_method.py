@@ -15,7 +15,7 @@ with the rest of nodepy.
 
     >>> print tsrk.loadTSRK('order4')
     Two-step Runge-Kutta Method
-    Type II
+    General
      -113/88      | 1435/352      -479/352      | 1
      -103/88      | 1917/352      -217/352      |               1
     ______________|_____________________________|_____________________________
@@ -27,6 +27,13 @@ with the rest of nodepy.
     4
     >>> tsrk5.order(tol=1.e-3)
     5
+
+* Get the radius of absolute monotonicity::
+
+    >>> tsrk4.absolute_monotonicity_radius()
+    0
+    >>> tsrk5.absolute_monotonicity_radius()
+    0
 
 
 **References**:
@@ -273,7 +280,10 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         r""" Returns arrays $S,T$ such that the TSRK can be written
             $$ w = S x + T f(w),$$
             and such that $\[S \ \ T\]$ has no two rows equal.
-            See (2.5) of the TSRK paper by Ketcheson, Gottlieb, and Macdonald.
+            See the TSRK paper by Ketcheson, Gottlieb, and Macdonald.
+            Equation (2.5) therein gives the Spijker form for general TSRKs,
+            while the last (unnumbered) equation of Section 4.2 gives the
+            form for TSRKs of Type II (which are the type described by (4.2)).
         """
         s=self.s
         if self.type=='General':
