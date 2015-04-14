@@ -3521,7 +3521,7 @@ def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14,p=None):
         # If we DO NOT consider parallelization then we divide by total number of stages
         return 1.0/len(rk1) * (1.0/A1)**(1./(p+1))
 
-def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
+def linearly_stable_step_size(rk, L, acc=1.e-7, tol=1.e-14, plot=1):
     r"""
         Determine the maximum linearly stable step size for Runge-Kutta method
         rk applied to the IVP `u' = Lu`, by computing the eigenvalues of `L`
@@ -3549,7 +3549,6 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
     from utils import bisect
     import matplotlib.pyplot as plt
 
-    tol=1.e-14
     p,q = rk.__num__().stability_function(mode='float')
     if len(L.shape)==2:
         lamda = np.linalg.eigvals(L)

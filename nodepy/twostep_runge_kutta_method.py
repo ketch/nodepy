@@ -6,6 +6,18 @@ with the rest of nodepy.
 
 **Examples**::
 
+	>>> print tsrk.loadTSRK('order4')
+	Two-step Runge-Kutta Method
+	Type II
+	-1.284 | 4.077 -1.361  | 1.000
+	-1.170 | 5.446 -0.616  |        1.000
+	_______|_______________|_______________
+	-0.560 | 1.883 -0.555  |-1.395  0.508
+
+
+
+REFERENCES:
+=======
     >>> from nodepy import twostep_runge_kutta_method as tsrk
 
 * Load methods::
@@ -23,6 +35,7 @@ with the rest of nodepy.
 
 **References**:
     [jackiewicz1995,butcher1997,hairer1997]
+
 """
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
@@ -75,6 +88,12 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             z=self.order_conditions(p+1)
             if np.any(abs(z)>tol): return p
             p=p+1
+
+    def __len__(self):
+        """
+            The length of the method is the number of stages.
+        """
+        return np.size(self.A,0)
 
     def order_conditions(self,p):
         r"""
@@ -178,6 +197,93 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
 
+    def latex(self):
+    	"""A laTeX representation of the compact form."""
+    	from sympy.printing import latex
+
+        d       = self.d
+        A       = self.A
+        Ahat    = self.Ahat
+        b       = self.b
+        bhat    = self.bhat
+        theta   = self.theta
+
+        s= r'\begin{align}'
+        s+='\n'
+        s+=r'  \begin{array}{c|'
+        s+='c'*(len(self)) +'|'
+        s+='c'*(len(self)) 
+        s+='}\n'
+        for i in range(len(self)):
+            s+='  '+latex(d[i,0])
+            
+            for j in range(len(self)):
+                s+=' & '+latex(Ahat[i,j])
+            
+            for j in range(len(self)):
+                s+=' & '+latex(A[i,j])
+            
+            s+=r'\\'
+            s+='\n'
+        s+=r'  \hline'
+        s+='\n'
+        s+= '  '+latex(theta)
+        for j in range(len(self)):
+        	s+=' & '+latex(bhat[j,0])
+        for j in range(len(self)):
+        	s+=' & '+latex(b[j,0])
+        s+='\n'
+        s+=r'  \end{array}'
+        s+='\n'
+        s+=r'\end{align}'
+        s=s.replace('- -','')
+    	return s
+
+
+    def __str__(self):
+	r"""
+	>>> print tsrk.loadTSRK('order4')
+	Two-step Runge-Kutta Method
+	Type II
+	-1.284 | 4.077 -1.361  | 1.000
+	-1.170 | 5.446 -0.616  |        1.000
+	_______|_______________|_______________
+	-0.560 | 1.883 -0.555  |-1.395  0.508
+	"""
+	    
+	from nodepy.utils import array2strings, shortstring
+	from runge_kutta_method import _get_column_widths
+        
+        d       = array2strings(self.d)
+        A       = array2strings(self.A)
+        Ahat    = array2strings(self.Ahat)
+        b       = array2strings(self.b)
+        bhat    = array2strings(self.bhat)
+
+	theta = '%6.3f' % self.theta
+	lenmax, colmax = _get_column_widths([d,Ahat, A])
+	alenmax, blenmax, clenmax = lenmax
+
+        s   = self.name+'\n'+self.type+'\n'
+        for i in range(len(self)):
+                s+=d[i,0].ljust(colmax+1)+'|'
+                for j in range(len(self)):
+                        s+=Ahat[i,j].ljust(colmax+1)
+                s+=' |'
+                for j in range(len(self)):
+                        s+=A[i,j].ljust(colmax+1)
+                s=s.rstrip()+'\n'
+        s+='_'*(colmax+1)+('|_'+'_'*(colmax+1)*np.size(A,0))*2+'\n'
+
+        s+= theta.ljust(colmax)
+        s+=' |'
+        for j in range(len(self)):
+                s+=bhat[j,0].ljust(colmax+1)
+        s+=' |'
+        for j in range(len(self)):
+                s+=b[j,0].ljust(colmax+1)
+        return s.rstrip()
+
     def spijker_form(self):
         r""" Returns arrays $S,T$ such that the TSRK can be written
             $$ w = S x + T f(w),$$
@@ -219,6 +325,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             
         return S,T
 
+
     def is_absolutely_monotonic(self,r,tol):
         r""" Returns 1 if the TSRK method is absolutely monotonic
             at $z=-r$.
@@ -244,7 +351,6 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         else:
             return 1
         # Need an exception here if rhi==rmax
-
 
 
 #================================================================
