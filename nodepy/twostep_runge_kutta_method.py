@@ -6,24 +6,20 @@ with the rest of nodepy.
 
 **Examples**::
 
-	>>> print tsrk.loadTSRK('order4')
-	Two-step Runge-Kutta Method
-	Type II
-	-1.284 | 4.077 -1.361  | 1.000
-	-1.170 | 5.446 -0.616  |        1.000
-	_______|_______________|_______________
-	-0.560 | 1.883 -0.555  |-1.395  0.508
-
-
-
-REFERENCES:
-=======
     >>> from nodepy import twostep_runge_kutta_method as tsrk
 
 * Load methods::
 
     >>> tsrk4 = tsrk.loadTSRK('order4')
     >>> tsrk5 = tsrk.loadTSRK('order5')
+
+    >>> print tsrk.loadTSRK('order4')
+    Two-step Runge-Kutta Method
+    Type II
+     -113/88      | 1435/352      -479/352      | 1
+     -103/88      | 1917/352      -217/352      |               1
+    ______________|_____________________________|_____________________________
+    -0.560        | 180991/96132  -17777/32044  | -44709/32044  48803/96132
 
 * Check their order of accuracy::
 
@@ -241,17 +237,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 
 
     def __str__(self):
-	r"""
-	>>> print tsrk.loadTSRK('order4')
-	Two-step Runge-Kutta Method
-	Type II
-	-1.284 | 4.077 -1.361  | 1.000
-	-1.170 | 5.446 -0.616  |        1.000
-	_______|_______________|_______________
-	-0.560 | 1.883 -0.555  |-1.395  0.508
-	"""
-	    
-	from nodepy.utils import array2strings, shortstring
+	from nodepy.utils import array2strings
 	from runge_kutta_method import _get_column_widths
         
         d       = array2strings(self.d)
@@ -261,12 +247,11 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         bhat    = array2strings(self.bhat)
 
 	theta = '%6.3f' % self.theta
-	lenmax, colmax = _get_column_widths([d,Ahat, A])
-	alenmax, blenmax, clenmax = lenmax
+	lenmax, colmax = _get_column_widths([d, Ahat, A, bhat, b])
 
         s   = self.name+'\n'+self.type+'\n'
         for i in range(len(self)):
-                s+=d[i,0].ljust(colmax+1)+'|'
+                s+=d[i].ljust(colmax+1)+'|'
                 for j in range(len(self)):
                         s+=Ahat[i,j].ljust(colmax+1)
                 s+=' |'
@@ -278,10 +263,10 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         s+= theta.ljust(colmax)
         s+=' |'
         for j in range(len(self)):
-                s+=bhat[j,0].ljust(colmax+1)
+                s+=bhat[j].ljust(colmax+1)
         s+=' |'
         for j in range(len(self)):
-                s+=b[j,0].ljust(colmax+1)
+                s+=b[j].ljust(colmax+1)
         return s.rstrip()
 
     def spijker_form(self):
@@ -469,3 +454,7 @@ def load_type2_TSRK(s,p,type='Type II'):
         Ahat[row,:] = coeff[s**2+2*s+2+s*row:s**2+2*s+2+s*(row+1)]
     bhat = np.array(coeff[2*s**2+2*s+2:2*s**2+3*s+2],ndmin=2).T
     return TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat,type=type)
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
