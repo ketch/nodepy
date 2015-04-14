@@ -53,7 +53,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         u^{n+1} = & \\theta u^{n-1} + (1-\\theta)u^n + \\Delta t \\sum_{j=1}^{s}(\\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
         \\end{align*}`
     """
-    def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='Type II',name='Two-step Runge-Kutta Method'):
+    def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='General',name='Two-step Runge-Kutta Method'):
         r"""
             Initialize a 2-step Runge-Kutta method."""
         d,A,b,Ahat,bhat=snp.normalize(d,A,b,Ahat,bhat)
@@ -273,18 +273,19 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         r""" Returns arrays $S,T$ such that the TSRK can be written
             $$ w = S x + T f(w),$$
             and such that $\[S \ \ T\]$ has no two rows equal.
+            See (2.5) of the TSRK paper by Ketcheson, Gottlieb, and Macdonald.
         """
         s=self.s
         if self.type=='General':
-            z0=np.zeros([s,1])
-            z00=np.zeros([1,1])
-            T3 = np.hstack([self.Ahat,z0,self.A,z0])
-            T4 = np.hstack([self.bhat.T,z00,self.b.T,z00])
-            T = np.vstack([np.zeros([s+1,2*s+2]),T3,T4])
-            S1 = np.hstack([np.zeros([s+1,1]),np.eye(s+1)])
-            S2 = np.hstack([self.d,np.zeros([s,s]),1-self.d])
-            S3 = np.hstack([[[self.theta]],np.zeros([1,s]),[[1-self.theta]]])
-            S = np.vstack([S1,S2,S3])
+            zero_column = np.zeros( (s,1) )
+            T3 = np.hstack( (self.Ahat,zero_column,self.A,zero_column) )
+            T4 = np.hstack( (self.bhat, 0, self.b, 0) )
+            T = np.vstack( (np.zeros([s+1,2*s+2]),T3,T4) )
+
+            S1 = np.hstack( (np.zeros([s+1,1]),np.eye(s+1)) )
+            S2 = np.column_stack( (self.d,np.zeros([s,s]),1-self.d) )
+            S3 = np.hstack( ([[self.theta]],np.zeros([1,s]),[[1-self.theta]]) )
+            S = np.vstack( (S1,S2,S3) )
 
         elif self.type=='Type I':
             K = np.vstack([self.A,self.b.T])
@@ -412,7 +413,7 @@ def loadTSRK(which='All'):
     A=np.eye(2,dtype=object)
     bhat=np.array([180991*one/96132,-17777*one/32044])
     b=np.array([-44709*one/32044,48803*one/96132])
-    TSRK['order4']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat)
+    TSRK['order4']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat,type='General')
     #================================================
     d=np.array([-0.210299,-0.0995138])
     theta=-0.186912
@@ -420,7 +421,7 @@ def loadTSRK(which='All'):
     A=np.zeros([2,2])
     bhat=np.array([1.45338,0.248242])
     b=np.array([-0.812426,-0.0761097])
-    TSRK['order5']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat)
+    TSRK['order5']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat,type='General')
     if which=='All': return TSRK
     else: return TSRK[which]
 
