@@ -3551,7 +3551,10 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, plot=1):
 
     tol=1.e-14
     p,q = rk.__num__().stability_function(mode='float')
-    lamda = np.linalg.eigvals(L)
+    if len(L.shape)==2:
+        lamda = np.linalg.eigvals(L)
+    else:
+        lamda = L
     hmax = 2.5*len(rk)**2 / max(abs(lamda))
     h=bisect(0,hmax,acc,tol,_is_linearly_stable, params=(p,q,lamda))
     if plot:
