@@ -187,7 +187,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
 
     def plot_stability_region(self,N=100,bounds=None,color='r',filled=True, alpha=1.,
-                              to_file=False,longtitle=False):
+                              to_file=False,longtitle=False,Ntheta=1000,plot_axes=True):
         r""" 
             The region of absolute stability of a linear multistep method is
             the set
@@ -216,12 +216,12 @@ class LinearMultistepMethod(GeneralLinearMethod):
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
         import matplotlib.pyplot as plt
-        from utils import find_plot_bounds
         rho, sigma = self.__num__().characteristic_polynomials()
-        mag = lambda z : _root_condition(rho-z*sigma)
+        #mag = lambda z : _root_condition(rho-z*sigma)
+        mag = lambda z : _max_root(rho-z*sigma)
         vmag = np.vectorize(mag)
 
-        z = self._boundary_locus()
+        z = self._boundary_locus(Ntheta)
         if bounds is None:
             # Use boundary locus to decide plot region
             realmax, realmin = np.max(np.real(z)), np.min(np.real(z))
@@ -236,11 +236,16 @@ class LinearMultistepMethod(GeneralLinearMethod):
         X=np.tile(x,(N,1))
         Z=X+Y*1j
 
-        R=1.5-vmag(Z)
+        #R=1.5-vmag(Z)
+        R = vmag(Z)**10
 
 
         if filled:
-            plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
+            plt.clf()
+            plt.contourf(X,Y,R,np.linspace(0,1,100),alpha=alpha,cmap='Blues_r')#,colors=color)
+            #pc = plt.pcolor(X,Y,R,cmap='Blues_r',clim=[0,1])
+            #pc.cmap.set_over('white')
+            plt.clim((0,1))
         else:
             plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
 
@@ -252,8 +257,9 @@ class LinearMultistepMethod(GeneralLinearMethod):
             plt.setp(ax,title='Stability region')
 
         plt.hold(True)
-        plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-        plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+        if plot_axes:
+            plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+            plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
         plt.axis(bounds)
         plt.hold(False)
@@ -292,7 +298,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         plt.draw()
 
 
-    def _boundary_locus(self, N=1000):
+    def _boundary_locus(self, N=2000):
         r"""Compute the boundary locus, which is
             given by the set of points
 
