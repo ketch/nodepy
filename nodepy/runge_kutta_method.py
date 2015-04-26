@@ -952,8 +952,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
             plt.draw()
         return fig
 
-    def plot_order_star(self,N=200,bounds=[-5,5,-5,5],
-                    color='r',filled=True,plotaxes=True):
+    def plot_order_star(self,N=200,bounds=[-5,5,-5,5],plotroots=False,
+                        color=('w','b'),filled=True,fignum=None):
         r""" The order star of a Runge-Kutta method is the set
             
             $$ \\{ z \\in C : | \\phi(z)/\\exp(z) | \\le 1 \\} $$
@@ -969,28 +969,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
             **Example**::
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
-                >>> rk4.plot_order_star()
-         """
+                >>> rk4.plot_order_star() # doctest: +ELLIPSIS
+                <matplotlib.figure.Figure object at 0x...>
+        """
+        import stability_function
         import matplotlib.pyplot as plt
+
         p,q=self.__num__().stability_function(mode='float')
-        x=np.linspace(bounds[0],bounds[1],N)
-        y=np.linspace(bounds[2],bounds[3],N)
-        X=np.tile(x,(N,1))
-        Y=np.tile(y[:,np.newaxis],(1,N))
-        Z=X+Y*1j
-        R=np.abs(p(Z)/q(Z)/np.exp(Z))
-        plt.clf()
-        if filled:
-            plt.contourf(X,Y,R,[0,1],colors=color)
-        else:
-            plt.contour(X,Y,R,[0,1],colors=color)
+
+        fig = stability_function.plot_order_star(p,q,N,bounds,plotroots,color,filled,fignum)
         plt.title('Order star for '+self.name)
-        if plotaxes:
-            plt.hold(True)
-            plt.plot([0,0],[bounds[2],bounds[3]],'--k')
-            plt.plot([bounds[0],bounds[1]],[0,0],'--k')
-        plt.axis('Image')
-        plt.hold(False)
+        return fig
         
     #============================================================
     # Nonlinear Stability

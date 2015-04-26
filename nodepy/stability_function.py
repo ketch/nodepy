@@ -188,7 +188,7 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
 
 
 def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
-                color=('w','b'),filled=True,subplot=None):
+                color=('w','b'),filled=True,fignum=None):
     r""" Plot the order star of a rational function
         i.e. the set
         
@@ -216,10 +216,8 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
     Y=np.tile(y[:,np.newaxis],(1,N))
     Z=X+Y*1j
     R=np.abs(p(Z)/q(Z)/np.exp(Z))
-    if subplot is not None:
-        plt.subplot(subplot[0],subplot[1],subplot[2])
-    else:
-        plt.clf()
+
+    h = plt.figure(fignum)
     plt.contourf(X,Y,R,[0,1,1.e299],colors=color)
     plt.hold(True)
     if plotroots: plt.plot(np.real(p.r),np.imag(p.r),'ok')
@@ -227,7 +225,7 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
     plt.plot([bounds[0],bounds[1]],[0,0],'--k')
     plt.axis('Image')
     plt.hold(False)
-    plt.draw()
+    return h
 
 
 def pade_exp(k,j):
