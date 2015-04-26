@@ -41,7 +41,7 @@ At the moment, the following classes are implemented:
 
 **Examples**::
 
-    >>> from nodepy import lsrk
+    >>> from nodepy import lsrk, ivp
     >>> myrk = lsrk.load_2R('DDAS47')
     >>> print myrk
     DDAS4()7[2R]
@@ -56,6 +56,15 @@ At the moment, the following classes are implemented:
     _______|_________________________________________________
            | 0.094  0.150  0.285 -0.122  0.061  0.346  0.187
         
+    >>> rk58 = lsrk.load_2R('RK58[3R]C')
+    >>> rk58.name
+    'RK5(4)8[3R+]C'
+    >>> rk58.order()
+    5
+    >>> problem = ivp.load_ivp('vdp')
+    >>> t,u = rk58(problem)
+    >>> u[-1]
+    array([-1.40278844,  1.23080499])
 
 """
 from runge_kutta_method import *
@@ -135,7 +144,7 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
         self.alpha=alpha
         self.beta=beta
 
-    def __step__(self,f,t,u,dt,errest=False,x=None):
+    def __step__(self,f,t,u,dt,errest=False,x=None,**kwargs):
         """
             Take a time step on the ODE u'=f(t,u).
             The implementation here is special for 2R/3R low-storage methods
@@ -737,3 +746,7 @@ def load_2R(name):
                          772137014323./4386814405182,
                          277420604269./1857595682219])
     return TwoRRungeKuttaMethod(a,b,bhat,regs,fullname,description=descript,shortname=shortname)
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
