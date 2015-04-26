@@ -985,7 +985,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         from utils import bisect
 
         tol=1.e-14
-        r=bisect(0,rmax,acc,tol,self.__num__().is_circle_contractive)
+        r=bisect(0,rmax,acc,tol,self.__num__()._is_circle_contractive)
         return r
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
@@ -998,7 +998,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         from utils import bisect
 
-        r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
+        r=bisect(0,rmax,acc,tol,self._is_absolutely_monotonic)
         if r>=rmax-acc: return np.inf
         else: return r
 
@@ -1046,7 +1046,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return float(np.real(r))
 
 
-    def is_circle_contractive(self,r,tol):
+    def _is_circle_contractive(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method has radius of circle
             contractivity at least `r`.
             
@@ -1062,30 +1062,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         else:
             return 0
 
-    def denominator_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
-                                            tol=3.e-16):
-        """ 
-            Returns the radius of absolute monotonicity
-            of the denominator of the stability function of a Runge-Kutta method.
-        """
-        from utils import bisect
-        p,q=self.stability_function()
-        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p=q)
-        return r
 
-    def numerator_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
-                                            tol=3.e-16):
-        """ 
-            Returns the radius of absolute monotonicity
-            of the numerator of the stability function of a Runge-Kutta method.
-        """
-        from utils import bisect
-        p,q=self.stability_function()
-        r=bisect(0,rmax,acc,tol,is_absolutely_monotonic_poly,p=p)
-        return r
-
-
-    def is_absolutely_monotonic(self,r,tol):
+    def _is_absolutely_monotonic(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method is absolutely monotonic
             at `z=-r`.
 
