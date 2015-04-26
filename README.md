@@ -2,6 +2,13 @@
 [![Build Status](https://travis-ci.org/ketch/nodepy.png)](https://travis-ci.org/ketch/nodepy)
 [![Coverage Status](https://coveralls.io/repos/ketch/nodepy/badge.svg)](https://coveralls.io/r/ketch/nodepy)
 
+# Installation
+
+    pip install nodepy
+
+This will automatically fetch dependencies also (numpy, matplotlib, sympy, scipy).  It will not fetch
+cvxpy, which is an optional dependency (used only in a few specialized routines).
+
 # Overview
 
 NodePy (Numerical ODEs in Python) is a Python package for designing, analyzing,
