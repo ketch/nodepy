@@ -973,6 +973,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
         r""" 
             Returns the radius of circle contractivity
             of a Runge-Kutta method.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.circle_contractivity_radius() #doctest: +ELLIPSIS
+                1.000...
+
         """
         from utils import bisect
 
