@@ -21,6 +21,8 @@
     2
     >>> ssp32.ssp_coefficient()
     1/2
+    >>> ssp32.plot_stability_region() #doctest: +ELLIPSIS
+    <matplotlib.figure.Figure object at 0x...>
 
 """
 from general_linear_method import GeneralLinearMethod
@@ -137,6 +139,16 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return self.order()
 
     def latex(self):
+        r"""
+        Print a LaTeX representation of a linear multistep formula.
+
+        **Example**::
+
+            >>> from nodepy import lm
+            >>> print lm.Adams_Bashforth(2).latex()
+            \begin{align} y_{n + 2} - y_{n + 1} = \frac{3}{2}h f(y_{n + 1}) - \frac{1}{2}h f(y_{n})\end{align}
+
+        """
         from sympy import symbols, latex
         n = symbols('n')
         from snp import printable
@@ -216,7 +228,6 @@ class LinearMultistepMethod(GeneralLinearMethod):
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
         import matplotlib.pyplot as plt
-        from utils import find_plot_bounds
         rho, sigma = self.__num__().characteristic_polynomials()
         mag = lambda z : _root_condition(rho-z*sigma)
         vmag = np.vectorize(mag)
