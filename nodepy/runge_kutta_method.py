@@ -960,8 +960,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - bounds  -- limits of plotting region
                 - color   -- color to use for this plot
                 - filled  -- if true, order star is filled in (solid); otherwise it is outlined
-        """
-        import matplotlib.pyplot as pl
+
+            **Example**::
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.plot_order_star()
+         """
+        import matplotlib.pyplot as plt
         p,q=self.__num__().stability_function(mode='float')
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
@@ -969,18 +974,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
         Y=np.tile(y[:,np.newaxis],(1,N))
         Z=X+Y*1j
         R=np.abs(p(Z)/q(Z)/np.exp(Z))
-        pl.clf()
+        plt.clf()
         if filled:
-            pl.contourf(X,Y,R,[0,1],colors=color)
+            plt.contourf(X,Y,R,[0,1],colors=color)
         else:
-            pl.contour(X,Y,R,[0,1],colors=color)
-        pl.title('Order star for '+self.name)
+            plt.contour(X,Y,R,[0,1],colors=color)
+        plt.title('Order star for '+self.name)
         if plotaxes:
-            pl.hold(True)
-            pl.plot([0,0],[bounds[2],bounds[3]],'--k')
-            pl.plot([bounds[0],bounds[1]],[0,0],'--k')
-        pl.axis('Image')
-        pl.hold(False)
+            plt.hold(True)
+            plt.plot([0,0],[bounds[2],bounds[3]],'--k')
+            plt.plot([bounds[0],bounds[1]],[0,0],'--k')
+        plt.axis('Image')
+        plt.hold(False)
         
     #============================================================
     # Nonlinear Stability
