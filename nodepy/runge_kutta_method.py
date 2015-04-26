@@ -911,6 +911,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 - bounds  -- limits of plotting region
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+
+            **Example**::
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.plot_stability_region() #doctest: +ELLIPSIS
+                <matplotlib.figure.Figure object at 0x...>
         """
         import stability_function 
         import matplotlib.pyplot as plt
