@@ -586,14 +586,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         if mode == 'float':
             method = self.__num__()
+            from numpy import sqrt
         elif mode == 'exact':
             method = self
+            from sympy import sqrt
         else:
             raise Exception('Unrecognized mode value')
 
         for tree in forest:
             errs.append(method.error_coefficient(tree))
-        return np.sqrt(float(np.sum(np.array(errs)**2)))
+        if mode == 'float':
+            return sqrt(float(np.sum(np.array(errs)**2)))
+        else:
+            return sqrt(np.sum(np.array(errs)**2))
 
     def order(self,tol=1.e-14,mode='float',extremely_high_order=False):
         """ The order of a Runge-Kutta method.
@@ -1260,29 +1265,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         return gamma, alpha, alphatilde
 
-    def split(self,r,tol=1.e-15):
-        s=len(self)
-        I=np.eye(s+1)
-        d,P=self.canonical_shu_osher_form(r)
-
-        # Split P into positive and negative parts
-        P_plus=P*(P>0).astype(int)
-        P_minus=-P*(P<0).astype(int)
-
-        # Form new coefficients
-        M=np.linalg.inv(I+2*P_minus)
-        alpha=np.dot(M,P_plus)
-        gamma=np.dot(M,d)
-        alphatilde=np.dot(M,P_minus)
-
-        if self.is_explicit():
-            # Assuming gamma is positive, we can redistribute it
-            alpha[1:,0]+=gamma[1:]/2.
-            alphatilde[1:,0]+=gamma[1:]/2.
-            gamma[1:]=0.
-
-        return gamma, alpha, alphatilde
-
 
     def resplit(self,r,tol=1.e-15,max_iter=5):
         s = len(self)
@@ -1308,18 +1290,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return gamma, alpha_up, alpha_down
 
 
-    def is_splittable(self,r,tol=1.e-15,iterate=True):
-        if iterate:
-            d,alpha,alphatilde=self.resplit(r,tol=tol)
-        else:
-            d,alpha,alphatilde=self.split(r,tol=tol)
+    def is_splittable(self,r,tol=1.e-15):
+        d,alpha,alphatilde=self.resplit(r,tol=tol)
         if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: 
             return True
         else: 
             return False
 
-    def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13,
-                                    algorithm='split',iterate=True):
+    def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13,algorithm='split'):
         r"""
             Return the optimal downwind splitting of the method
             along with the optimal downwind SSP coefficient.
@@ -1345,7 +1323,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if algorithm == 'LP':
             r=bisect(0,rmax,acc,tol,self.lp_perturb)
         elif algorithm == 'split':
-            r=bisect(0,rmax,acc,tol,self.is_splittable,iterate=iterate)
+            r=bisect(0,rmax,acc,tol,self.is_splittable)
 
         d,alpha,alphatilde=self.resplit(r,tol=tol)
         return r,d,alpha,alphatilde
@@ -3197,6 +3175,8 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
             3
             >>> ex3.principal_error_norm()
             0.04606423319938055
+            >>> ex3.principal_error_norm(mode='exact')
+            sqrt(11)/72
 
             >>> ex4 = rk.extrap(2,'midpoint')
             >>> print ex4
