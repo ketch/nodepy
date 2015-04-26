@@ -65,7 +65,14 @@ At the moment, the following classes are implemented:
     >>> t,u = rk58(problem)
     >>> u[-1]
     array([-1.40278844,  1.23080499])
-
+    >>> rk2S = lsrk.load_LSRK('./method_coefficients/58-2S_acc.txt',has_emb=True)
+    >>> rk2S.order()
+    5
+    >>> rk2S.embedded_method.order()
+    4
+    >>> rk3S = lsrk.load_LSRK('./method_coefficients/58-3Sstar_acc.txt',lstype='3S*')
+    >>> rk3S.principal_error_norm() # doctest: +ELLIPSIS
+    0.00035742076...
 """
 from runge_kutta_method import *
 
@@ -342,6 +349,8 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
         self.delta=delta
         self.lstype=lstype
         self.shortname=shortname
+        self.alphahat = None
+        self._p_hat = None
 
         if lstype=='2S_pair':
             m=len(betavec)-1
@@ -411,7 +420,6 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
             self.bhat=bhat
  
         self.alpha, self.beta = alpha, beta
-        self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
 
         if order is not None:
             self._p = order
@@ -500,6 +508,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
         bhat=[]
         for line in f:
             bhat.append(float(line))
+        bhat = np.array(bhat)
 
     # Determine number of stages
     if lstype=='2S' or lstype=='2S*': m=int(len(coeff)/3+1) 
