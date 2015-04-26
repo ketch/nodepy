@@ -3222,7 +3222,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
             p = 2*p
         return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
 
-def extrap_pair(p, base='euler', seq='harmonic'):
+def extrap_pair(p, base='euler'):
     """ 
         Returns an embedded RK pair.  If the base method is Euler, the prinicpal method has
         order p and the embedded method has order p-1.  If the base
@@ -3231,10 +3231,15 @@ def extrap_pair(p, base='euler', seq='harmonic'):
         **Examples**::
 
             >>> from nodepy import rk
-            >>> ex32 = rk.extrap_pair(3)
+            >>> ex32 = rk.extrap_pair(3,base='Euler')
             >>> ex32.order()
             3
             >>> ex32.embedded_method.order()
+            2
+            >>> ex42 = rk.extrap_pair(2,base='midpoint')
+            >>> ex42.order()
+            4
+            >>> ex42.embedded_method.order()
             2
     """
     if p<2:
