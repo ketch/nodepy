@@ -812,6 +812,8 @@ def arw2(gam,c):
         1
         >>> CNLF.method2.ssp_coefficient()
         0
+        >>> print CNLF.stiff_damping_factor() #doctest: +ELLIPSIS
+        0.999...
     """
     half = sympy.Rational(1,2)
     alpha = snp.array([gam-half,-2*gam,gam+half])
