@@ -1824,6 +1824,14 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         self._p_hat = order[1]
 
     @property
+    def main_method(self):
+        """Return the main method of the pair (usually the higher-order one)."""
+        if self.alpha is None:
+            return ExplicitRungeKuttaMethod(self.A,self.b,order=self._p)
+        else:
+            return ExplicitRungeKuttaMethod(alpha=self.alpha,beta=self.beta,order=self._p)
+
+    @property
     def embedded_method(self):
         """Always recompute the embedded method on the fly.  This may be inefficient."""
         if self.alphahat is None:
@@ -1991,6 +1999,16 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
     def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
                               plotroots=False,alpha=1.,scalefac=1.,to_file=False,
                               longtitle=True):
+        r"""Plot the absolute stability region of an RK pair.  By default,
+            the region of the main method is filled in red and the region of
+            the embedded method is outlined in black.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> bs5 = rk.loadRKM('BS5')
+                >>> bs5.plot_stability_region()
+        """
         import stability_function 
         import matplotlib.pyplot as plt
 
