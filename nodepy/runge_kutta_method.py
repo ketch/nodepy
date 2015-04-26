@@ -3334,46 +3334,6 @@ def compose(RK1,RK2,h1=1,h2=1):
     else:
         return RungeKuttaMethod(A,b)
 
-def plot_rational_stability_region(p,q,N=200,bounds=[-10,1,-5,5],
-                          color='r',filled=True,scaled=False):
-    r""" 
-        Plot the region of absolute stability
-        of a rational function i.e. the set
-
-        `\{ z \in C : |\phi (z)|\le 1 \}`
-
-        where `\phi(z)=p(z)/q(z)` is the rational function.
-
-        **Input**: 
-            required
-                - p       -- numerator (numpy.poly1d)
-                - p       -- denominator (numpy.poly1d)
-            
-            optional
-                - N       -- Number of gridpoints to use in each direction
-                - bounds  -- limits of plotting region
-                - color   -- color to use for this plot
-                - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
-    """
-    import matplotlib.pyplot as pl
-    m=len(p)
-    x=np.linspace(bounds[0],bounds[1],N)
-    y=np.linspace(bounds[2],bounds[3],N)
-    X=np.tile(x,(N,1))
-    Y=np.tile(y[:,np.newaxis],(1,N))
-    Z=X+Y*1j
-    if not scaled: R=np.abs(p(Z)/q(Z))
-    else: R=np.abs(p(Z*m)/q(Z*m))
-    if filled:
-        pl.contourf(X,Y,R,[0,1],colors=color)
-    else:
-        pl.contour(X,Y,R,[0,1],colors=color)
-    pl.hold(True)
-    pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-    pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
-    pl.axis('Image')
-    pl.hold(False)
-    pl.show()
 
 def python_to_fortran(code):
     code = code.replace("dot(b","dot_product(b")
