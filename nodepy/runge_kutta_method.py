@@ -1622,30 +1622,6 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         return theta
 
-    def internal_stability_polynomials_unexpanded(self):
-        stage = len(self)+1
-
-        alpha = self.alpha[0:stage,0:stage-1]
-        beta  = self.beta[0:stage,0:stage-1]
-
-        s = alpha.shape[1]
-
-        import sympy
-        z = sympy.var('z')
-        I = sympy.eye(s)
-
-        alpha_star = sympy.Matrix(alpha[0:-1,:])
-        beta_star  = sympy.Matrix(beta[0:-1,:])
-
-        apbz_star = alpha_star + beta_star*z
-        apbz = sympy.Matrix(alpha[-1,:]+z*beta[-1,:])
-
-        thet = (I-apbz_star).T.upper_triangular_solve(apbz.T)
-
-        # Don't consider perturbations to first stage:
-        theta = thet[1:]
-        return theta
-
 
     def internal_stability_plot(self,bounds=None,N=200,use_butcher=False,formula='lts',levels=[1,100,500,1000,1500,10000]):
         r"""Plot internal stability regions.
