@@ -3485,14 +3485,11 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, tol=1.e-14, plot=1):
             Centered differences on a grid with spacing 1/100:
             >>> L1=semidisc.centered_diffusion_matrix(100)
             >>> L2=semidisc.centered_advection_diffusion_matrix(1.,1./500,100)
-            >>> L3=semidisc.weno5_linearized_matrix(100)
 
             >>> print "%.5f" % rk.linearly_stable_step_size(rk44,L1,plot=0)
             0.00007
             >>> print "%.5f" % rk.linearly_stable_step_size(rk44,L2,plot=0)
             0.02423
-            >>> print "%.5f" % rk.linearly_stable_step_size(rk44,L3,plot=0)
-            0.01733
 
             >>> sd = semidisc.load_semidisc('spectral difference advection',order=1)
             >>> print "%.5f" % rk.linearly_stable_step_size(rk44,sd.L,plot=0)
