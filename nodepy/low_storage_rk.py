@@ -65,12 +65,13 @@ At the moment, the following classes are implemented:
     >>> t,u = rk58(problem)
     >>> u[-1]
     array([-1.40278844,  1.23080499])
-    >>> rk2S = lsrk.load_LSRK('./method_coefficients/58-2S_acc.txt',has_emb=True)
+    >>> import nodepy
+    >>> rk2S = lsrk.load_LSRK(nodepy.__path__[0]+'/method_coefficients/58-2S_acc.txt',has_emb=True)
     >>> rk2S.order()
     5
     >>> rk2S.embedded_method.order()
     4
-    >>> rk3S = lsrk.load_LSRK('./method_coefficients/58-3Sstar_acc.txt',lstype='3S*')
+    >>> rk3S = lsrk.load_LSRK(nodepy.__path__[0]+'/method_coefficients/58-3Sstar_acc.txt',lstype='3S*')
     >>> rk3S.principal_error_norm() # doctest: +ELLIPSIS
     0.00035742076...
 """
