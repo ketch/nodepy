@@ -887,12 +887,22 @@ class RungeKuttaMethod(GeneralLinearMethod):
         
 
     def plot_stability_function(self,bounds=[-20,1]):
-        import matplotlib.pyplot as pl
+        r"""Plot the value of the stability function along the negative real axis.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.plot_stability_function()
+
+        """
+        import matplotlib.pyplot as plt
         p,q=self.stability_function()
         xx=np.arange(bounds[0], bounds[1], 0.01)
         yy=p(xx)/q(xx)
-        pl.plot(xx,yy)
-        pl.draw()
+        fig, = plt.plot(xx,yy)
+        plt.draw()
+
 
 
     def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
@@ -2007,7 +2017,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
                 >>> from nodepy import rk
                 >>> bs5 = rk.loadRKM('BS5')
-                >>> bs5.plot_stability_region()
+                >>> bs5.plot_stability_region() # doctest: +ELLIPSIS
+                <matplotlib.figure.Figure object at 0x...>
+
         """
         import stability_function 
         import matplotlib.pyplot as plt
