@@ -232,15 +232,27 @@ def pade_exp(k,j):
     """
     Return the Pade approximation to the exponential function
     with numerator of degree k and denominator of degree j.
+
+    **Example**::
+
+        >>> from nodepy import stability_function
+        >>> p, q = stability_function.pade_exp(2,3)
+        >>> p
+        poly1d([1/20, 2/5, 1], dtype=object)
+        >>> q
+        poly1d([-1/60, 3/20, -3/5, 1], dtype=object)
+
     """
-    Pcoeffs=[1]
-    Qcoeffs=[1]
+    from sympy import Rational
+    one = Rational(1)
+    Pcoeffs=[one]
+    Qcoeffs=[one]
     for n in range(1,k+1):
-        newcoeff=Pcoeffs[0]*(k-n+1.)/(j+k-n+1.)/n
+        newcoeff=Pcoeffs[0]*(k-n+one)/(j+k-n+one)/n
         Pcoeffs=[newcoeff]+Pcoeffs
     P=np.poly1d(Pcoeffs)
     for n in range(1,j+1):
-        newcoeff=-1.*Qcoeffs[0]*(j-n+1.)/(j+k-n+1.)/n
+        newcoeff=-one*Qcoeffs[0]*(j-n+one)/(j+k-n+one)/n
         Qcoeffs=[newcoeff]+Qcoeffs
     Q=np.poly1d(Qcoeffs)
     return P,Q
@@ -248,10 +260,19 @@ def pade_exp(k,j):
 def taylor(p):
     r"""
         Return the Taylor polynomial of the exponential, up to order p.
+
+        **Example**::
+
+            >>> from nodepy import stability_function
+            >>> stability_function.taylor(3)
+            poly1d([1/6, 1/2, 1, 1], dtype=object)
+
+
+poly1d([-1/60, 3/20, -3/5, 1], dtype=object)
     """
     from sympy import factorial
 
-    coeffs = np.array( [1./factorial(k) for k in range(p+1) ] )
+    coeffs = np.array( [1/factorial(k) for k in range(p+1) ] )
 
     return np.poly1d(coeffs[::-1])
 
