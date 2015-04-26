@@ -1327,8 +1327,20 @@ class RungeKuttaMethod(GeneralLinearMethod):
             The default algorithm (split with iteration) is not
             provably correct.  The LP algorithm is.  See the paper
             (Higueras & Ketcheson) for more details.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> r, d, alpha, alphatilde = rk4.optimal_perturbed_splitting(algorithm='split')
+                >>> print r # doctest: +ELLIPSIS
+                0.68501606...
         """
         from utils import bisect
+        try:
+            import cvxpy as cvx
+        except:
+            algorithm = 'split'
 
         if algorithm == 'LP':
             r=bisect(0,rmax,acc,tol,self.lp_perturb)
