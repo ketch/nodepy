@@ -3667,4 +3667,3 @@ def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-

@@ -30,7 +30,6 @@ REFERENCES:
 from __future__ import division
 from general_linear_method import GeneralLinearMethod
 import runge_kutta_method as rk
-import utils
 import numpy as np
 import snp
 
@@ -220,3 +219,6 @@ def downwind_shu_osher_to_butcher(alpha,alphat,beta,betat):
     return A,At,b,bt
 
 
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

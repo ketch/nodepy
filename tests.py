@@ -9,6 +9,7 @@ import unittest
 for module_name in ('runge_kutta_method',
                     'linear_multistep_method',
                     'twostep_runge_kutta_method',
+                    'downwind_runge_kutta_method',
                     'ivp',
                     'low_storage_rk',
                     'rooted_trees',

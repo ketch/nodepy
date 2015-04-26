@@ -6,6 +6,7 @@ __version__="0.6"
 
 import runge_kutta_method as rk
 import twostep_runge_kutta_method as tsrk
+import downwind_runge_kutta_method as dwrk
 import linear_multistep_method as lm
 import rooted_trees as rt
 import ivp
