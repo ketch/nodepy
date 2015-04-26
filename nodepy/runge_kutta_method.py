@@ -658,28 +658,29 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def effective_order(self,tol=1.e-14):
         """ 
             Returns the effective order of a Runge-Kutta method.
+            This may be higher than the classical order.
+
+            **Example**:
+            >>> from nodepy import rk
+            >>> RK4 = rk.loadRKM('RK44')
+            >>> RK4.effective_order()
+            4
+
         """
         q=0
         while True:
             if q==4: return q
-            z=self.effective_order_conditions(q+1)
+            z=self.effective_order_condition_residuals(q+1)
             if np.any(abs(z)>tol): return q
             q=q+1
 
-    def effective_order_conditions(self,q):
+    def effective_order_condition_residuals(self,q):
         """
             Generates and evaluates code to test whether a method
             satisfies the effective order q conditions (only).
 
             Similar to order_condition_residuals(self,p), but at the moment
             works only for q <= 4. (enough to find Explicit SSPRK)
-
-            Currently uses Albrecht's recursion to generate the
-            order conditions. Then based on q and p the effective order
-            conditions are derived.
-
-            TODO: Compute the effective order p>=5 conditions based on 
-            Albrecht's recursion approach.
         """
         from sympy import factorial,Rational
         A,b,c=self.A,self.b,self.c
@@ -700,8 +701,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             exec('z[0]='+code[1]+'-'+'np.dot(b,np.dot(A,c**2))/2.+1/24.')
             exec('z[1]='+code2[0]+'-'+code[1]+'-'+code[2])
         if q>4:
-            raise NotImplementedError('At the moment, conditions of effective order \
-                            five or more are not computed.')
+            raise NotImplementedError
         return z
 
     def stage_order(self,tol=1.e-14):
