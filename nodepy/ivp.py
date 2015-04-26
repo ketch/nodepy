@@ -21,6 +21,12 @@ This module implements the initial value problem as a class.
     >>> t,y = rk4(myivp)
     >>> y[-1][0] # doctest: +ELLIPSIS
     2.06115362252...e-09
+
+    # Load a large set of non-stiff problems
+    >>> problems = detest_suite_plus()
+
+    # Load a few stiff problems
+    >>> problems = detest_stiff_suite()
 """
 import numpy as np
 
@@ -423,6 +429,11 @@ def detest_suite_plus():
 def detest_suite_minus():
     """The entire non-stiff DETEST suite of problems except the F (discontinous) problems."""
     detestkeys=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5','C1','C2','C3','C4','C5','D1','D2','D3','D4','D5','E1','E2','E3','E4','E5']
+    return [detest(dtkey) for dtkey in detestkeys]
+
+def detest_stiff_suite():
+    """The entire non-stiff DETEST suite of problems."""
+    detestkeys=['A1', 'A2', 'A3', 'A4']
     return [detest(dtkey) for dtkey in detestkeys]
 
 
