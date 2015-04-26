@@ -434,7 +434,7 @@ def detest_suite_minus():
 def detest_stiff_suite():
     """The entire non-stiff DETEST suite of problems."""
     detestkeys=['A1', 'A2', 'A3', 'A4']
-    return [detest(dtkey) for dtkey in detestkeys]
+    return [detest_stiff(dtkey) for dtkey in detestkeys]
 
 
 def detest_stiff(testkey):
