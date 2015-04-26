@@ -741,19 +741,31 @@ class RungeKuttaMethod(GeneralLinearMethod):
     # Classical Stability
     #============================================================
     def stability_function_unexpanded(self):
+        r"""Compute the stability function expression but don't simplify it.
+            This can be useful for performance reasons.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.stability_function_unexpanded()
+                z*(z/2 + 1)/3 + z*(z*(z/2 + 1)/2 + 1)/3 + z*(z*(z*(z/2 + 1)/2 + 1) + 1)/6 + z/6 + 1
+                >>> rk4.stability_function_unexpanded().simplify()
+                z**4/24 + z**3/6 + z**2/2 + z + 1
+        """
         import sympy
         z = sympy.var('z')
         s = len(self)
         I = sympy.eye(s)
         
         v = 1 - self.alpha.sum(1)
-        vstar = sympy.Matrix(v[:-1]).T
+        vstar = sympy.Matrix(v[:-1])
         v_mp1 = sympy.Rational(v[-1])
         alpha_star = sympy.Matrix(self.alpha[:-1,:])
         beta_star = sympy.Matrix(self.beta[:-1,:])
         alpha_mp1 = sympy.Matrix(self.alpha[-1,:])
         beta_mp1 = sympy.Matrix(self.beta[-1,:])
-        p1 = (alpha_mp1 + z*beta_mp1)*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
+        p1 = (alpha_mp1 + z*beta_mp1).T*(I-alpha_star-z*beta_star).lower_triangular_solve(vstar)
         p1 = p1[0] + v_mp1
         return p1
 
