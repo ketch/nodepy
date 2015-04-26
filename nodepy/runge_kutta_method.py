@@ -542,7 +542,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         err_coeffs=[]
         for tree in forest:
             err_coeffs.append(self.error_coefficient(tree))
-        return err_coeffs
+        return snp.array(err_coeffs)
 
     def error_metrics(self):
         r"""
@@ -560,7 +560,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.error_metrics()
-                (0.01450458234319821, 1/120, 0.016035314699606992, 1/144, 1)
+                (sqrt(1745)/2880, 1/120, sqrt(8531)/5760, 1/144, 1)
                 
             Reference: [kennedy2000]_
         """
@@ -568,9 +568,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
         tau_1=self.error_coeffs(q+1)
         tau_2=self.error_coeffs(q+2)
 
-        A_qp1=np.sqrt(float(np.sum(np.array(tau_1)**2)))
+        A_qp1 = snp.norm(tau_1)
         A_qp1_max=max([abs(tau) for tau in tau_1])
-        A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
+        A_qp2 = snp.norm(tau_2)
         A_qp2_max=max([abs(tau) for tau in tau_2])
 
         D=max(np.max(np.abs(self.A)),
@@ -1925,8 +1925,18 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             return u_new
 
     def error_metrics(self,q=None,p=None):
-        r"""Return full set of error metrics
-            See [kennedy2000]_ p. 181"""
+        r"""Return full set of error metrics for an embedded RK pair.
+            See [kennedy2000]_ p. 181
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> bs5 = rk.loadRKM('BS5')
+                >>> bs5.error_metrics()
+                main method has order 5
+                embedded method has order 4
+                (43*sqrt(83011)/558835200, 43/3386880, sqrt(29695176594765489880490334265)/810521680634265600, 1451/15966720, sqrt(870269901055795)/277898765760, 10147/131580855, sqrt(51577359825120524319571156056057595)/219308015066060340, 26201089/40912704, sqrt(5250600078722255566247933273951710555)/2193080150660603400, 305343067/400035328, 482048/414219, 5987277*sqrt(72241974756542598745)/243675572295622600, 5987277/36366848)
+        """
         if q is None:
             q=self.order()
             print 'main method has order '+str(q)
@@ -1934,12 +1944,12 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             p=self.embedded_method.order()
             print 'embedded method has order '+str(p)
 
-        tau_1=self.error_coeffs(q+1)
-        tau_2=self.error_coeffs(q+2)
+        tau_1 = self.error_coeffs(q+1)
+        tau_2 = self.error_coeffs(q+2)
 
-        A_qp1=np.sqrt(float(np.sum(np.array(tau_1)**2)))
+        A_qp1 = snp.norm(tau_1)
+        A_qp2 = snp.norm(tau_2)
         A_qp1_max=max([abs(tau) for tau in tau_1])
-        A_qp2=np.sqrt(float(np.sum(np.array(tau_2)**2)))
         A_qp2_max=max([abs(tau) for tau in tau_2])
 
         D=max(np.max(np.abs(self.A)),
@@ -1949,11 +1959,12 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         tau_pp1_hat=self.embedded_method.error_coeffs(p+1)
         tau_pp2_hat=self.embedded_method.error_coeffs(p+2)
 
-        A_pp1_hat=np.sqrt(float(np.sum(np.array(tau_pp1_hat)**2)))
+        A_pp1_hat = snp.norm(tau_pp1_hat)
+        A_pp2_hat = snp.norm(tau_pp2_hat)
+        A_pp2 = snp.norm(tau_pp2)
+
         A_pp1_hat_max=max([abs(tau) for tau in tau_pp1_hat])
 
-        A_pp2=    np.sqrt(float(np.sum(np.array(tau_pp2)**2)))
-        A_pp2_hat=np.sqrt(float(np.sum(np.array(tau_pp2_hat)**2)))
         A_pp2_max=    max([abs(tau) for tau in tau_pp2])
         A_pp2_hat_max=max([abs(tau) for tau in tau_pp2_hat])
 
@@ -1961,7 +1972,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         B_pp2_max=A_pp2_hat_max/A_pp1_hat_max
 
         tau2diff=np.array(tau_pp2_hat)-np.array(tau_pp2)
-        C_pp2=    np.sqrt(float(np.sum(tau2diff**2)))/A_pp1_hat
+        C_pp2 = snp.norm(tau2diff) / A_pp1_hat
         C_pp2_max=max([abs(tau) for tau in tau2diff])/A_pp1_hat_max
 
         D=max(np.max(self.A),np.max(self.b),np.max(self.bhat),np.max(self.c))

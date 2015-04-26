@@ -75,6 +75,13 @@ def diag(v, k=0):
 def poly(A,mode='exact'):
     if mode=='exact': return sympy.berkowitz
 
+def norm(x):
+    if x.dtype == object:
+        from sympy import sqrt
+        return sqrt(np.sum(x**2))
+    else:
+        return np.sqrt(float(np.sum(x**2)))
+
 def array(x):
     return np.array(x,dtype=object)
 
