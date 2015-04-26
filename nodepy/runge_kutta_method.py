@@ -604,20 +604,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.order()
                 4
+                >>> rk4.order(mode='exact')
+                4
 
-            mode=='hard-coded': 
-                Use hard-coded Butcher conditions in oc_butcher.py (those were
-                auto-generated previously).  
-                This is the fastest, evaluated using floating-point coefficients.
+            mode == 'float': (default)
+                Check that conditions hold approximately, to within tolerance `tol`.
+                Appropriate when coefficients are floating-point, or for faster
+                checking of high-order methods.
 
-            mode=='generation-albrecht': 
-                Use Albrecht's recursion to generate the order conditions.  
-                Evaluated symbolically.
-
-            mode=='generation-trees':
-                Use Butcher's recursive product on trees.
-                Advantages: Most satisfying, no maximum order
-                Disadvantages: way too slow for high order
+            mode == 'exact':
+                Check that conditions hold exactly.  Appropriate when coefficients
+                are specified as rational or algebraic numbers, but may be very
+                slow for high order methods.
         """
         if mode=='float':
             if not extremely_high_order:
@@ -636,8 +634,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 z = snp.array([simplify(zz) for zz in z])
                 if np.any(abs(z)>tol): break
                 p=p+1
-        elif mode=='generation-trees':
-            raise NotImplementedError
         return p
 
     def order_condition_residuals(self,p):
