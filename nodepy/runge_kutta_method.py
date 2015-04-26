@@ -1097,7 +1097,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
     # Representations
     #============================================================
-    def optimal_shu_osher_form(self,r=None):
+    def optimal_shu_osher_form(self):
         r"""
             Gives a Shu-Osher form in which the SSP coefficient is
             evident (i.e., in which `\\alpha_{ij},\\beta_{ij} \\ge 0` and
@@ -1116,25 +1116,37 @@ class RungeKuttaMethod(GeneralLinearMethod):
             where K=[ A
                      b^T].
 
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> rk2 = rk.loadRKM('MTE22')
+                >>> rk2.optimal_shu_osher_form()
+                (array([[0, 0, 0],
+                       [1.00000000000000, 0, 0],
+                       [0.625000000060027, 0.374999999939973, 0]], dtype=object), array([[0, 0, 0],
+                       [0.666666666666667, 0, 0],
+                       [4.00177668780088e-11, 0.750000000000000, 0]], dtype=object))
+
             **References**: 
                 #. [higueras2005]_
 
         """
         m=len(self)
-        if r is None: r=self.absolute_monotonicity_radius()
-        K=np.vstack([self.A,self.b])
-        K=np.hstack([K,np.zeros([m+1,1])])
-        X=snp.eye(m+1)+r*K
-        beta=snp.solve(X,K)
-        beta=beta[:,:-1]
-        alpha=r*beta
-        for i in range(1,len(self)+1):
-            alpha[i,0]=1.-np.sum(alpha[i,1:])
+        r = self.absolute_monotonicity_radius()
+        v, alpha = self.canonical_shu_osher_form(r)
+        beta = alpha / r
+        if self.is_explicit():
+            for i in range(1,len(self)+1):
+                alpha[i,0]=1.-np.sum(alpha[i,1:])
         return alpha, beta
 
     def canonical_shu_osher_form(self,r):
-        r""" d,P where P is the matrix `P=r(I+rK)^{-1}K`
-             and d is the vector `d=(I+rK)^{-1}e=(I-P)e`
+        r""" Returns d,P where P is the matrix `P=r(I+rK)^{-1}K`
+             and d is the vector `d=(I+rK)^{-1}e=(I-P)e`.
+
+             Note that this can be computed for any value of `r`,
+             including values for which `d, P` may have negative
+             entries.
         """
         s=len(self)
         K=np.vstack([self.A,self.b])
