@@ -3004,6 +3004,24 @@ def dcweights(x):
     return w[:,:-1]
 
 def DC_pair(s,theta=0.,grid='eq'):
+    r"""Spectral deferred correction embedded pairs.
+        See also the help for DC().
+        **Examples**::
+
+            >>> from nodepy import rk
+            >>> DC2 = rk.DC_pair(2)
+            >>> print DC2
+            Picard 3(2)
+            <BLANKLINE>
+             0     |
+             1/2   | 1/2
+             1     | 1/2    1/2
+             1/2   | 5/24   1/3    -1/24
+             1     | 1/6    2/3    1/6
+            _______|___________________________________
+                   | 1/6    0      0      2/3    1/6
+                   | 1/6    2/3    1/6                 
+    """
 
     if s<2:
         raise Exception('s must be equal to or greater than 2')
@@ -3023,7 +3041,7 @@ def DC_pair(s,theta=0.,grid='eq'):
 def DC(s,theta=0,grid='eq',num_corr=None):
     """ Spectral deferred correction methods.
         For now, based on explicit Euler and equispaced points.
-        TODO: generalize base method and grid.
+        For theta=0, this is Picard iteration.
 
         **Input**: s -- number of grid points & number of correction iterations
 
@@ -3034,6 +3052,18 @@ def DC(s,theta=0,grid='eq',num_corr=None):
 
         **Examples**::
             
+            >>> from nodepy import rk
+            >>> dc3 = rk.DC(3)
+            >>> dc3.order()
+            4
+            >>> dc3.principal_error_norm() #doctest: +ELLIPSIS
+            0.0069444...
+            >>> dc3_cheb = rk.DC(3,grid='cheb')
+            >>> dc3_cheb.order()
+            4
+            >>> dc3_cheb.principal_error_norm() #doctest: +ELLIPSIS
+            0.0066478...
+
         **References**: 
 
             #. [dutt2000]_
@@ -3048,13 +3078,6 @@ def DC(s,theta=0,grid='eq',num_corr=None):
     elif grid=='cheb':
         t=0.5*(np.cos(np.arange(0,s+1)*np.pi/s)+1.)  #Chebyshev
         t=t[::-1]
-    elif grid=='gauss':
-        # Not working yet; these nodes don't include the endpoints
-        Toff = 0.5/np.sqrt(1.-(2.*np.arange(1,m))**(-2.))
-        T = np.diag(Toff,1) + np.diag(Toff,-1)
-        t, junk = np.linalg.eig(T)
-        t.sort()
-        t = (t+1.)/2.
 
     dt=np.diff(t)
 
