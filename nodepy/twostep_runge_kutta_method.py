@@ -1,4 +1,4 @@
-"""
+r"""
 Class for two-step Runge-Kutta methods, and various functions related to them.
 
 This module is extremely experimental and some parts may be incompatible
@@ -13,13 +13,22 @@ with the rest of nodepy.
     >>> tsrk4 = tsrk.loadTSRK('order4')
     >>> tsrk5 = tsrk.loadTSRK('order5')
 
-    >>> print tsrk.loadTSRK('order4')
+    >>> print tsrk4
     Two-step Runge-Kutta Method
     General
      -113/88      | 1435/352      -479/352      | 1
      -103/88      | 1917/352      -217/352      |               1
     ______________|_____________________________|_____________________________
     -0.560        | 180991/96132  -17777/32044  | -44709/32044  48803/96132
+    >>> print tsrk4.latex()
+    \begin{align}
+      \begin{array}{c|cc|cc}
+      - \frac{113}{88} & \frac{1435}{352} & - \frac{479}{352} & 1 & 0\\
+      - \frac{103}{88} & \frac{1917}{352} & - \frac{217}{352} & 0 & 1\\
+      \hline
+      - \frac{4483}{8011} & \frac{180991}{96132} & - \frac{17777}{32044} & - \frac{44709}{32044} & \frac{48803}{96132}
+      \end{array}
+    \end{align}
 
 * Check their order of accuracy::
 
@@ -218,7 +227,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         s+='c'*(len(self)) 
         s+='}\n'
         for i in range(len(self)):
-            s+='  '+latex(d[i,0])
+            s+='  '+latex(d[i])
             
             for j in range(len(self)):
                 s+=' & '+latex(Ahat[i,j])
@@ -232,9 +241,9 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         s+='\n'
         s+= '  '+latex(theta)
         for j in range(len(self)):
-        	s+=' & '+latex(bhat[j,0])
+            s+=' & '+latex(bhat[j])
         for j in range(len(self)):
-        	s+=' & '+latex(b[j,0])
+            s+=' & '+latex(b[j])
         s+='\n'
         s+=r'  \end{array}'
         s+='\n'
