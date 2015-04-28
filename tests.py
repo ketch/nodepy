@@ -20,6 +20,7 @@ for module_name in ('runge_kutta_method',
                     'semidisc',
                     'strmanip',
                     'utils',
+                    'graph',
                     'convergence'):
     module = nodepy.__getattribute__(module_name)
     doctest.testmod(module)
