@@ -19,7 +19,7 @@ with the rest of nodepy.
      -113/88      | 1435/352      -479/352      | 1
      -103/88      | 1917/352      -217/352      |               1
     ______________|_____________________________|_____________________________
-    -0.560        | 180991/96132  -17777/32044  | -44709/32044  48803/96132
+    -4483/8011    | 180991/96132  -17777/32044  | -44709/32044  48803/96132
     >>> print tsrk4.latex()
     \begin{align}
       \begin{array}{c|cc|cc}
@@ -29,6 +29,8 @@ with the rest of nodepy.
       - \frac{4483}{8011} & \frac{180991}{96132} & - \frac{17777}{32044} & - \frac{44709}{32044} & \frac{48803}{96132}
       \end{array}
     \end{align}
+
+    >>> tsrk4.plot_stability_region()
 
 * Check their order of accuracy::
 
@@ -59,15 +61,15 @@ import snp
 #=====================================================
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
-    """ General class for Two-step Runge-Kutta Methods 
-        The representation
-        uses the form and notation of [Jackiewicz1995]_.
+    r""" General class for Two-step Runge-Kutta Methods
+        The representation uses the form and partly the notation of [Jackiewicz1995]_,
+        equation (1.3).
 
-        `\\begin{align*}
-        y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \\Delta t \\sum_{k=1}^{s}
-        (\\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1\\le j \\le s) \\\\
-        u^{n+1} = & \\theta u^{n-1} + (1-\\theta)u^n + \\Delta t \\sum_{j=1}^{s}(\\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
-        \\end{align*}`
+        `\begin{align*}
+        y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \Delta t \sum_{k=1}^{s}
+        (\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1\le j \le s) \\
+        u^{n+1} = & \theta u^{n-1} + (1-\theta)u^n + \Delta t \sum_{j=1}^{s}(\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
+        \end{align*}`
     """
     def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='General',name='Two-step Runge-Kutta Method'):
         r"""
@@ -144,22 +146,51 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             WARNING: This only works for Type I & Type II methods
             right now!!!
         """
-        D=np.hstack([1.-self.d,self.d]) 
-        thet=np.hstack([1.-self.theta,self.theta])
-        A,b=self.A,self.b
-        if self.type=='Type II':
-            ahat = np.zeros([self.s,1]); ahat[:,0] = self.Ahat[:,0]
-            bh = np.zeros([1,1]); bh[0,0]=self.bhat[0]
-            A = np.hstack([ahat,self.A])
-            A = np.vstack([np.zeros([1,self.s+1]),A])
-            b =  np.vstack([bh,self.b])
+        s = self.Ahat.shape[1]
+        if self.type == 'General':
+            # J Y^n = K Y^{n-1}
+            K1 = np.column_stack((z*self.Ahat,self.d,1-self.d))
+            K2 = snp.zeros(s+2); K2[-1] = 1
+            K3 = np.concatenate((z*self.bhat,np.array((self.theta,1-self.theta))))
+            K = np.vstack((K1,K2,K3))
 
-        M1=np.linalg.solve(np.eye(self.s)-z*self.A,D)
-        L1=thet+z*np.dot(self.b.T,M1)
-        M=np.vstack([L1,[1.,0.]])
+            J = snp.eye(s+2)
+            J[:s,:s] = J[:s,:s] - z*self.A
+            J[-1,:s] = z*self.b
+
+            M = snp.solve(J.astype('complex64'),K.astype('complex64'))
+            #M = snp.solve(J, K) # This version is slower
+
+        else:
+            D=np.hstack([1.-self.d,self.d])
+            thet=np.hstack([1.-self.theta,self.theta])
+            A,b=self.A,self.b
+            if self.type=='Type II':
+                ahat = np.zeros([self.s,1]); ahat[:,0] = self.Ahat[:,0]
+                bh = np.zeros([1,1]); bh[0,0]=self.bhat[0]
+                A = np.hstack([ahat,self.A])
+                A = np.vstack([np.zeros([1,self.s+1]),A])
+                b =  np.vstack([bh,self.b])
+
+            M1=np.linalg.solve(np.eye(self.s)-z*self.A,D)
+            L1=thet+z*np.dot(self.b.T,M1)
+            M=np.vstack([L1,[1.,0.]])
         return M
 
-    def plot_stability_region(self,N=50,bounds=[-10,1,-5,5],
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        import copy
+        numself = copy.deepcopy(self)
+        if self.A.dtype==object:
+            for coeff_array in ['A','Ahat','b','bhat','theta','d']:
+                setattr(numself,coeff_array,np.array(getattr(self,coeff_array),dtype=np.float64))
+        return numself
+
+    def plot_stability_region(self,N=50,bounds=None,
                     color='r',filled=True,scaled=False):
         r""" 
             Plot the region of absolute stability
@@ -175,29 +206,36 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
-        import pylab as pl
+        method = self.__num__() # Use floating-point coefficients for efficiency
+
+        import matplotlib.pyplot as plt
+        if bounds is None:
+            from utils import find_plot_bounds
+            stable = lambda z : max(abs(np.linalg.eigvals(method.stability_matrix(z))))<=1.0
+            bounds = find_plot_bounds(np.vectorize(stable),guess=(-10,1,-5,5))
+            if np.min(np.abs(np.array(bounds)))<1.e-14:
+                print 'No stable region found; is this method zero-stable?'
 
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))
         Y=np.tile(y[:,np.newaxis],(1,N))
         Z=X+Y*1j
-        R=Z*0
-        for i,xx in enumerate(x):
-            for j,yy in enumerate(y):
-                M=self.stability_matrix(xx+yy*1j)
-                R[j,i]=max(abs(np.linalg.eigvals(M)))
-                #print xx,yy,R[i,j]
+
+        maxroot = lambda z : max(abs(np.linalg.eigvals(method.stability_matrix(z))))
+        Mroot = np.vectorize(maxroot)
+        R = Mroot(Z)
+
         if filled:
-            pl.contourf(X,Y,R,[0,1],colors=color)
+            plt.contourf(X,Y,R,[0,1],colors=color)
         else:
-            pl.contour(X,Y,R,[0,1],colors=color)
-        pl.title('Absolute Stability Region for '+self.name)
-        pl.hold(True)
-        pl.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-        pl.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
-        pl.axis('Image')
-        pl.hold(False)
+            plt.contour(X,Y,R,[0,1],colors=color)
+        plt.title('Absolute Stability Region for '+self.name)
+        plt.hold(True)
+        plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+        plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+        plt.axis('Image')
+        plt.hold(False)
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
                     tol=3.e-16):
@@ -262,7 +300,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         b       = array2strings(self.b)
         bhat    = array2strings(self.bhat)
 
-	theta = '%6.3f' % self.theta
+	theta = str(self.theta)
 	lenmax, colmax = _get_column_widths([d, Ahat, A, bhat, b])
 
         s   = self.name+'\n'+self.type+'\n'
@@ -425,6 +463,16 @@ def loadTSRK(which='All'):
     one  = Rational(1,1)
 
     TSRK={}
+    #================================================
+    c = one
+    lamda = 0
+    theta = (6*c**2 - 12*c + 5)/(1 - 6*c**2)
+    d    = np.array( [ (2*c - c**2 -2*lamda)/(2*c - 1) ] )
+    Ahat = np.array( [[(c+c**2-lamda-2*c*lamda)/(2*c - 1)]] )
+    A    = np.array( [[lamda]] )
+    bhat = np.array( [2*(1-3*c**2)/(1-6*c**2)] )
+    b    = np.array( [2*(2-6*c+3*c**2)/(1-6*c**2)] )
+    TSRK['order3']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat,type='General')
     #================================================
     d=np.array([-113*one/88,-103*one/88])
     theta=-4483*one/8011
