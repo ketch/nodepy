@@ -4,6 +4,7 @@
 What's new in Version 0.6.1
 ===========================
 *Released May 14, 2015*
+
 - Two algorithms for computing optimal downwind perturbations of Runge-Kutta methods.  One relies on CVXPY for solving linear programs.
 - The Numipedia project has been moved to its own repository: https://github.com/ketch/numipedia
 - Many new doctests; >80% test coverage.
