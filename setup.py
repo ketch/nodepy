@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='nodepy',
-      version='0.6',
+      version='0.6.1',
       packages=['nodepy'],
       author=['David Ketcheson'],
       author_email=['dketch@gmail.com'],

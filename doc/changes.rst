@@ -1,6 +1,24 @@
 
 .. _changes:
 
+What's new in Version 0.6.1
+===========================
+*Released May 14, 2015*
+- Two algorithms for computing optimal downwind perturbations of Runge-Kutta
+  methods.  One relies on CVXPY for solving linear programs.
+- The Numipedia project has been moved to its own repository: https://github.com/ketch/numipedia
+- Many new doctests; >80% test coverage.
+- Many improvements to the two-step RK module, including stability region plots for arbitrary methods.
+- Three-step RK methods removed from master (because most of the module was not working).
+- Pretty-printing of linear multistep methods.
+- New methods:
+  - Several very-high-order RK methods
+  - Some singly diagonally-implicit RK methods
+  - Nystrom and Milne-Simpson families of multistep methods
+- load_ivp() works similarly to load_RKM() (returns a dictionary).
+- Improved computation of maximum linearly stable step sizes for semi-discretizations.
+- Many bug fixes.
+
 What's new in Version 0.6
 ==========================
 Version 0.6 is a relatively small update, which includes the following:
