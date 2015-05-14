@@ -2,8 +2,10 @@
 [![Coverage Status](https://coveralls.io/repos/ketch/nodepy/badge.svg)](https://coveralls.io/r/ketch/nodepy)
 [![Stories in Ready](https://badge.waffle.io/ketch/nodepy.png?label=ready&title=Ready)](https://waffle.io/ketch/nodepy)
 
+[![](https://readthedocs.org/projects/nodepy/badge)](https://readthedocs.org/projects/nodepy/)
 [![version status](https://pypip.in/v/nodepy/badge.png)](https://pypi.python.org/pypi/nodepy)
 [![downloads](https://pypip.in/d/nodepy/badge.png)](https://pypi.python.org/pypi/nodepy)
+
 
 # Installation
 
@@ -28,7 +30,7 @@ the same sense that MATLAB is a laboratory for matrices.
 
 Documentation can be found online at
 
-http://numerics.kaust.edu.sa/nodepy/
+http://nodepy.readthedocs.org/en/latest/
 
 The development version can be obtained from
 
