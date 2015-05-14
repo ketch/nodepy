@@ -30,7 +30,7 @@ the same sense that MATLAB is a laboratory for matrices.
 
 Documentation can be found online at
 
-http://numerics.kaust.edu.sa/nodepy/
+http://nodepy.readthedocs.org/en/latest/
 
 The development version can be obtained from
 
