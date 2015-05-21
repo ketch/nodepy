@@ -15,7 +15,7 @@
     False
     >>> bdf3=lm.backward_difference_formula(3)
     >>> bdf3.A_alpha_stability()
-    172
+    86
     >>> ssp32=lm.elm_ssp2(3)
     >>> ssp32.order()
     2
@@ -333,7 +333,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             >>> from nodepy import lm
             >>> bdf5 = lm.backward_difference_formula(5)
             >>> bdf5.A_alpha_stability()
-            103
+            51
         """
         from math import atan2, floor
 
@@ -341,7 +341,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         rad = map(atan2,np.imag(z),np.real(z))
         rad = np.mod(np.array(rad),2*np.pi)
 
-        return int(floor(np.min(np.abs(np.where(np.real(z)<-tol,rad,1.e99)-np.pi))/np.pi*360))
+        return min(int(floor(np.min(np.abs(np.where(np.real(z)<-tol,rad,1.e99)-np.pi))/np.pi*180)),90)
 
     def is_explicit(self):
         return self.beta[-1]==0
@@ -706,7 +706,7 @@ def backward_difference_formula(k):
             >>> import linear_multistep_method as lm
             >>> bdf4=lm.backward_difference_formula(4)
             >>> bdf4.A_alpha_stability()
-            146
+            73
 
         **References**:
             #.[hairer1993]_ pp. 364-365
