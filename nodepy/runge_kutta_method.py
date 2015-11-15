@@ -2509,8 +2509,8 @@ def shu_osher_to_butcher(alpha,beta):
                     np.size(beta,1)]==[m+1,m+1,m]):
         raise Exception('Inconsistent dimensions of Shu-Osher arrays')
 
-    alph = np.zeros( (m+1,m+1) )
-    bet = np.zeros( (m+1,m+1) )
+    alph = snp.zeros( (m+1,m+1) )
+    bet = snp.zeros( (m+1,m+1) )
     alph[:,:m] = alpha
     bet[:,:m] = beta
     X=snp.eye(m+1)-alph
@@ -3670,7 +3670,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
         if seq == 'harmonic plus 1':
             N = snp.arange(p)+1; # Should add 1 more here
 
-    J = np.cumsum(N) # Indices of T_j1 stages
+    J = np.cumsum(N) # Indices of T_j1 stages (natural, not Python)
     if base != 'implicit euler':
         J = J + 1  # Explicit methods have a dummy stage y_1 = u_n
     order_reducer = 0
@@ -3686,16 +3686,24 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
     alpha = snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
     beta =  snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
 
-    # T_11
-    if base in ('euler', 'midpoint'):
+    # Form T_11:
+    if base == 'euler':
         alpha[1,0] = 1
         beta[1,0] = 1/N[0]
+        for i in range(1,N[0]):
+            beta[ i,i-1] = 1/N[0]
+            alpha[i,i-1] = 1
+    elif base == 'midpoint':
+        alpha[1,0] = 1
+        beta[1,0] = 1/N[0]
+        for i in range(1,N[0]):
+            beta[i+1,i] = 2/N[0]
+            alpha[i+1,i-1] = 1
     elif base == 'implicit euler':
-        beta[0,0] = 1/N[0]
-
-    if base == 'midpoint':
-        alpha[2,0] = 1
-        beta[2,1] = 2/N[0]
+        for i in range(N[0]):
+            beta[i,i] = 1/N[0]
+            if i>0:
+                alpha[i,i-1] = 1
 
 
     for j in range(1,len(N)):
@@ -3703,9 +3711,9 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
         if base in ('euler', 'midpoint'):
             alpha[J[j-1],0] = 1
             beta[ J[j-1],0] = 1/N[j]
-        elif base == 'implicit euler':
-            beta[ J[j-1],J[j-1] ] = 1/N[j]
         if base == 'midpoint':
+            alpha[J[j-1],0] = 1
+            beta[ J[j-1],0] = 1/N[j]
             alpha[J[j-1]+1,0] = 1
             beta[ J[j-1]+1,J[j-1]] = 2/N[j]
 
@@ -3714,9 +3722,10 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
                 alpha[J[j-1]+i,J[j-1]+i-1] = 1
                 beta[ J[j-1]+i,J[j-1]+i-1] = 1/N[j]
         elif base == 'implicit euler':
-            for i in range(1,N[j]):
-                alpha[J[j-1]+i,J[j-1]+i-1] = 1
+            for i in range(N[j]):
                 beta[ J[j-1]+i,J[j-1]+i] = 1/N[j]
+                if i>0:
+                    alpha[J[j-1]+i,J[j-1]+i-1] = 1
         elif base == 'midpoint':
             for i in range(1,int(N[j]/2)):
                 alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)  ] = 1
@@ -3724,14 +3733,15 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
                 beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2/N[j]
                 beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2/N[j]
 
+
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
     if (embedded and p>2) or (not embedded):
         for j in range(1,p):
             #form T_{j+1,2}:
-            alpha[nrs-1+j,J[j]-1] = 1 + 1/((N[j]/N[j-1])**an_exp - 1)
-            alpha[nrs-1+j,J[j-1]-1] = - 1/((N[j]/N[j-1])**an_exp - 1)
-
+            alpha[nrs+j-1,J[j]-1] = 1 + 1/((N[j]/N[j-1])**an_exp - 1)
+            alpha[nrs+j-1,J[j-1]-1] = - 1/((N[j]/N[j-1])**an_exp - 1)
+    
     #Now form all the rest, up to T_ss:
     nsd = nrs-1+p # Number of stages done
     for k in range(2,p-order_reducer):
