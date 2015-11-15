@@ -3125,10 +3125,10 @@ def DC(s,theta=0,grid='eq',num_corr=None):
 #============================================================
 # Extrapolation methods
 #============================================================
-def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
+def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
     """ Construct extrapolation methods as Runge-Kutta methods.
 
-        **Input**: p -- number of grid points & number of extrapolation iterations
+        **Input**: k -- number of grid points & number of extrapolation iterations
                    base -- the base method to be used ('euler' or 'midpoint')
                    seq -- extrapolation sequence
 
@@ -3178,29 +3178,31 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
     if not base in ['euler','midpoint','implicit euler']:
         raise Exception('Unrecognized base method '+base)
 
+    if seq == 'harmonic':
+        N = snp.arange(k) + 1
+        if base == 'midpoint':
+            N = 2*N
+    elif seq == 'romberg':
+        N = snp.arange(k)+1;  N = 2**(N-1)
+    else:
+        N = seq
+
     if base == 'euler':
-        name = 'Ex-Euler '+str(p)
+        name = 'Ex-Euler '+str(k)
         an_exp = 1
-        if seq == 'harmonic':
-            N = snp.arange(p)+1
-        elif seq == 'Romberg':
-            N = snp.arange(p)+1;  N = 2**(N-1)
     elif base == 'midpoint':
-        name = 'Ex-Midpoint '+str(p)
+        name = 'Ex-Midpoint '+str(k)
         an_exp = 2
-        N = 2*snp.arange(p)+2
     elif base == 'implicit euler':
-        name = 'Im-Euler '+str(p)
+        name = 'Im-Euler '+str(k)
         an_exp = 1
-        if seq == 'harmonic plus 1':
-            N = snp.arange(p)+1; # Should add 1 more here
 
     J = np.cumsum(N) # Indices of T_j1 stages (natural, not Python)
     if base != 'implicit euler':
         J = J + 1  # Explicit methods have a dummy stage y_1 = u_n
     order_reducer = 0
     if embedded:
-        if p>1:
+        if k>1:
             order_reducer = 1
         else:
             raise Exception('Embedded pair must have order>0')
@@ -3208,8 +3210,8 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
     nrs = J[-1]
 
     # Shu-Osher arrays
-    alpha = snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
-    beta =  snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
+    alpha = snp.zeros([nrs+k*(k-1)/2-order_reducer,nrs+k*(k-1)/2-1-order_reducer])
+    beta =  snp.zeros([nrs+k*(k-1)/2-order_reducer,nrs+k*(k-1)/2-1-order_reducer])
 
     # Form T_11:
     if base == 'euler':
@@ -3261,26 +3263,28 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
 
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
-    if (embedded and p>2) or (not embedded):
-        for j in range(1,p):
+    if (embedded and k>2) or (not embedded):
+        for j in range(1,k):
             #form T_{j+1,2}:
             alpha[nrs+j-1,J[j]-1] = 1 + 1/((N[j]/N[j-1])**an_exp - 1)
             alpha[nrs+j-1,J[j-1]-1] = - 1/((N[j]/N[j-1])**an_exp - 1)
     
     #Now form all the rest, up to T_ss:
-    nsd = nrs-1+p # Number of stages done
-    for k in range(2,p-order_reducer):
-        for ind,j in enumerate(range(k,p)):
-            #form T_{j+1,k+1}:
-            alpha[nsd+ind,nsd-(p-k)+ind] = 1 + 1/((N[j]/N[j-k])**an_exp - 1)
-            alpha[nsd+ind,nsd-(p-k)+ind-1] = - 1/((N[j]/N[j-k])**an_exp - 1)
-        nsd += p-k
+    nsd = nrs-1+k # Number of stages done
+    for m in range(2,k-order_reducer):
+        for ind,j in enumerate(range(m,k)):
+            #form T_{j+1,m+1}:
+            alpha[nsd+ind,nsd-(k-m)+ind] = 1 + 1/((N[j]/N[j-m])**an_exp - 1)
+            alpha[nsd+ind,nsd-(k-m)+ind-1] = - 1/((N[j]/N[j-m])**an_exp - 1)
+        nsd += k-m
 
     if shuosher:
         return alpha, beta
     else:
         if base == 'midpoint':
-            p = 2*p
+            p = 2*k
+        else:
+            p = k
         if base == 'implicit euler':
             return RungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
         else:
