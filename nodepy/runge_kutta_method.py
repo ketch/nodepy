@@ -3649,6 +3649,8 @@ def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
 
         See :cite:`hairer1993` chapter II.9.
     """
+    from sympy import Rational
+
     base = base.lower()
     if not base in ['euler','midpoint','implicit euler']:
         raise Exception('Unrecognized base method '+base)
@@ -3661,6 +3663,7 @@ def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
         N = snp.arange(k)+1;  N = 2**(N-1)
     else:
         N = seq
+        assert len(N) == k, 'Iteration sequence length does not match k.'
 
     if base == 'euler':
         name = 'Ex-Euler '+str(k)
@@ -3689,68 +3692,74 @@ def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
     beta =  snp.zeros([nrs+k*(k-1)/2-order_reducer,nrs+k*(k-1)/2-1-order_reducer])
 
     # Form T_11:
+    h = Rational(1,N[0])
     if base == 'euler':
         alpha[1,0] = 1
-        beta[1,0] = 1/N[0]
+        beta[1,0] = h
         for i in range(1,N[0]):
-            beta[ i,i-1] = 1/N[0]
+            beta[ i,i-1] = h
             alpha[i,i-1] = 1
     elif base == 'midpoint':
         alpha[1,0] = 1
         beta[1,0] = 1/N[0]
         for i in range(1,N[0]):
-            beta[i+1,i] = 2/N[0]
+            beta[i+1,i] = 2*h
             alpha[i+1,i-1] = 1
     elif base == 'implicit euler':
         for i in range(N[0]):
-            beta[i,i] = 1/N[0]
+            beta[i,i] = h
             if i>0:
                 alpha[i,i-1] = 1
 
 
     for j in range(1,len(N)):
+        h = Rational(1,N[j])
         #Form T_j1:
         if base in ('euler', 'midpoint'):
             alpha[J[j-1],0] = 1
-            beta[ J[j-1],0] = 1/N[j]
+            beta[ J[j-1],0] = h
         if base == 'midpoint':
             alpha[J[j-1],0] = 1
-            beta[ J[j-1],0] = 1/N[j]
+            beta[ J[j-1],0] = h
             alpha[J[j-1]+1,0] = 1
-            beta[ J[j-1]+1,J[j-1]] = 2/N[j]
+            beta[ J[j-1]+1,J[j-1]] = 2*h
 
         if base == 'euler':
             for i in range(1,N[j]):
                 alpha[J[j-1]+i,J[j-1]+i-1] = 1
-                beta[ J[j-1]+i,J[j-1]+i-1] = 1/N[j]
+                beta[ J[j-1]+i,J[j-1]+i-1] = h
         elif base == 'implicit euler':
             for i in range(N[j]):
-                beta[ J[j-1]+i,J[j-1]+i] = 1/N[j]
+                beta[ J[j-1]+i,J[j-1]+i] = h
                 if i>0:
                     alpha[J[j-1]+i,J[j-1]+i-1] = 1
         elif base == 'midpoint':
             for i in range(1,int(N[j]/2)):
                 alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)  ] = 1
                 alpha[J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+1] = 1
-                beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2/N[j]
-                beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2/N[j]
+                beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2*h
+                beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2*h
 
+
+    print beta
 
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
     if (embedded and k>2) or (not embedded):
         for j in range(1,k):
             #form T_{j+1,2}:
-            alpha[nrs+j-1,J[j]-1] = 1 + 1/((N[j]/N[j-1])**an_exp - 1)
-            alpha[nrs+j-1,J[j-1]-1] = - 1/((N[j]/N[j-1])**an_exp - 1)
+            ratio = Rational(N[j],N[j-1])
+            alpha[nrs+j-1,J[j]-1] = 1 + 1/(ratio**an_exp - 1)
+            alpha[nrs+j-1,J[j-1]-1] = - 1/(ratio**an_exp - 1)
     
     #Now form all the rest, up to T_ss:
     nsd = nrs-1+k # Number of stages done
     for m in range(2,k-order_reducer):
         for ind,j in enumerate(range(m,k)):
+            ratio = Rational(N[j],N[j-m])
             #form T_{j+1,m+1}:
-            alpha[nsd+ind,nsd-(k-m)+ind] = 1 + 1/((N[j]/N[j-m])**an_exp - 1)
-            alpha[nsd+ind,nsd-(k-m)+ind-1] = - 1/((N[j]/N[j-m])**an_exp - 1)
+            alpha[nsd+ind,nsd-(k-m)+ind] = 1 + 1/(ratio**an_exp - 1)
+            alpha[nsd+ind,nsd-(k-m)+ind-1] = - 1/(ratio**an_exp - 1)
         nsd += k-m
 
     if shuosher:
