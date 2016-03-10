@@ -1097,7 +1097,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 #. [kraaijevanger1991]
         """
         s=len(self)
-        K=np.vstack([self.A,self.b])
+        K=np.vstack([self.A.astype(float),self.b.astype(float)])
         K=np.hstack([K,np.zeros([s+1,1])])
         X=np.eye(s+1)+r*K
         if abs(np.linalg.det(X))<tol: return 0
@@ -1265,7 +1265,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             aup, aum = sign_split(alpha_up)
             adp, adm = sign_split(alpha_down)
 
-            G = np.linalg.inv(I + 2*(aum + adm))
+            G = np.linalg.inv(I + 2*(aum.astype(float) + adm.astype(float)))
             alpha_up = np.dot(G,aup+adm)
             alpha_down = np.dot(G,aum+adp)
             gamma = np.dot(G,gamma)
@@ -1413,23 +1413,23 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             use_butcher = True
 
 	m=len(self)
-        u_old = u[-1]		# Initial value
+        u_old = u		# Initial value
         size = np.size(u_old)
         y = [np.zeros((size)) for i in range(m+1)]
         fy = [np.zeros((size)) for i in range(m)]
 
         # First stage
         y[0][:]=u_old
-        if x is not None: fy[0][:]=f(t[-1],y[0],x)
-        else: fy[0][:]=f(t[-1],y[0])
+        if x is not None: fy[0][:]=f(t,y[0],x)
+        else: fy[0][:]=f(t,y[0])
 
         if use_butcher:                 # Use Butcher coefficients
             for i in range(1,m):        # Compute stage i
                 y[i][:] = u_old
                 for j in range(i):
                     y[i] += self.A[i,j]*dt*fy[j]
-                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
-                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
+                    if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
             u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
  
         else:             # Use Shu-Osher coefficients
@@ -1439,8 +1439,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 for j in range(i):
                     y[i] += self.alpha[i,j]*y[j] + dt*self.beta[i,j]*fy[j]
                 if i<m:
-                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
-                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
+                    if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
             u_new = y[m]
     
         return u_new
@@ -2535,6 +2535,45 @@ def loadRKM(which='All'):
     RK['SSP95']=ExplicitRungeKuttaMethod(A,b,name='SSP 95',
                                          description='From Ruuth-Spiteri paper',
                                          shortname='SSPRK95')
+    #================================================
+    A = np.array([[0,0,0,0,0],
+                  [0.39175222700392,0,0,0,0],
+                  [0.21766909633821, 0.36841059262959, 0,0,0],
+                  [0.08269208670950, 0.13995850206999, 0.25189177424738, 0,0],
+                  [0.06796628370320, 0.11503469844438, 0.20703489864929, 0.54497475021237, 0]])
+    b = np.array([0.14681187618661, 0.24848290924556, 0.10425883036650, 0.27443890091960, 0.22600748319395])
+    RK['SSP54'] = ExplicitRungeKuttaMethod(A,b,name='SSP 54',
+                                           description='From Ruuth-Spiteri paper',
+                                           shortname='SSPRK54')
+    #================================================
+    A = np.array([[0,0,0,0,0],
+                  [0.37726891511710,0,0,0,0],
+                  [0.37726891511710,0.37726891511710, 0,0,0],
+                  [0.16352294089771,0.16352294089771,0.16352294089771, 0,0],
+                  [0.14904059394856,0.14831273384724,0.14831273384724,0.34217696850008, 0]])
+    b = np.array([0.19707596384481,0.11780316509765,0.11709725193772,0.27015874934251,0.29786487010104])
+    RK['SSP53'] = ExplicitRungeKuttaMethod(A,b,name='SSP 53',
+                                           description='From Ruuth-Spiteri paper',
+                                           shortname='SSPRK53')
+    #================================================
+    alpha = np.array([[0,0,0,0,0,0],
+                      [1,0,0,0,0,0],
+                      [0,1,0,0,0,0],
+                      [0,0,1,0,0,0],
+                      [0.476769811285196,0.098511733286064,0,0.424718455428740,0,0],
+                      [0,0,0,0,1,0],
+                      [0,0,0.155221702560091,0,0,0.844778297439909]])
+    x = 0.284220721334261
+    beta = np.array([[0,0,0,0,0,0],
+                     [x,0,0,0,0,0],
+                     [0,x,0,0,0,0],
+                     [0,0,x,0,0,0],
+                     [0,0,0,0.120713785765930,0,0],
+                     [0,0,0,0,x,0],
+                     [0,0,0,0,0,0.240103497065900]])
+    RK['SSP63'] = ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name='SSP 63',
+                                           description='From Ruuth 2006 paper',
+                                           shortname='SSPRK63')
 
     if which=='All':
         return RK

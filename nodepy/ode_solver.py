@@ -1,3 +1,5 @@
+import numbers
+
 #=====================================================
 class ODESolver(object):
 #=====================================================
@@ -8,7 +10,8 @@ class ODESolver(object):
     def __step__(self):
         raise NotImplementedError
 
-    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',x=None,diagnostics=False,use_butcher=False):
+    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',
+                 x=None,diagnostics=False,use_butcher=False,max_steps=7500):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -48,6 +51,11 @@ class ODESolver(object):
                 - t -- A list of solution times
                 - u -- A list of solution values
 
+            If ivp.T is a scalar, the solution is integrated to that time
+            and all output step values are returned.  If ivp.T is a list/array,
+            the solution is integrated to T[-1] and the solution is returned
+            for the times specified in T.
+
             TODO: 
 
                 * Implement an option to not keep all output (for efficiency).
@@ -55,16 +63,51 @@ class ODESolver(object):
         """
         numself = self.__num__()
         f=ivp.rhs; u0=ivp.u0; T=ivp.T
-        u=[u0]; t=[t0]; dthist=[]; errest_hist=[]
+        u=[u0]; t=[t0];
+        dthist=[]; errest_hist=[]
+        uu = u0
         rejected_steps=0
 
+        if isinstance(T, numbers.Number):
+            t_final = T
+            t_out = None
+        else:
+            t_final = T[-1]
+            t_out = T
+
+        if t_out is not None:
+            iout = 0
+            next_out = T[iout]
+        else:
+            next_out = t_final
+
+        t_current = t0
+
+        out_now = False
+
         if errtol is None:      # Fixed-timestep mode
-            if dt is None: dt=(T-t0)/N
-            while t[-1]<T:
-                if t[-1]+dt>T: dt=T-t[-1]
-                if x is not None: u.append(numself.__step__(f,t,u,dt,x=x,use_butcher=use_butcher))
-                else: u.append(numself.__step__(f,t,u,dt,use_butcher=use_butcher))
-                t.append(t[-1]+dt)
+            if dt is None: dt = (t_final-t0)/float(N)
+            dt_standard = dt + 0
+            for istep in range(max_steps):
+
+                if t_current+dt >= next_out:
+                    print t_current, dt, next_out
+                    dt = next_out - t_current
+                    out_now = True
+
+                uu = numself.__step__(f,t_current,uu,dt,x=x,use_butcher=use_butcher)
+
+                t_current += dt
+                if (out_now) or (t_out is None):
+                    u.append(uu)
+                    t.append(t_current)
+                if t_current >= t_final: break
+                if out_now:
+                    iout += 1
+                    next_out = T[iout]
+                    dt = dt_standard
+
+                out_now = False
 
         else:                   # Error-control mode
             p=self.embedded_method.p
@@ -73,18 +116,33 @@ class ODESolver(object):
             errestold = errtol
             errest=1.
 
-            maxsteps = 7500
-            for istep in range(maxsteps):
-                if t[-1]>=T: break
-                if t[-1]+dt>T: dt=T-t[-1]
-                unew,errest = numself.__step__(f,t,u,dt,estimate_error=True,x=x,use_butcher=use_butcher)
+
+            for istep in range(max_steps):
+                # Hit next output time exactly:
+                if t_current+dt >= next_out: 
+                    dt = next_out - t_current
+                    out_now = True
+
+                unew,errest = numself.__step__(f,t_current,uu,dt,estimate_error=True,x=x,use_butcher=use_butcher)
+
                 if errest<=errtol:      # Step accepted
-                    u.append(unew)
-                    t.append(t[-1]+dt)
-                    errestold = errest  #Should this happen if step is rejected?
+                    t_current += dt
+                    if (out_now) or (t_out is None):
+                        u.append(unew)
+                        t.append(t_current)
+                        uu = unew.copy()
+                    # Stop if final time reached:
+                    if t_current >= t_final: break
+                    if out_now:
+                        iout += 1
+                        next_out = T[iout]
+                    errestold = errest #Should this happen if step is rejected?
                     dthist.append(dt)
                     errest_hist.append(errest)
-                else: rejected_steps+=1
+                else: 
+                    rejected_steps+=1
+
+                out_now = False
 
                 if controllertype=='P':
                   #Compute new dt using P-controller
@@ -96,12 +154,14 @@ class ODESolver(object):
                             *(errestold/errtol)**beta)
                 else: print 'Unrecognized time step controller type'
 
+                # Set new step size
                 dt = dt * min(facmax,max(facmin,kappa*facopt))
-            if istep==maxsteps-1:
+
+            if istep==max_steps-1:
                 print 'Maximum number of steps reached; giving up.'
 
         if diagnostics==False: 
-            return t,u
+            return t, u
         else: 
             if errtol is None:
                 return t,u,rejected_steps,dthist
