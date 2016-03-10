@@ -10,7 +10,8 @@ class ODESolver(object):
     def __step__(self):
         raise NotImplementedError
 
-    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',x=None,diagnostics=False,use_butcher=False):
+    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',
+                 x=None,diagnostics=False,use_butcher=False,max_steps=7500):
         """
             Calling an ODESolver numerically integrates the ODE
             u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
@@ -87,18 +88,14 @@ class ODESolver(object):
         if errtol is None:      # Fixed-timestep mode
             if dt is None: dt = (t_final-t0)/float(N)
             dt_standard = dt + 0
-            while t_current < t_final:
-                #print t_current, t_final, dt
+            for istep in range(max_steps):
 
                 if t_current+dt >= next_out:
                     print t_current, dt, next_out
                     dt = next_out - t_current
                     out_now = True
 
-                if x is not None: 
-                    uu = numself.__step__(f,t_current,uu,dt,x=x,use_butcher=use_butcher)
-                else: 
-                    uu = numself.__step__(f,t_current,uu,dt,use_butcher=use_butcher)
+                uu = numself.__step__(f,t_current,uu,dt,x=x,use_butcher=use_butcher)
 
                 t_current += dt
                 if (out_now) or (t_out is None):
@@ -119,10 +116,8 @@ class ODESolver(object):
             errestold = errtol
             errest=1.
 
-            maxsteps = 7500
 
-            for istep in range(maxsteps):
-                # Stop if final time reached:
+            for istep in range(max_steps):
                 # Hit next output time exactly:
                 if t_current+dt >= next_out: 
                     dt = next_out - t_current
@@ -136,6 +131,7 @@ class ODESolver(object):
                         u.append(unew)
                         t.append(t_current)
                         uu = unew.copy()
+                    # Stop if final time reached:
                     if t_current >= t_final: break
                     if out_now:
                         iout += 1
@@ -161,7 +157,7 @@ class ODESolver(object):
                 # Set new step size
                 dt = dt * min(facmax,max(facmin,kappa*facopt))
 
-            if istep==maxsteps-1:
+            if istep==max_steps-1:
                 print 'Maximum number of steps reached; giving up.'
 
         if diagnostics==False: 
