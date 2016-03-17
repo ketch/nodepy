@@ -56,7 +56,6 @@ import numpy as np
 import snp
 import sympy
 
-
 #=====================================================
 class RungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
@@ -1732,6 +1731,21 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 #=====================================================
 
 
+class ContinuousRungeKuttaMethod(RungeKuttaMethod):
+
+    def __init__(self,A=None,b=None,alpha=None,beta=None,
+                 b_dense=None,
+                 name='Continuous Runge-Kutta Method',shortname='CRKM',
+                 description='',mode='exact',order=None):
+
+        super(ContinuousRungeKuttaMethod,self).__init__(A,b,alpha,beta,name,
+                                                   shortname,description)
+        self.b_dense = b_dense
+
+class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRungeKuttaMethod):
+    pass
+
+
 #=====================================================
 class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 #=====================================================
@@ -2678,8 +2692,14 @@ def SSPRK2(m):
     beta=alpha/r
     alpha[m,0]=one/m
     name='SSPRK('+str(m)+',2)'
-    shortname='SSPRK'+str(m)+'2'
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
+    # Dense output coefficients
+    b_dense = np.zeros( (m,3) )
+    b_dense[0,:] = [0., 1., -(m-1.)/m]
+    for i in range(1,m):
+        b_dense[i,2] = 1./m
+    return ContinuousExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
+                                    b_dense=b_dense,name=name,
+                                    shortname=name)
 
 
 def SSPRK3(m):
