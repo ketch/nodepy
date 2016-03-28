@@ -1765,7 +1765,7 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
             use_butcher = True
 
 	m=len(self)
-        u_old = u		# Initial value
+        u_old = u.copy()		# Initial value
         size = np.size(u_old)
         y = [np.zeros((size)) for i in range(m+1)]
         fy = [np.zeros((size)) for i in range(m)]
@@ -1799,12 +1799,12 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
             deg = self.b_dense.shape[1] # b_j polynomial degree
             u_theta = [np.zeros(size) for i in range(len(thetas))]
             for i, theta in enumerate(thetas):
-                u_theta = u_old.copy()
+                u_theta[i]= u_old.copy()
                 for j in range(m):
                     bj = 0.
-                    for d in range(deg):
+                    for d in range(1,deg):
                         bj += self.b_dense[j,d] * theta**d
-                    u_theta[i] += bj*fy[j]
+                    u_theta[i] += dt*bj*fy[j]
         else:
             u_theta = None
 
