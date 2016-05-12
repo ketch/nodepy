@@ -1,6 +1,7 @@
 import nodepy.runge_kutta_method as rk
 import nodepy.convergence as cv
 from nodepy import ivp
+import matplotlib.pyplot as pl
 
 #Load some methods:
 rk4=rk.loadRKM('RK44')
@@ -15,3 +16,4 @@ myivp=ivp.load_ivp('test')
 T=[0.,5.]
 
 cv.ctest([rk4,SSP2,SSP104],myivp)
+pl.show()

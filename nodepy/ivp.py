@@ -381,7 +381,7 @@ def _F4rhs(t,u):
 def _F5rhs(t,u):
     du=np.zeros(1)
     c=np.sum([i**(4./3) for i in range(1,20)])
-    du[0] = 4./3/c * np.sum([(t-i+0j)**(4./3) for i in range(1,20)])*u[0]
+    du[0] = 4./3/c * np.sum([(t-i+0j)**(4./3) for i in range(1,20)]).real*u[0]
     return du
 
 def _B4rhs(t,u):
