@@ -2,8 +2,8 @@
 Unit tests for NodePy.
 This needs to be updated.
 """
-import linear_multistep_method as lmm
-import runge_kutta_method as rk
+import nodepy.linear_multistep_method as lmm
+import nodepy.runge_kutta_method as rk
 import unittest as ut
 
 class LinearMultistepTestCase(ut.TestCase):

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import numpy as np
 
 def imaginary_stability_interval(p,q=None,eps=1.e-14):
@@ -12,7 +14,7 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
             >>> rk4.imaginary_stability_interval() #doctest: +ELLIPSIS
             2.8284271247...
     """
-    if q is None: 
+    if q is None:
         q = np.poly1d([1.])
 
     c = p.c[::-1].copy()
@@ -68,7 +70,7 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
         else:
             return 0
         if np.abs(z)<1.e-10:
-            print "Warning: unable to determine exact imaginary stability interval"
+            print("Warning: unable to determine exact imaginary stability interval")
             return mr
 
 
@@ -82,7 +84,7 @@ def real_stability_interval(p,q=None,eps=1.e-12):
             >>> from nodepy import rk
             >>> rk4 = rk.loadRKM('RK44')
             >>> I = rk4.real_stability_interval()
-            >>> print "%.10f" % I
+            >>> print("{:.10f}".format(I))
             2.7852935634
             >>> rkc = rk.RKC1(2)
             >>> rkc.real_stability_interval()
@@ -106,7 +108,7 @@ def real_stability_interval(p,q=None,eps=1.e-12):
         z = -(roots[i]+roots[i+1])/2
         if np.abs(p(z)/q(z))>1.+eps:
             return roots[i]
-    z = -roots[-1]*2 
+    z = -roots[-1]*2
     if np.abs(p(z)/q(z))>1.+eps:
         return roots[-1]
     return np.inf
@@ -114,7 +116,7 @@ def real_stability_interval(p,q=None,eps=1.e-12):
 
 def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
                           plotroots=False,alpha=1.,scalefac=1.,fignum=None):
-    r""" 
+    r"""
         Plot the region of absolute stability of a rational function; i.e. the set
 
         `\{ z \in C : |\phi (z)|\le 1 \}`
@@ -122,11 +124,11 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
         Unless specified explicitly, the plot bounds are determined automatically, attempting to
         include the entire region.  A check is performed beforehand for
         methods with unbounded stability regions.
-        Note that this function is not responsible for actually drawing the 
+        Note that this function is not responsible for actually drawing the
         figure to the screen (or saving it to file).
 
-        **Inputs**: 
-            - p, q  -- Numerator and denominator of the stability function 
+        **Inputs**:
+            - p, q  -- Numerator and denominator of the stability function
             - N       -- Number of gridpoints to use in each direction
             - color   -- color to use for this plot
             - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
@@ -145,11 +147,11 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
         q = np.poly1d([float(c) for c in q.coeffs])
 
     if bounds is None:
-        from utils import find_plot_bounds
+        from nodepy.utils import find_plot_bounds
         # Check if the stability region is bounded or not
         m,n = p.order,q.order
         if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
-            print 'The stability region is unbounded'
+            print('The stability region is unbounded')
             if m > 0:
                 bounds = (-10*m,m,-5*m,5*m)
             else:
@@ -158,10 +160,10 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
             stable = lambda z : np.abs(p(z)/q(z))<=1.0
             bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
             if np.min(np.abs(np.array(bounds)))<1.e-14:
-                print 'No stable region found; is this method zero-stable?'
+                print('No stable region found; is this method zero-stable?')
 
         if (m == n) and (abs(p[m])==abs(q[n])):
-            print 'The stability region may be unbounded'
+            print('The stability region may be unbounded')
 
     # Evaluate the stability function over a grid
     x=np.linspace(bounds[0],bounds[1],N)
@@ -191,7 +193,7 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
                 color=('w','b'),filled=True,fignum=None):
     r""" Plot the order star of a rational function
         i.e. the set
-        
+
         $$ \{ z \in C : |R(z)/exp(z)|\le 1 \} $$
 
         where $R(z)=p(z)/q(z)$ is the stability function of the method.

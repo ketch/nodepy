@@ -1,11 +1,11 @@
-from ode_solver import ODESolver
-import rooted_trees as rt
+from nodepy.ode_solver import ODESolver
+import nodepy.rooted_trees as rt
 
 #=====================================================
 class GeneralLinearMethod(ODESolver):
 #=====================================================
     """ General class for multstage, multistep methods.
-    
+
         This is a pure virtual class; only its child classes
         should be instantiated.
     """
@@ -14,7 +14,7 @@ class GeneralLinearMethod(ODESolver):
 
     def order_conditions(self,p):
         """
-        Generate a list of order conditions up to order p 
+        Generate a list of order conditions up to order p
         """
 
         forest=rt.list_trees(0)

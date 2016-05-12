@@ -1,9 +1,9 @@
 r"""
 Typically, implementation of a Runge-Kutta method requires `s \times N`
-memory locations, where `s` is the number of stages of the method and 
+memory locations, where `s` is the number of stages of the method and
 `N` is the number of unknowns.  Certain classes of Runge-Kutta methods
 can be implemented using substantially less memory, by taking advantage
-of special relations among the coefficients.  Three main classes have 
+of special relations among the coefficients.  Three main classes have
 been developed in the literature:
 
     * 2N (Williamson) methods
@@ -11,7 +11,7 @@ been developed in the literature:
     * 2S methods
 
 Each of these classes requires only `2\times N` memory locations.
-Additional methods have been developed that use more than two 
+Additional methods have been developed that use more than two
 memory locations per unknown but still provide a substantial savings
 over traditional methods.  These are referred to as, e.g., 3S, 3R, 4R,
 and so forth.
@@ -19,12 +19,12 @@ For a review of low-storage methods, see [ketcheson2010]_ .
 
 In NodePy, low-storage methods are a subclass of explicit Runge-Kutta
 methods (and/or explicit Runge-Kutta pairs).  In addition to the usual
-properties, they possess arrays of low-storage coefficients.  They 
-override the generic RK implementation of time-stepping and use 
+properties, they possess arrays of low-storage coefficients.  They
+override the generic RK implementation of time-stepping and use
 special memory-efficient implementations instead.  It should be noted
 that, although these low-storage algorithms are implemented, due to
 Python language restrictions an extra intermediate copy of the solution
-array will be created.  Thus the implementation in NodePy is not really 
+array will be created.  Thus the implementation in NodePy is not really
 minimum-storage.
 
 At the moment, the following classes are implemented:
@@ -43,7 +43,7 @@ At the moment, the following classes are implemented:
 
     >>> from nodepy import lsrk, ivp
     >>> myrk = lsrk.load_2R('DDAS47')
-    >>> print myrk
+    >>> print(myrk)
     DDAS4()7[2R]
     2R Method of Tselios \& Simos (2007)
      0.000 |
@@ -55,7 +55,7 @@ At the moment, the following classes are implemented:
      0.911 | 0.094  0.150  0.285 -0.122  0.061  0.444
     _______|_________________________________________________
            | 0.094  0.150  0.285 -0.122  0.061  0.346  0.187
-        
+
     >>> rk58 = lsrk.load_2R('RK58[3R]C')
     >>> rk58.name
     'RK5(4)8[3R+]C'
@@ -66,7 +66,7 @@ At the moment, the following classes are implemented:
     >>> u[-1]
     array([-1.40278844,  1.23080499])
     >>> import nodepy
-    >>> rk2S = lsrk.load_LSRK(nodepy.__path__[0]+'/method_coefficients/58-2S_acc.txt',has_emb=True)
+    >>> rk2S = lsrk.load_LSRK("{}/method_coefficients/58-2S_acc.txt".format(nodepy.__path__[0]),has_emb=True)
     >>> rk2S.order()
     5
     >>> rk2S.embedded_method.order()
@@ -75,7 +75,7 @@ At the moment, the following classes are implemented:
     >>> rk3S.principal_error_norm() # doctest: +ELLIPSIS
     0.00035742076...
 """
-from runge_kutta_method import *
+from nodepy.runge_kutta_method import *
 
 #=====================================================
 class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
@@ -171,16 +171,16 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
             TODO: Write a version of this for non-embedded methods
         """
         m=len(self); b=self.b; a=self.a
-        S2=u[-1]+0.
-        S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
-        S1=dt*f(t[-1],S1)
-        uhat = u[-1]+0.
+        S2=u[:]
+        S1=u[:]
+        S1=dt*f(t,S1)
+        uhat = u[:]
         if self.lstype.startswith('2'):
             S2=S2+self.b[0]*S1
             uhat = uhat + self.bhat[0]*S1
             for i in range(1,m):
                 S1 = S2 + (self.a[i-1]-self.b[i-1])*S1
-                S1=dt*f(t[-1]+self.c[i]*dt,S1)
+                S1=dt*f(t+self.c[i]*dt,S1)
                 S2=S2+self.b[i]*S1
                 uhat = uhat + self.bhat[i]*S1
             if errest: return S2, np.max(np.abs(S2-uhat))
@@ -191,17 +191,18 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
             S1=S3+(self.a[0,0]-self.b[0])*S1
             S2=(S1-S3)/(self.a[0,0]-self.b[0])
             for i in range(1,m-1):
-                S1=dt*f(t[-1]+self.c[i]*dt,S1)
+                S1=dt*f(t+self.c[i]*dt,S1)
                 S3=S3+self.b[i]*S1
                 uhat = uhat + self.bhat[i]*S1
                 S1=S3 + (self.a[0,i]-b[i])*S1 + (self.a[1,i-1]-b[i-1])*S2
                 S2=(S1-S3+(self.b[i-1]-self.a[1,i-1])*S2)/(self.a[0,i]-self.b[i])
-            S1=dt*f(t[-1]+self.c[m-1]*dt,S1)
+            S1=dt*f(t+self.c[m-1]*dt,S1)
             S3=S3+self.b[m-1]*S1
             uhat=uhat+self.bhat[m-1]*S1
             if errest: return S3, np.max(np.abs(S3-uhat))
             else: return S3
-        else: raise Exception('Error: only 2R and 3R methods implemented so far!')
+        else:
+            raise Exception('Error: only 2R and 3R methods implemented so far!')
 
 #=====================================================
 # End of class TwoRRungeKuttaMethod
@@ -332,7 +333,7 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
             * 2S_pair
             * 3S*
             * 3S*_pair
- 
+
         The 2S/2S*/3S* classes do not need an extra register for the
         error estimate, while the 2S_pair/3S_pair methods do.
     """
@@ -419,7 +420,7 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
             self.A=np.tril(self.A.astype(np.float64),-1)
             self.c=np.sum(self.A,1)
             self.bhat=bhat
- 
+
         self.alpha, self.beta = alpha, beta
 
         if order is not None:
@@ -444,7 +445,7 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
                 S1 -- approximate solution at time t[-1]+dt
                 S2 -- error estimate at time t[-1]+dt
 
-            The implementation here is special for 2S low-storage 
+            The implementation here is special for 2S low-storage
             embedded pairs.
             But it's not really fully low-storage yet.
         """
@@ -498,6 +499,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
         The use of both _pair and has_emb seems redundant; this should
         be corrected in the future.
     """
+    from numpy import sum
     #Read in coefficients
     f=open(file,'r')
     coeff=[]
@@ -512,7 +514,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
         bhat = np.array(bhat)
 
     # Determine number of stages
-    if lstype=='2S' or lstype=='2S*': m=int(len(coeff)/3+1) 
+    if lstype=='2S' or lstype=='2S*': m=int(len(coeff)/3+1)
     elif lstype=='2S_pair': m=int((len(coeff)+1)/3)
     elif lstype=='3S*': m=int((len(coeff)+6.)/4.)
     elif lstype=='3S*_pair': m=int((len(coeff)+3.)/4.)
@@ -526,7 +528,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
     elif lstype=='2S*': delta=[1.]+[0.]*len(range(m-1,2*m-3))+[0.]
     elif lstype=='2S_pair': delta=[1.]+coeff[m-1:2*m-3] +[coeff[-2],coeff[-1]]
     elif lstype=='3S*_pair': delta=[1.]+coeff[m-1:2*m-3] +[coeff[-3],coeff[-2],coeff[-1]]
-    if lstype=='2S' or lstype=='2S*': 
+    if lstype=='2S' or lstype=='2S*':
         for i in range(1,m+1): gamma[0].append(1.-gamma[1][i]*sum(delta[0:i]))
         if has_emb:
             meth = TwoSRungeKuttaPair(beta,gamma,delta,lstype,bhat=bhat)
@@ -547,7 +549,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
         elif lstype=='3S*_pair':
             meth = TwoSRungeKuttaPair(beta,gamma,delta,lstype)
     ord=meth.order()
-    if lstype=='2S_pair': 
+    if lstype=='2S_pair':
         emb_ord=meth.embedded_order()
         eostr=str(emb_ord)
     else: eostr=''
@@ -561,7 +563,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
 def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
     """
        Load low storage methods of the types 2S/2S*/3S*/2S_pair/3S_pair
-       from a file containing the low-storage coefficient arrays. Such a file 
+       from a file containing the low-storage coefficient arrays. Such a file
        is usually written by RK-opt (see https://github.com/ketch/RK-opt).
     """
     import re
@@ -582,7 +584,7 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
     beta = beta.split("\n")
     for k in range(nb_stages+1):
         beta[k] = [float(i) for i in beta[k].split()]
-    
+
     beta_sub=[0.]
     for i in range(1,nb_stages+1):
         beta_sub.append(beta[i][i-1])
@@ -594,14 +596,14 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
     if lstype.startswith('2S'):
         gamma1 = re.compile(r".*\ngamma1\n(.*?)\n\n",re.DOTALL).match(data).group(1)
         gamma.append([float(i) for i in gamma1.split()])
-    
+
         gamma2 = re.compile(r".*\ngamma2\n(.*?)\n\n",re.DOTALL).match(data).group(1)
         gamma.append([float(i) for i in gamma2.split()])
 
     elif lstype.startswith('3S*'):
         gamma1 = re.compile(r".*\ngamma1\n(.*?)\n\n",re.DOTALL).match(data).group(1)
         gamma.append([float(i) for i in gamma1.split()])
-    
+
         gamma2 = re.compile(r".*\ngamma2\n(.*?)\n\n",re.DOTALL).match(data).group(1)
         gamma.append([float(i) for i in gamma2.split()])
 
@@ -617,7 +619,7 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
         meth = TwoSRungeKuttaPair(beta_sub,gamma,delta,lstype)
 
     ord = meth.order()
-    if lstype=='2S_pair': 
+    if lstype=='2S_pair':
         emb_ord=meth.embedded_order()
         eostr = str(emb_ord)
     else: eostr=''
@@ -629,7 +631,7 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
     meth.name = 'RK'+str(ord)+'('+eostr+')'+str(m)+'['+lstypename+']'
 
     return meth
-       
+
 
 def load_2R(name):
     """

@@ -11,9 +11,10 @@ Load some high-order RK pairs.
     "Feagin's 12(10) pair"
 
 """
-import numpy as np
-from nodepy import rk
 import os
+import numpy as np
+
+from nodepy import rk
 
 path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(path,'method_coefficients')

@@ -18,7 +18,7 @@ This module implements the initial value problem as a class.
 
     # Integrate this problem with a Runge-Kutta method
     >>> rk4 = rk.loadRKM('RK44')
-    >>> t,y = rk4(myivp)
+    >>> t, y = rk4(myivp)
     >>> y[-1][0] # doctest: +ELLIPSIS
     2.06115362252...e-09
 
@@ -28,6 +28,8 @@ This module implements the initial value problem as a class.
     # Load a few stiff problems
     >>> problems = detest_stiff_suite()
 """
+from __future__ import print_function
+
 import numpy as np
 
 class IVP(object):
@@ -43,7 +45,7 @@ class IVP(object):
             exact: a function that takes one argument (t) and returns
                    the exact solution (Should we make this a function of
                    u0 as well?)
-            dt0: The default initial timestep when a variable step size 
+            dt0: The default initial timestep when a variable step size
                  integrator is used.
             Any other problem-specific parameters.
 
@@ -67,15 +69,15 @@ def load_ivp(ivpname='All'):
 
         >>> from nodepy import ivp
         >>> ivps = ivp.load_ivp('all')
-        >>> for problem in ivps.itervalues():
-        ...     print "%s: %s" % (problem.name, problem.description)
-        vdp: Van der Pol oscillator with epsilon = 1/10.
-        ode2: 
-        2odes: 
-        ode1: 
+        >>> for problem in sorted(ivps.values(), key=lambda x: x.name):
+        ...     print("{}: {}".format(problem.name, problem.description).rstrip())
+        2odes:
         nlsin: A simple nonlinear scalar problem
-        zoltan: The linear scalar test problem with abs value
+        ode1:
+        ode2:
         test: Dahlquist's test problem; $f(y) = \lambda y$
+        vdp: Van der Pol oscillator with epsilon = 1/10.
+        zoltan: The linear scalar test problem with abs value
     """
     ivps = {}
 
@@ -145,10 +147,10 @@ def detest(testkey):
             standard, and although there are certain dangers in accepting
             any particular set of problems as a universal standard, it
             is nevertheless sometimes useful to try a new method on this
-            test set due to the availability of published results for 
+            test set due to the availability of published results for
             many existing methods.
-        
-        Reference: [enright1987]_ 
+
+        Reference: [enright1987]_
     """
     import numpy as np
     ivp=IVP()
@@ -215,7 +217,7 @@ def detest(testkey):
         e=np.arange(1,11); e[-1]=0.
         ivp.L_rhs = np.diag(-e)+np.diag(e[:-1],-1);
         ivp.rhs = lambda t,u: np.dot(ivp.L_rhs,u)
-        ivp.dt0 = 1.e-2    
+        ivp.dt0 = 1.e-2
     elif testkey=='C3':
         ivp.u0=np.zeros(10); ivp.u0[0]=1.
         ivp.T=20.
@@ -229,10 +231,17 @@ def detest(testkey):
         e=np.ones(51)
         ivp.L_rhs = np.diag(-2*e)+np.diag(e[:-1],-1)+np.diag(e[:-1],1);
         ivp.rhs = lambda t,u: np.dot(ivp.L_rhs,u)
-        ivp.dt0 = 1.e-2     
+        ivp.dt0 = 1.e-2
     elif testkey=='C5':
         ivp.u0=np.zeros(30)
-	ivp.u0 = np.array([3.42947415189,3.35386959711,1.35494901715,6.64145542550,5.97156957878,2.18231499728,11.2630437207,14.6952576794,6.27960525067,-30.1552268759,1.65699966404,1.43785752721,-21.1238353380,28.4465098142,15.3882659679,-.557160570446,.505696783289,.230578543901,-.415570776342,.365682722812,.169143213293,-.325325669158,.189706021964,.0877265322780,-.0240476254170,-.287659532608,-.117219543175,-.176860753121,-.216393453025,-.0148647893090])	
+        ivp.u0 = np.array([3.42947415189, 3.35386959711, 1.35494901715,
+            6.64145542550, 5.97156957878, 2.18231499728, 11.2630437207,
+            14.6952576794, 6.27960525067, -30.1552268759, 1.65699966404,
+            1.43785752721, -21.1238353380, 28.4465098142, 15.3882659679,
+            -0.557160570446, 0.505696783289, 0.230578543901, -0.415570776342,
+            0.365682722812, 0.169143213293, -0.325325669158, 0.189706021964,
+            0.0877265322780, -0.0240476254170, -0.287659532608, -0.117219543175,
+            -0.176860753121,  -0.216393453025, -0.0148647893090])
         ivp.T=20.
         ivp.rhs = _C5rhs
         ivp.dt0 = 1.e-2
@@ -383,37 +392,37 @@ def _B4rhs(t,u):
     return du
 def _C5rhs(t,u):
     r = np.zeros(5); u1 = np.zeros(15); u2 = np.zeros(15); y1 = np.zeros((3,5)); y2 = np.zeros((3,5)); d = np.zeros((5,5)); du=np.zeros(30); ynew1 = np.zeros((3,5)); ynew2 = np.zeros((3,5));
-    k2 = 2.95912208286; m0 = 1.00000597682; 
+    k2 = 2.95912208286; m0 = 1.00000597682;
     m = np.array([.000954786104043,.000285583733151,.0000437273164546,.0000517759138449,.00000277777777778])
     k=0
     for j in range(0,5):
-	for i in range(0,3):
-	    y1[i][j] = u[k]
-	    y2[i][j] = u[k+15]
-	    k+=1
+        for i in range(0,3):
+            y1[i][j] = u[k]
+            y2[i][j] = u[k+15]
+            k+=1
 
     for j in range(0,5):
-	r[j] = np.sqrt(y1[0][j]**2+y1[1][j]**2+y1[2][j]**2)
+        r[j] = np.sqrt(y1[0][j]**2+y1[1][j]**2+y1[2][j]**2)
 
     for k in range(0,5):
-	for j in range(0,5):
-	    d[k][j] = np.sqrt((y1[0][k]-y1[0][j])**2+(y1[1][k]-y1[1][j])**2+(y1[2][k]-y1[2][j])**2)
-	      
+        for j in range(0,5):
+            d[k][j] = np.sqrt((y1[0][k]-y1[0][j])**2+(y1[1][k]-y1[1][j])**2+(y1[2][k]-y1[2][j])**2)
+
     for j  in range(0,5):
-	for i in range(0,3):
-	    term=0.;
-	    for k in range(0,5):
-		if (k != j):
-		    term = term+m[k]*((y1[i][k]-y1[i][j])/d[j][k]**3 - y1[i][k]/r[k]**3)
-	    ynew1[i][j] = y2[i][j] 
-	    ynew2[i][j] = k2*(-(m0+m[j])*y1[i][j]/r[j]**3+term)
+        for i in range(0,3):
+            term=0.;
+            for k in range(0,5):
+                if (k != j):
+                    term = term+m[k]*((y1[i][k]-y1[i][j])/d[j][k]**3 - y1[i][k]/r[k]**3)
+            ynew1[i][j] = y2[i][j]
+            ynew2[i][j] = k2*(-(m0+m[j])*y1[i][j]/r[j]**3+term)
     k=0
     for j in range(0,5):
-	for i in range(0,3):
-	    du[k] = ynew1[i][j]
-	    du[k+15] = ynew2[i][j] 
-	    k+=1
-    
+        for i in range(0,3):
+            du[k] = ynew1[i][j]
+            du[k+15] = ynew2[i][j]
+            k+=1
+
     return du
 
 def detest_suite():
@@ -460,7 +469,8 @@ def detest_stiff(testkey):
         ivp.T=1.
         ivp.rhs = _A4rhs_stiff
         ivp.dt0 = 1.e-5
-    else: print 'Unknown Detest problem; returning empty IVP'
+    else:
+        print('Unknown Detest problem; returning empty IVP')
     return ivp
 
 def _A2rhs_stiff(t,u):

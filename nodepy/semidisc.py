@@ -8,9 +8,10 @@
 In NodePy a semi-discretization is a family of IVPs parameterized by grid size.
 For now, only semi-discretizations of one-dimensional PDEs are supported.
 """
+from __future__ import print_function
 
 import numpy as np
-from ivp import IVP
+from nodepy.ivp import IVP
 
 class LinearSemiDiscretization(IVP):
     """
@@ -33,7 +34,7 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     sd.N=N
 
     # Grid spacing
-    dx=(xMax-xMin)/N;                               
+    dx=(xMax-xMin)/N;
 
     # Cell centers position
     sd.xCenter = np.zeros(N)
@@ -51,17 +52,18 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
         sd.u0 = np.sin(2*np.pi*sd.xCenter)
     elif sdName == 'spectral difference advection':
         sd.L,sd.xSol,sd.u0 = spectral_difference_matrix(N,sd.xCenter,dx,order)
-    else: print 'unrecognized sdname'
-    
+    else:
+        print('unrecognized sdname')
+
     # Define RHS
     # In this case is simply L*u
     sd.rhs=lambda t,u : np.dot(sd.L,u)
-    
+
     # Set final time
     sd.T = 5.9
 
 
-    # Construct exact solution by using a large number of cells. 
+    # Construct exact solution by using a large number of cells.
     # Probably this is not the best place to construct it because if one want
     # to change the the initial solution he must also change the intial condition
     # in the spatial discretization.
@@ -71,20 +73,20 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     sd.uExactInit = np.zeros(nbrCellsExact)
     sd.uExactInit = np.sin(2*np.pi*sd.xExact)
 
-    # Compute the real final position of the last point. 
+    # Compute the real final position of the last point.
     # One point is enough because it is a rigid translation in the x direction
     xExactTmp = sd.xExact+sd.T
     xLastPnt = xExactTmp[nbrCellsExact-1]
-  
+
     from math import modf
 
     b,a = modf(xLastPnt)
 
-    
+
     # 1st approach: valid for classical periodic initial condition, e.g. sin(), cos(), etc.
     sd.uExact = np.zeros((nbrCellsExact))
     sd.uExact = np.sin(2*np.pi*(sd.xExact-b))
-    
+
     return sd
 
 
@@ -120,7 +122,7 @@ def weno5_linearized_matrix(N,dx=0):
     L1 = np.hstack((L2[:,1:],last_column))
     L = (L1-L2)/dx
     return L
-    
+
 
 def centered_advection_matrix(N,dx=0):
     "3-point centered difference approximation of first derivative."
@@ -189,10 +191,10 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     nbrFluxPnts = fluxPnts.size
     nbrSolPnts = solPnts.size
 
-    # Matrices for the calculation of the solution at the flux points 
+    # Matrices for the calculation of the solution at the flux points
     #################################################################
     extrSolToFlux = np.ones((nbrFluxPnts,nbrSolPnts))
-    #print extrSolToFlux
+    #print(extrSolToFlux)
 
 
     for iFlux in range(0,nbrFluxPnts):
@@ -200,14 +202,14 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
             for iCon in range(0,nbrSolPnts):
                 if iCon != iSol:
                     extrSolToFlux[iFlux,iSol] = extrSolToFlux[iFlux,iSol]*(fluxPnts[iFlux]-solPnts[iCon])/(solPnts[iSol]-solPnts[iCon])
-            
-           
-  
+
+
+
     # Riemann flux settings
     #######################
     upwindPar = 1.0 # If fully upwind (upwindPar =1). For advection equation upwindPar = 1.0
 
-    faceLeft  = 0.5*(1.0 + upwindPar); # Contribution of the left solution 
+    faceLeft  = 0.5*(1.0 + upwindPar); # Contribution of the left solution
     faceRight = 0.5*(1.0 - upwindPar); # Contribution of the right solution
 
 
@@ -216,11 +218,11 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     fluxCurrCell = np.zeros((nbrFluxPnts,nbrSolPnts));
     fluxLeftCell = np.zeros((nbrFluxPnts,nbrSolPnts));
     fluxRightCell = np.zeros((nbrFluxPnts,nbrSolPnts));
-    
+
     # Flux at the internal flux points
     for iFlux in range(1,nbrFluxPnts-1):
         for iSol in range(0,nbrSolPnts):
-            fluxCurrCell[iFlux,iSol] = extrSolToFlux[iFlux,iSol]  # We assume convective velocity = 1, i.e. the flux function is 
+            fluxCurrCell[iFlux,iSol] = extrSolToFlux[iFlux,iSol]  # We assume convective velocity = 1, i.e. the flux function is
                                                                   # f= a*u
 
 
@@ -228,9 +230,9 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     # Flux at the boundaries flux points
     for iSol in range(0,nbrSolPnts):
         # Left face
-        fluxLeftCell[0,iSol] = faceLeft*extrSolToFlux[nbrFluxPnts-1,iSol] 
+        fluxLeftCell[0,iSol] = faceLeft*extrSolToFlux[nbrFluxPnts-1,iSol]
         fluxCurrCell[0,iSol] = faceRight*extrSolToFlux[0,iSol]
-    
+
         # Right face
         fluxCurrCell[nbrFluxPnts-1,iSol] = faceLeft*extrSolToFlux[nbrFluxPnts-1,iSol]
         fluxRightCell[nbrFluxPnts-1,iSol] = faceRight*extrSolToFlux[0,iSol]
@@ -261,14 +263,14 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     DMp1 = np.dot(derivFluxInSolPnts,fluxRightCell)
 
     # Create block tridiagonal matrix
-    #################################  
+    #################################
     dimL = nbrSolPnts*nbrCells
     L = np.zeros((dimL,dimL))
 
     # Main block diagonal
     for iBlock in range(0,nbrCells):
-        L[nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1),nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1)] = DM0[:,:] 
-    
+        L[nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1),nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1)] = DM0[:,:]
+
     # Lower and upper blocks diagonal
     for iBlock in range(0,nbrCells-1):
         L[nbrSolPnts*(iBlock+1):nbrSolPnts*(iBlock+2),nbrSolPnts*iBlock:nbrSolPnts*(iBlock+1)] = DMm1[:,:]
@@ -278,17 +280,17 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
     # Add periodic boundary condition contributions to the operator L
     #################################################################
     # Apply BC to the first cell --> DMm1
-    L[0:nbrSolPnts,nbrSolPnts*(nbrCells-1):nbrSolPnts*nbrCells] = DMm1[:,:]    
+    L[0:nbrSolPnts,nbrSolPnts*(nbrCells-1):nbrSolPnts*nbrCells] = DMm1[:,:]
 
     # Apply BC to the last cell --> DMp1
-    # Actually here we are doing nothing because it is a fully upwind scheme with 1D advection equation 
-    L[nbrSolPnts*(nbrCells-1):nbrSolPnts*nbrCells,0:nbrSolPnts] = DMp1[:,:]  
+    # Actually here we are doing nothing because it is a fully upwind scheme with 1D advection equation
+    L[nbrSolPnts*(nbrCells-1):nbrSolPnts*nbrCells,0:nbrSolPnts] = DMp1[:,:]
 
 
     # Bring spatial discretization on the RHS of the equation
     #########################################################
     L = -1*L
-  
+
     # Construct initial solution
     ############################
     u0 = np.zeros((dimL))
@@ -303,7 +305,7 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
 
     u0 = np.sin(2*np.pi*xSolPnts)
 
-   
+
     return L,xSolPnts,u0
 
 

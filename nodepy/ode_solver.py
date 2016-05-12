@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+
 import numbers
 
 #=====================================================
@@ -56,7 +59,7 @@ class ODESolver(object):
             the solution is integrated to T[-1] and the solution is returned
             for the times specified in T.
 
-            TODO: 
+            TODO:
 
                 * Implement an option to not keep all output (for efficiency).
                 * Option to keep error estimate history
@@ -90,8 +93,8 @@ class ODESolver(object):
             dt_standard = dt + 0
             for istep in range(max_steps):
 
-                if t_current+dt >= next_out:
-                    print t_current, dt, next_out
+                if (t_current + dt) >= next_out:
+                    #print(t_current, dt, next_out) # tests don't expect this
                     dt = next_out - t_current
                     out_now = True
 
@@ -119,7 +122,7 @@ class ODESolver(object):
 
             for istep in range(max_steps):
                 # Hit next output time exactly:
-                if t_current+dt >= next_out: 
+                if t_current+dt >= next_out:
                     dt = next_out - t_current
                     out_now = True
 
@@ -139,30 +142,31 @@ class ODESolver(object):
                     errestold = errest #Should this happen if step is rejected?
                     dthist.append(dt)
                     errest_hist.append(errest)
-                else: 
+                else:
                     rejected_steps+=1
 
                 out_now = False
 
                 if controllertype=='P':
                   #Compute new dt using P-controller
-                  facopt = (errtol/(errest+1.e-6*errtol))**alpha 
+                  facopt = (errtol/(errest+1.e-6*errtol))**alpha
 
                 elif controllertype=='PI':
                   #Compute new dt using PI-controller
                   facopt = ((errtol/errest)**alpha
                             *(errestold/errtol)**beta)
-                else: print 'Unrecognized time step controller type'
+                else:
+                    print('Unrecognized time step controller type')
 
                 # Set new step size
                 dt = dt * min(facmax,max(facmin,kappa*facopt))
 
             if istep==max_steps-1:
-                print 'Maximum number of steps reached; giving up.'
+                print('Maximum number of steps reached; giving up.')
 
-        if diagnostics==False: 
+        if diagnostics==False:
             return t, u
-        else: 
+        else:
             if errtol is None:
                 return t,u,rejected_steps,dthist
             else:
