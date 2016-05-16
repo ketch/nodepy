@@ -1978,8 +1978,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         else: return False
 
     def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
-                              plotroots=False,alpha=1.,scalefac=1.,to_file=False,
-                              longtitle=True):
+                              plotroots=False,alpha=1.,scalefac=1.,
+                              to_file=False,longtitle=True,fignum=None):
         r"""Plot the absolute stability region of an RK pair.  By default,
             the region of the main method is filled in red and the region of
             the embedded method is outlined in black.
@@ -1997,8 +1997,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
         p,q=self.__num__().stability_function(mode='float')
 
-        fig = stability_function.plot_stability_region(p,q,N,color,filled,bounds,plotroots,
-                alpha,scalefac)
+        fig = stability_function.plot_stability_region(p,q,N,color,filled,
+                        bounds,plotroots,alpha,scalefac,fignum)
 
         plt.hold(True)
         p,q = self.embedded_method.__num__().stability_function(mode='float')
