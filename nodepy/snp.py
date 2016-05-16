@@ -5,7 +5,7 @@ that understand numpy arrays of floats or symbolic objects.
 import sympy
 import numpy as np
 
-dtypes={'exact':object,'numeric':np.float64}
+dtypes = {'exact': object, 'numeric': np.float64}
 
 def normalize(*arrays):
     """
@@ -34,7 +34,7 @@ def tri(n,mode='exact'):
     return x
 
 def solve(A,b):
-    """Solve Ax = b.  
+    """Solve Ax = b.
         If A holds exact values, solve exactly using sympy.
         Otherwise, solve in floating-point using numpy.
     """
@@ -66,8 +66,8 @@ def linspace(start,stop,num=50,endpoint=True,retstep=False):
 def arange(start,stop=None,step=None,mode='exact'):
     return normalize(np.arange(start,stop,step,dtype=dtypes[mode]))
 
-def zeros(shape,mode='exact'):
-    return normalize(np.zeros(shape,dtype=dtypes[mode]))
+def zeros(shape, mode='exact'):
+    return normalize(np.zeros(np.array(shape).astype(int), dtype=dtypes[mode]))
 
 def diag(v, k=0):
     return normalize(np.diag(v,k))
@@ -87,7 +87,7 @@ def array(x):
 
 def simplify(x):
     shape = x.shape
-    x = map(sympy.simplify,x.reshape(-1))
+    x = list(map(sympy.simplify, x.reshape(-1)))
     return np.reshape(x,shape)
 
 def printable(num,digits=3,return_zero=False,return_one=True):

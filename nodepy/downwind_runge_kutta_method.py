@@ -8,7 +8,7 @@ Class for Downwind Runge-Kutta methods, and various functions related to them.
 * Load a method::
 
     >>> dw2 = dwrk.opt_dwrk(8)
-    >>> print dw2 # doctest: +NORMALIZE_WHITESPACE
+    >>> print(dw2) # doctest: +NORMALIZE_WHITESPACE
     downwind Runge-Kutta Method
     <BLANKLINE>
      0.750 |  2.875         |         2.125
@@ -28,10 +28,11 @@ REFERENCES:
     [higueras2005,Ketcheson2010]_
 """
 from __future__ import division
-from general_linear_method import GeneralLinearMethod
-import runge_kutta_method as rk
+
 import numpy as np
-import snp
+import nodepy.snp as snp
+import nodepy.runge_kutta_method as rk
+from nodepy.general_linear_method import GeneralLinearMethod
 
 #=====================================================
 class DownwindRungeKuttaMethod(GeneralLinearMethod):
@@ -71,10 +72,10 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         elif alpha is not None: #Initialize with Shu-Osher arrays
             A,At,b,bt=downwind_shu_osher_to_butcher(alpha,alphat,beta,betat)
         # Set Butcher arrays
-        if len(np.shape(A))==2: 
+        if len(np.shape(A))==2:
           self.A=A
           self.At=At
-        else: 
+        else:
           self.A =snp.array([A ]) #Fix for 1-stage methods
           self.At=snp.array([At])
         self.b=b;
@@ -84,7 +85,7 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         self.info=description
         self.underlying_method=rk.RungeKuttaMethod(self.A-self.At,self.b-self.bt)
 
-    def __repr__(self): 
+    def __repr__(self):
         """
         Pretty-prints the Butcher array in the form:
           |   |
@@ -92,7 +93,7 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         ___________
           | b | bt
         """
-        from utils import shortstring
+        from nodepy.utils import shortstring
         c = [shortstring(ci) for ci in self.c]
         clenmax = max([len(ci) for ci in c])
         A = [shortstring(ai) for ai in self.A.reshape(-1)]
@@ -114,7 +115,7 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
             for j in range(len(self)):
                 ss=shortstring(self.A[i,j])
                 s+=ss.ljust(colmax+1)
-            s+=' | '    
+            s+=' | '
             for j in range(len(self)):
                 ss=shortstring(self.At[i,j])
                 s+=ss.ljust(colmax+1)
@@ -127,32 +128,32 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
         for j in range(len(self)):
             s+=' '*(colmax-len(bt[j])+1)+bt[j]
         return s
- 
+
     def __len__(self):
         """
             The length of the method is the number of stages.
         """
-        return np.size(self.A,0) 
+        return np.size(self.A,0)
 
     def order(self,tol=1.e-13):
-        r""" 
+        r"""
             Return the order of a Downwind Runge-Kutta method.
         """
         return self.underlying_method.order(tol)
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
                     tol=3.e-16):
-        r""" 
+        r"""
             Returns the radius of absolute monotonicity
             of a Runge-Kutta method.
         """
-        from utils import bisect
-        
+        from nodepy.utils import bisect
+
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
 
     def is_absolutely_monotonic(self,r,tol):
-        r""" Returns 1 if the downwind Runge-Kutta method is 
+        r""" Returns 1 if the downwind Runge-Kutta method is
             absolutely monotonic at $z=-r$.
 
             The method is absolutely monotonic if $(I+rK+rKt)^{-1}$ exists
@@ -169,11 +170,11 @@ class DownwindRungeKuttaMethod(GeneralLinearMethod):
 
         """
         m=len(self)
-        K  =np.hstack([np.vstack([self.A  ,self.b ]),np.zeros([m+1,1])])
-        Kt =np.hstack([np.vstack([self.At ,self.bt]),np.zeros([m+1,1])])
+        K  =np.hstack([np.vstack([self.A  ,self.b ]),np.zeros([m+1,1])]).astype(np.float64)
+        Kt =np.hstack([np.vstack([self.At ,self.bt]),np.zeros([m+1,1])]).astype(np.float64)
         X=np.eye(len(self)+1) + r*(K+Kt)
         beta =r*np.linalg.solve(X, K)
-        betat=r*np.linalg.solve(X,Kt)
+        betat=r*np.linalg.solve(X, Kt)
         ech=np.linalg.solve(X,np.ones(m+1))
         if min(beta.min(),betat.min(),ech.min())<-tol:
             return 0
@@ -196,7 +197,7 @@ def opt_dwrk(r):
 
 def downwind_shu_osher_to_butcher(alpha,alphat,beta,betat):
     r""" Accepts a Shu-Osher representation of a downwind Runge-Kutta
-        method and returns the Butcher coefficients 
+        method and returns the Butcher coefficients
 
         \\begin{align*}
         A  = & (I-\\alpha_0-\\alphat_0)^{-1} \\beta_0 \\\\
@@ -204,7 +205,7 @@ def downwind_shu_osher_to_butcher(alpha,alphat,beta,betat):
         b = & \\beta_1 + (\\alpha_1 + \\alphat_1) * A
         \\end{align*}
 
-        **References**:  
+        **References**:
              #. [gottlieb2009]_
     """
     m=np.size(alpha,1)

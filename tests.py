@@ -6,7 +6,7 @@ import nodepy
 matplotlib.use('agg')
 import unittest
 
-for module_name in ('runge_kutta_method',
+for module_name in ['runge_kutta_method',
                     'linear_multistep_method',
                     'twostep_runge_kutta_method',
                     'downwind_runge_kutta_method',
@@ -21,7 +21,7 @@ for module_name in ('runge_kutta_method',
                     'strmanip',
                     'utils',
                     'graph',
-                    'convergence'):
+                    'convergence']:
     module = nodepy.__getattribute__(module_name)
     doctest.testmod(module)
 
