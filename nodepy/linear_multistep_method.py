@@ -1,7 +1,7 @@
 """
 **Examples**::
 
-    >>> import linear_multistep_method as lm
+    >>> import nodepy.linear_multistep_method as lm
     >>> ab3=lm.Adams_Bashforth(3)
     >>> ab3.order()
     3
@@ -25,11 +25,12 @@
     <matplotlib.figure.Figure object at 0x...>
 
 """
-from general_linear_method import GeneralLinearMethod
+from __future__ import print_function
+
 import numpy as np
 import sympy
-import snp
-
+import nodepy.snp as snp
+from nodepy.general_linear_method import GeneralLinearMethod
 
 
 #=====================================================
@@ -45,7 +46,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
         Notes: Representation follows Hairer & Wanner p. 368, NOT Butcher.
 
-        **References**:  
+        **References**:
             #. [hairer1993]_ Chapter III
             #. [butcher2003]_
     """
@@ -88,15 +89,15 @@ class LinearMultistepMethod(GeneralLinearMethod):
         `\sigma(z) = \sum_{j=0}^k \beta_k z^k`
 
         **Examples**::
-            
+
             >>> from nodepy import lm
             >>> ab5 = lm.Adams_Bashforth(5)
             >>> rho,sigma = ab5.characteristic_polynomials()
-            >>> print rho
+            >>> print(rho)
                5     4
             1 x - 1 x
 
-            >>> print sigma
+            >>> print(sigma)
                   4         3         2
             2.64 x - 3.853 x + 3.633 x - 1.769 x + 0.3486
 
@@ -110,7 +111,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
     def order(self,tol=1.e-10):
         r""" Return the order of the local truncation error of a linear multistep method.
-        
+
         **Examples**::
 
             >>> from nodepy import lm
@@ -126,7 +127,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
                 return p
 
     def _satisfies_order_conditions(self,p,tol):
-        """ Return True if the linear multistep method satisfies 
+        """ Return True if the linear multistep method satisfies
             the conditions of order p (only) """
         ii=snp.arange(len(self.alpha))
         return abs(sum(ii**p*self.alpha-p*self.beta*ii**(p-1)))<tol
@@ -145,23 +146,23 @@ class LinearMultistepMethod(GeneralLinearMethod):
         **Example**::
 
             >>> from nodepy import lm
-            >>> print lm.Adams_Bashforth(2).latex()
+            >>> print(lm.Adams_Bashforth(2).latex())
             \begin{align} y_{n + 2} - y_{n + 1} = \frac{3}{2}h f(y_{n + 1}) - \frac{1}{2}h f(y_{n})\end{align}
 
         """
         from sympy import symbols, latex
         n = symbols('n')
-        from snp import printable
+        from nodepy.snp import printable
         k = len(self)
         alpha_terms = []
         beta_terms = []
         for i in range(k+1):
             subscript = latex(n+k-i)
             if self.alpha[k-i] != 0:
-                alpha_terms.append(printable(self.alpha[k-i],return_one=False) 
+                alpha_terms.append(printable(self.alpha[k-i],return_one=False)
                                    + ' y_{'+subscript+'}')
             if self.beta[k-i] != 0:
-                beta_terms.append(printable(self.beta[k-i],return_one=False) 
+                beta_terms.append(printable(self.beta[k-i],return_one=False)
                                   +  'h f(y_{'+subscript+'})')
         lhs = ' + '.join(alpha_terms)
         rhs = ' + '.join(beta_terms)
@@ -173,7 +174,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         r""" Return the SSP coefficient of the method.
 
          The SSP coefficient is given by
-        
+
         `\min_{0 \le j < k} -\alpha_k/beta_k`
 
         if `\alpha_j<0` and `\beta_j>0` for all `j`, and is equal to
@@ -191,16 +192,16 @@ class LinearMultistepMethod(GeneralLinearMethod):
             >>> bdf2.ssp_coefficient()
             0
         """
-        if np.any(self.alpha[:-1]>0) or np.any(self.beta<0): 
+        if np.any(self.alpha[:-1]>0) or np.any(self.beta<0):
             return 0
 
-        return min([-self.alpha[j]/self.beta[j] 
+        return min([-self.alpha[j]/self.beta[j]
                     for j in range(len(self.alpha)-1) if self.beta[j]!=0])
 
 
     def plot_stability_region(self,N=100,bounds=None,color='r',filled=True, alpha=1.,
                               to_file=False,longtitle=False):
-        r""" 
+        r"""
             The region of absolute stability of a linear multistep method is
             the set
 
@@ -214,7 +215,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
             `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
 
-            Here `\rho` and `\sigma` are the characteristic polynomials 
+            Here `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
             References:
@@ -281,7 +282,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
             `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
 
-            where `\rho` and `\sigma` are the characteristic polynomials 
+            where `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
             References:
@@ -309,7 +310,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
             `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
 
-            where `\rho` and `\sigma` are the characteristic polynomials 
+            where `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
             References:
@@ -324,10 +325,10 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
     def A_alpha_stability(self, N=1000, tol=1.e-14):
         r"""Angle of `A(\alpha)`-stability.
-        
+
         The result is given in degrees.  The result is only accurate to
         about 1 degree, so we round down.
-        
+
         **Examples**:
 
             >>> from nodepy import lm
@@ -338,7 +339,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         from math import atan2, floor
 
         z = self._boundary_locus(N)
-        rad = map(atan2,np.imag(z),np.real(z))
+        rad = list(map(atan2,np.imag(z),np.real(z)))
         rad = np.mod(np.array(rad),2*np.pi)
 
         return min(int(floor(np.min(np.abs(np.where(np.real(z)<-tol,rad,1.e99)-np.pi))/np.pi*180)),90)
@@ -375,7 +376,7 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
         The method takes the form
 
         `\alpha_k y_{n+k} + \alpha_{k-1} y_{n+k-1} + ... + \alpha_0 y_n
-        = h ( \beta_k f_{n+k} + ... + \beta_0 f_n 
+        = h ( \beta_k f_{n+k} + ... + \beta_0 f_n
         + \gamma_k f_{n+k} + ... + \gamma_0 f_n )`
 
         Methods are automatically normalized so that \alpha_k=1.
@@ -424,7 +425,7 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
 
 
     def plot_imex_stability_region(self,N=100,color='r',filled=True, alpha=1.,fignum=None):
-        r""" 
+        r"""
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction
                 - bounds  -- limits of plotting region
@@ -479,7 +480,7 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
             if np.abs(f[-1]-f[-2]) < epsilon:
                 return f[-1]
             if len(f)>100:
-                print f
+                print(f)
                 raise Exception('Unable to compute stiff damping factor: slow convergence')
 
 
@@ -515,19 +516,19 @@ def _root_condition(p,tol=1.e-13):
 #======================================================
 
 def Adams_Bashforth(k):
-    r""" 
+    r"""
     Construct the k-step, Adams-Bashforth method.
     The methods are explicit and have order k.
     They have the form:
 
     `y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
 
-    They are generated using equations (1.5) and (1.7) from 
+    They are generated using equations (1.5) and (1.7) from
     [hairer1993]_ III.1, along with the binomial expansion.
 
     **Examples**::
 
-        >>> import linear_multistep_method as lm
+        >>> import nodepy.linear_multistep_method as lm
         >>> ab3=lm.Adams_Bashforth(3)
         >>> ab3.order()
         3
@@ -564,7 +565,7 @@ def Nystrom(k):
 
     `y_{n+1} = y_{n-1} + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
 
-    They are generated using equations (1.13) and (1.7) from 
+    They are generated using equations (1.13) and (1.7) from
     [hairer1993]_ III.1, along with the binomial expansion
     and the relation in exercise 4 on p. 367.
 
@@ -574,7 +575,7 @@ def Nystrom(k):
 
     **Examples**::
 
-        >>> import linear_multistep_method as lm
+        >>> import nodepy.linear_multistep_method as lm
         >>> nys3=lm.Nystrom(6)
         >>> nys3.order()
         6
@@ -608,20 +609,20 @@ def Nystrom(k):
     return LinearMultistepMethod(alpha,beta,name=name,shortname='Nys'+str(k))
 
 def Adams_Moulton(k):
-    r""" 
+    r"""
         Construct the k-step, Adams-Moulton method.
         The methods are implicit and have order k+1.
         They have the form:
 
         `y_{n+1} = y_n + h \sum_{j=0}^{k} \beta_j f(y_n-k+j+1)`
 
-        They are generated using equation (1.9) and the equation in 
-        Exercise 3 from Hairer & Wanner III.1, along with the binomial 
+        They are generated using equation (1.9) and the equation in
+        Exercise 3 from Hairer & Wanner III.1, along with the binomial
         expansion.
 
         **Examples**::
 
-            >>> import linear_multistep_method as lm
+            >>> import nodepy.linear_multistep_method as lm
             >>> am3=lm.Adams_Moulton(3)
             >>> am3.order()
             4
@@ -655,13 +656,13 @@ def Milne_Simpson(k):
 
         `y_{n+1} = y_{n-1} + h \sum_{j=0}^{k} \beta_j f(y_n-k+j+1)`
 
-        They are generated using equation (1.15), the equation in 
+        They are generated using equation (1.15), the equation in
         Exercise 3, and the relation in exercise 4, all from Hairer & Wanner
         III.1, along with the binomial expansion.
 
         **Examples**::
 
-            >>> import linear_multistep_method as lm
+            >>> import nodepy.linear_multistep_method as lm
             >>> ms3=lm.Milne_Simpson(3)
             >>> ms3.order()
             4
@@ -691,7 +692,7 @@ def Milne_Simpson(k):
     return LinearMultistepMethod(alpha,beta,name=name,shortname='MS'+str(k))
 
 def backward_difference_formula(k):
-    r""" 
+    r"""
         Construct the k-step backward differentiation method.
         The methods are implicit and have order k.
         They have the form:
@@ -703,7 +704,7 @@ def backward_difference_formula(k):
 
         **Examples**::
 
-            >>> import linear_multistep_method as lm
+            >>> import nodepy.linear_multistep_method as lm
             >>> bdf4=lm.backward_difference_formula(4)
             >>> bdf4.A_alpha_stability()
             73
@@ -733,7 +734,7 @@ def elm_ssp2(k):
 
     **Examples**::
 
-        >>> import linear_multistep_method as lm
+        >>> import nodepy.linear_multistep_method as lm
         >>> lm10=lm.elm_ssp2(10)
         >>> lm10.ssp_coefficient()
         8/9
@@ -755,7 +756,7 @@ def sand_cc(s):
 
     **Examples**::
 
-        >>> import linear_multistep_method as lm
+        >>> import nodepy.linear_multistep_method as lm
         >>> cc4 = lm.sand_cc(4)
         >>> cc4.order()
         10
@@ -790,7 +791,7 @@ def sand_cc(s):
         beta[j] = tau_product**2
         alpha[j] = 2*beta[j]*tau_sum
     return LinearMultistepMethod(alpha,beta,'Sand circle-contractive')
-        
+
 def arw2(gam,c):
     r"""Returns the second order IMEX additive multistep method based on the
     parametrization in Section 3.2 of Ascher, Ruuth, & Spiteri.  The parameters
@@ -812,7 +813,7 @@ def arw2(gam,c):
         1
         >>> CNLF.method2.ssp_coefficient()
         0
-        >>> print CNLF.stiff_damping_factor() #doctest: +ELLIPSIS
+        >>> print(CNLF.stiff_damping_factor()) #doctest: +ELLIPSIS
         0.999...
     """
     half = sympy.Rational(1,2)
@@ -823,7 +824,7 @@ def arw2(gam,c):
 
 
 def loadLMM(which='All'):
-    """ 
+    """
     Load a set of standard linear multistep methods for testing.
 
     **Examples**::

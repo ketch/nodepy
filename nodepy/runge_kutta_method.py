@@ -20,10 +20,10 @@
 * Load a dictionary with many methods::
 
     >>> RK=loadRKM()
-    >>> RK.keys()
-    ['BE', 'SSP75', 'SDIRK34', 'Fehlberg45', 'FE', 'Merson43', 'SSP33', 'MTE22', 'PD8', 'SSP95', 'SDIRK23', 'RK44', 'SSP22star', 'RadauIIA3', 'RadauIIA2', 'BS5', 'LobattoIIIA2', 'Lambert65', 'Heun33', 'SSP22', 'DP5', 'GL3', 'NSSP33', 'NSSP32', 'SSP85', 'CMR6', 'BuRK65', 'SSP104', 'LobattoIIIA3', 'SDIRK54', 'GL2', 'LobattoIIIC4', 'LobattoIIIC3', 'LobattoIIIC2', 'Mid22']
+    >>> sorted(RK.keys())
+    ['BE', 'BS5', 'BuRK65', 'CMR6', 'DP5', 'FE', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95']
 
-    >>> print RK['Mid22']
+    >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
     <BLANKLINE>
      0   |
@@ -46,29 +46,32 @@
          | 1/4            3/4  |                1/4
 
 
-**References**:  
+**References**:
     #. [butcher2003]_
     #. [hairer1993]_
 """
+from __future__ import print_function
 from __future__ import division
-from general_linear_method import GeneralLinearMethod
+
 import numpy as np
-import snp
 import sympy
+
+import nodepy.snp as snp
+from nodepy.general_linear_method import GeneralLinearMethod
 
 #=====================================================
 class RungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
-    r""" 
+    r"""
         General class for implicit and explicit Runge-Kutta Methods.
         The method is defined by its Butcher array (`A,b,c`).
         It is assumed everywhere that  `c_i=\sum_j A_{ij}`.
-        
+
         A Runge-Kutta Method is initialized by providing either:
-            #. Butcher arrays `A` and `b` with valid and consistent 
+            #. Butcher arrays `A` and `b` with valid and consistent
                dimensions; or
             #. Shu-Osher arrays `\alpha` and `\beta` with valid and
-               consistent dimensions 
+               consistent dimensions
 
         but not both.
 
@@ -151,9 +154,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         if not isinstance(self,ExplicitRungeKuttaMethod):
             if not np.triu(self.A).any():
-                print """Warning: this method appears to be explicit, but is
+                print("""Warning: this method appears to be explicit, but is
                        being initialized as a RungeKuttaMethod rather than
-                       as an ExplicitRungeKuttaMethod."""
+                       as an ExplicitRungeKuttaMethod.""")
 
         if order is not None:
             self._p = order
@@ -179,7 +182,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         import copy
         numself = copy.deepcopy(self)
-        if self.A.dtype==object:
+        if self.A.dtype == object or self.b.dtype == object:
             numself.A=np.array(self.A,dtype=np.float64)
             numself.b=np.array(self.b,dtype=np.float64)
             numself.c=np.array(self.c,dtype=np.float64)
@@ -189,12 +192,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def latex(self):
         r"""A laTeX representation of the Butcher arrays.
-        
+
             **Example**::
 
             >>> from nodepy import rk
             >>> merson = rk.loadRKM('Merson43')
-            >>> print merson.latex()
+            >>> print(merson.latex())
             \begin{align}
             \begin{array}{c|ccccc}
              &  &  &  &  & \\
@@ -208,7 +211,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             \end{array}
             \end{align}
         """
-        from snp import printable
+        from nodepy.snp import printable
         sep = ' & '
         s= r'\begin{align}' + '\n'
         s+=r'\begin{array}{c|'
@@ -246,7 +249,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         if (self.alpha is None or self.beta is None):
             raise Exception('Shu-Osher arrays not defined for this method.')
 
-        from utils import array2strings
+        from nodepy.utils import array2strings
 
         c = array2strings(self.c)
         alpha = array2strings(self.alpha)
@@ -269,7 +272,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         s+=' |'
         for j in range(len(self)):
             s+=beta[-1,j].ljust(colmax+1)
-        print s.rstrip()
+        print(s.rstrip())
 
 
     def __str__(self):
@@ -281,7 +284,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         ______
           | b
         """
-        from utils import array2strings
+        from nodepy.utils import array2strings
 
         c = array2strings(self.c,printzeros=True)
         A = array2strings(self.A)
@@ -299,7 +302,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         for j in range(len(self)):
             s+=b[j].ljust(colmax+1)
         return s.rstrip()
-     
+
     def __eq__(self,rkm):
         """
             Methods considered equal if their Butcher arrays are
@@ -317,7 +320,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             Check that the two are actually equal::
 
-                >>> print reduced == merson
+                >>> print(reduced == merson)
                 True
         """
         K1=np.vstack([self.A,self.b])
@@ -331,7 +334,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
             The length of the method is the number of stages.
         """
-        return np.size(self.A,0) 
+        return np.size(self.A,0)
 
     def __mul__(self,RK2):
         """ Multiplication is interpreted as composition:
@@ -383,9 +386,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 for i in range(len(self)):
                     if i not in Nset and abs(A[i,j])>tol: #Stage j matters
                         remove_j=True
-                        continue       
+                        continue
                     if remove_j: continue
-                if remove_j: 
+                if remove_j:
                     Nset.remove(j)
                     continue
             if Nset==Nsetold: return Nset
@@ -401,7 +404,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             does not influence the output.
 
             **Examples**::
-            
+
                 Construct a reducible method:
                 >>> from nodepy import rk
                 >>> A=np.array([[0,0],[1,0]])
@@ -413,9 +416,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 [1]
 
                 Reduce it:
-                >>> print rkm.dj_reduce()
+                >>> print(rkm.dj_reduce())
                 Runge-Kutta Method
-                <BLANKLINE>                
+                <BLANKLINE>
                  0 |
                 ___|___
                    | 1
@@ -428,14 +431,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
 
     def _hs_reducible_stages(self,tol=1.e-13):
-        """ 
+        """
             Determine whether the method is HS-reducible.
             A Runge-Kutta method is HS-reducible if two
             rows of A are equal.
 
             If the method is HS-reducible, returns True and a
             pair of equal stages.  If not, returns False and
-            the minimum pairwise difference (in the maximum norm) 
+            the minimum pairwise difference (in the maximum norm)
             between rows of A.
 
             **Examples**::
@@ -504,7 +507,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         corresponding to a given tree.
 
            **Examples**::
-            
+
                 Construct an RK method and some rooted trees:
                 >>> from nodepy import rk, rt
                 >>> rk4 = rk.loadRKM('RK44')
@@ -526,17 +529,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
         A,b,c = self.A,self.b,self.c
 
         if A.dtype == object:
-            exec('coeff=simplify('+code+'-Rational(1,'+str(tree.density())+'))')
+            exec('coeff = simplify({} - Rational(1, {}))'.format(code, tree.density()))
         else:
-            exec('coeff=('+code+'-1./'+str(tree.density())+')')
-        return coeff/tree.symmetry()
+            exec("coeff = ({} - 1.0 / {})".format(code, tree.density()))
+        return locals()["coeff"] / tree.symmetry()
 
     def error_coeffs(self,p):
         r"""
         Returns the coefficients in the Runge-Kutta method's error expansion
         multiplying all elementary differentials of the given order.
         """
-        import rooted_trees as rt
+        import nodepy.rooted_trees as rt
         forest=rt.list_trees(p)
         err_coeffs=[]
         for tree in forest:
@@ -560,7 +563,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.error_metrics()
                 (sqrt(1745)/2880, 1/120, sqrt(8531)/5760, 1/144, 1)
-                
+
             Reference: [kennedy2000]_
         """
         q=self.order()
@@ -579,7 +582,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def principal_error_norm(self,tol=1.e-13,mode='float'):
         r"""The 2-norm of the vector of leading order error coefficients."""
-        import rooted_trees as rt
+        import nodepy.rooted_trees as rt
         forest=rt.list_trees(self.p+1)
         errs=[]
 
@@ -623,13 +626,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         if mode=='float':
             if not extremely_high_order:
-                import oc_butcher
+                import nodepy.oc_butcher as oc_butcher
                 p = oc_butcher.order(self.__num__(),tol)
             else:
-                import oc_butcher_high_order
+                import nodepy.oc_butcher_high_order as oc_butcher_high_order
                 p = oc_butcher_high_order.order(self.__num__(),tol)
             if p==0:
-                print 'Apparent order is 0; this may be due to roundoff.  Try order(mode="exact") or increase tol.'
+                print('Apparent order is 0; this may be due to round-off.  Try order(mode="exact") or increase tol.')
         elif mode=='exact':
             from sympy import simplify
             p=0
@@ -660,7 +663,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return z
 
     def effective_order(self,tol=1.e-14):
-        """ 
+        """
             Returns the effective order of a Runge-Kutta method.
             This may be higher than the classical order.
 
@@ -709,8 +712,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return z
 
     def stage_order(self,tol=1.e-14):
-        r""" 
-            The stage order of a Runge-Kutta method is the minimum, 
+        r"""
+            The stage order of a Runge-Kutta method is the minimum,
             over all stages, of the
             order of accuracy of that stage.  It can be shown to be
             equal to the largest integer k such that the simplifying
@@ -761,7 +764,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         z = sympy.var('z')
         s = len(self)
         I = sympy.eye(s)
-        
+
         v = 1 - self.alpha.sum(1)
         vstar = sympy.Matrix(v[:-1])
         v_mp1 = sympy.Rational(v[-1])
@@ -775,7 +778,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
 
     def stability_function(self,stage=None,mode='exact',formula='lts',use_butcher=False):
-        r""" 
+        r"""
             The stability function of a Runge-Kutta method is
             `\\phi(z)=p(z)/q(z)`, where
 
@@ -789,7 +792,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             where `e` is a column vector with all entries equal to one.
 
-            This function constructs the numerator and denominator of the 
+            This function constructs the numerator and denominator of the
             stability function of a Runge-Kutta method.
 
             For methods with rational coefficients, mode='exact' computes
@@ -823,7 +826,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> p,q = rk4.stability_function()
-                >>> print p
+                >>> print(p)
                          4          3       2
                 0.04167 x + 0.1667 x + 0.5 x + 1 x + 1
 
@@ -888,7 +891,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 p = np.poly1d(p.coeffs[(d_num-d_true):])
 
         return p,q
-        
+
 
     def plot_stability_function(self,bounds=[-20,1]):
         r"""Plot the value of the stability function along the negative real axis.
@@ -912,7 +915,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
                               plotroots=False,alpha=1.,scalefac=1.,
                               to_file=False, longtitle=True,fignum=None):
-        r""" 
+        r"""
             The region of absolute stability
             of a Runge-Kutta method, is the set
 
@@ -932,7 +935,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4.plot_stability_region() #doctest: +ELLIPSIS
                 <matplotlib.figure.Figure object at 0x...>
         """
-        import stability_function 
+        import nodepy.stability_function as stability_function
         import matplotlib.pyplot as plt
 
         p,q=self.__num__().stability_function(mode='float')
@@ -954,7 +957,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def plot_order_star(self,N=200,bounds=[-5,5,-5,5],plotroots=False,
                         color=('w','b'),filled=True,fignum=None):
         r""" The order star of a Runge-Kutta method is the set
-            
+
             $$ \\{ z \\in C : | \\phi(z)/\\exp(z) | \\le 1 \\} $$
 
             where `\phi(z)` is the stability function of the method.
@@ -971,7 +974,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4.plot_order_star() # doctest: +ELLIPSIS
                 <matplotlib.figure.Figure object at 0x...>
         """
-        import stability_function
+        import nodepy.stability_function as stability_function
         import matplotlib.pyplot as plt
 
         p,q=self.__num__().stability_function(mode='float')
@@ -979,12 +982,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
         fig = stability_function.plot_order_star(p,q,N,bounds,plotroots,color,filled,fignum)
         plt.title('Order star for '+self.name)
         return fig
-        
+
     #============================================================
     # Nonlinear Stability
     #============================================================
     def circle_contractivity_radius(self,acc=1.e-13,rmax=1000):
-        r""" 
+        r"""
             Returns the radius of circle contractivity
             of a Runge-Kutta method.
 
@@ -996,7 +999,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 1.000...
 
         """
-        from utils import bisect
+        from nodepy.utils import bisect
 
         tol=1.e-14
         r=bisect(0,rmax,acc,tol,self.__num__()._is_circle_contractive)
@@ -1004,13 +1007,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
                     tol=3.e-16):
-        r""" 
+        r"""
             Returns the radius of absolute monotonicity
             (also referred to as the radius of contractivity or
-            the strong stability preserving coefficient 
+            the strong stability preserving coefficient
             of a Runge-Kutta method.
         """
-        from utils import bisect
+        from nodepy.utils import bisect
 
         r=bisect(0,rmax,acc,tol,self._is_absolutely_monotonic)
         if r>=rmax-acc: return np.inf
@@ -1034,7 +1037,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         phi = lambda z: p(z)/q(z)
         #Get the negative real zeroes of the derivative of p/q:
         phip=p.deriv()*q-q.deriv()*p
-        zeroes=[z for z in phip.r if np.isreal(z) and z<0]      
+        zeroes=[z for z in phip.r if np.isreal(z) and z<0]
         #Find the extremum of phi on (-inf,0):
         xmax=-10000
         if phip(0)<0: return 0
@@ -1044,15 +1047,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
                     xmax=zeroes[i]
             zmax=max(abs(phi(zeroes)))
             rlo=max(zeroes)
-            if p.order==q.order: 
+            if p.order==q.order:
                 zmax=max(zmax, abs(p[len(p)]/q[len(q)]))
         else:
             if p.order<q.order: return -np.inf
-            if p.order==q.order: 
+            if p.order==q.order:
                 zmax=abs(p[len(p)]/q[len(q)])
                 if p[len(p)]/q[len(q)]>=-tol: return -np.inf
                 rlo=-10000
-        s=p-zmax*q 
+        s=p-zmax*q
         zeroes2=[z for z in s.r if np.isreal(z) and z<0 and z>=xmax]
         if len(zeroes2)>0:
             r=max(zeroes2)
@@ -1063,7 +1066,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def _is_circle_contractive(self,r,tol):
         r""" Returns 1 if the Runge-Kutta method has radius of circle
             contractivity at least `r`.
-            
+
             **References**:
                 #. Dekker and Verwer
         """
@@ -1117,13 +1120,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
             evident (i.e., in which `\\alpha_{ij},\\beta_{ij} \\ge 0` and
             `\\alpha_{ij}/\\beta_{ij}=c` for every `\\beta_{ij}\\ne 0`).
 
-            **Input**: 
+            **Input**:
                 - A RungeKuttaMethod
-            **Output**: 
+            **Output**:
                 - alpha, beta -- Shu-Osher arrays
 
             The 'optimal' Shu-Osher arrays are given by
-            
+
             $$\\alpha= K(I+cA)^{-1}$$
             $$\\beta = c \\alpha$$
 
@@ -1141,7 +1144,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                        [0.666666666666667, 0, 0],
                        [4.00177668780088e-11, 0.750000000000000, 0]], dtype=object))
 
-            **References**: 
+            **References**:
                 #. [higueras2005]_
 
         """
@@ -1219,7 +1222,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def ssplit(self,r,P_signs=None,delta=None):
         """Sympy exact version of split()
-        
+
         If P_signs is passed, use that as the sign pattern of the P matrix.
         This is useful if r is symbolic (since then in general the signs of
         elemnts of P are unknown).
@@ -1280,9 +1283,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def is_splittable(self,r,tol=1.e-15):
         d,alpha,alphatilde=self.resplit(r,tol=tol)
-        if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol: 
+        if alpha.min()>=-tol and d.min()>=-tol and alphatilde.min()>=-tol:
             return True
-        else: 
+        else:
             return False
 
     def optimal_perturbed_splitting(self,acc=1.e-12,rmax=50.01,tol=1.e-13,algorithm='split'):
@@ -1299,10 +1302,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> r, d, alpha, alphatilde = rk4.optimal_perturbed_splitting(algorithm='split')
-                >>> print r # doctest: +ELLIPSIS
+                >>> print(r) # doctest: +ELLIPSIS
                 0.68501606...
         """
-        from utils import bisect
+        from nodepy.utils import bisect
         try:
             import cvxpy as cvx
         except:
@@ -1321,10 +1324,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
     #============================================================
     def propagation_matrix(self,L,dt):
         """
-            Returns the solution propagation matrix for the linear 
-            autonomous system with RHS equal to the matrix L, i.e. 
+            Returns the solution propagation matrix for the linear
+            autonomous system with RHS equal to the matrix L, i.e.
             it returns the matrix G such that when the Runge-Kutta
-            method is applied to the system 
+            method is applied to the system
             `u'(t)=Lu`
             with stepsize dt, the numerical solution is given by
             `u^{n+1} = G u^n`.
@@ -1338,7 +1341,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             `G = 1 + b^T L (I-A L)^{-1} e`
 
             where `A` and `b` are the Butcher arrays and `e` is the vector
-            of ones.  If `L` is a matrix, all quantities above are 
+            of ones.  If `L` is a matrix, all quantities above are
             replaced by their Kronecker product with the identity
             matrix of size `m`, where `m` is the number of stages of
             the Runge-Kutta method.
@@ -1411,8 +1414,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         if self.alpha is None:
             use_butcher = True
 
-	m=len(self)
-        u_old = u		# Initial value
+        m=len(self)
+        u_old = u       # Initial value
         size = np.size(u_old)
         y = [np.zeros((size)) for i in range(m+1)]
         fy = [np.zeros((size)) for i in range(m)]
@@ -1429,8 +1432,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                     y[i] += self.A[i,j]*dt*fy[j]
                     if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
                     else: fy[i][:] = f(t+self.c[i]*dt,y[i])
-            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
- 
+            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])
+
         else:             # Use Shu-Osher coefficients
             v = 1 - self.alpha.sum(1)
             for i in range(1,m+1):
@@ -1441,7 +1444,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                     if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
                     else: fy[i][:] = f(t+self.c[i]*dt,y[i])
             u_new = y[m]
-    
+
         return u_new
 
 
@@ -1458,7 +1461,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> rk4.imaginary_stability_interval() # doctest: +ELLIPSIS
                 2.8284271247461...
         """
-        import stability_function
+        import nodepy.stability_function as stability_function
         p,q=self.stability_function(mode=mode)
         return stability_function.imaginary_stability_interval(p,q,eps=eps)
 
@@ -1472,23 +1475,23 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> I = rk4.real_stability_interval()
-                >>> print "%.10f" % I
+                >>> print("{:.10f}".format(I))
                 2.7852935634
         """
-        import stability_function
+        import nodepy.stability_function as stability_function
         p,q=self.stability_function(mode=mode)
         return stability_function.real_stability_interval(p,q,eps=eps)
 
 
     def linear_absolute_monotonicity_radius(self,acc=1.e-10,rmax=50,
                                             tol=3.e-16):
-        """ 
+        """
             Returns the radius of absolute monotonicity
             of the stability function of a Runge-Kutta method.
 
             TODO: implement this functionality for implicit methods.
         """
-        from utils import bisect
+        from nodepy.utils import bisect
         p,q=self.stability_function()
         if q.order!=0 or q[0]!=1:
             raise NotImplementedError(
@@ -1519,7 +1522,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 7
                 >>> ex4.num_seq_dep_stages()
                 4
-                
+
                 So are deferred correction methods:
                 >>> dc4 = rk.DC(4)
                 >>> len(dc4)
@@ -1544,8 +1547,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         return n
 
     def internal_stability_polynomials(self,stage=None,mode='exact',formula='lts',use_butcher=False):
-        r""" 
-            The internal stability polynomials of a Runge-Kutta method 
+        r"""
+            The internal stability polynomials of a Runge-Kutta method
             depend on the implementation and must therefore be constructed
             base on the Shu-Osher form used for the implementation.
             By default the Shu-Osher coefficients are used.  The
@@ -1561,7 +1564,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             the current time level. Therefore, the first internal polynomial is
             set to zero.
 
-            For symbolic computation, 
+            For symbolic computation,
             this routine has been significantly modified for efficiency
             relative to particular classes of methods.  Two formulas are
             implemented, one based on SymPy's Matrix.lower_triangular_solve()
@@ -1581,7 +1584,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> theta = rk4.internal_stability_polynomials()
                 >>> for p in theta:
-                ...     print p
+                ...     print(p)
                          3          2
                 0.08333 x + 0.1667 x + 0.3333 x
                         2
@@ -1613,7 +1616,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
     def internal_stability_plot(self,bounds=None,N=200,use_butcher=False,formula='lts',levels=[1,100,500,1000,1500,10000]):
         r"""Plot internal stability regions.
-        
+
             Plots the $\epsilon$-internal-stability region contours.
 
             By default the Shu-Osher coefficients are used.  The
@@ -1626,11 +1629,11 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.internal_stability_plot()
         """
-        import stability_function
+        import nodepy.stability_function as stability_function
         import matplotlib.pyplot as plt
-        from utils import find_plot_bounds
+        from nodepy.utils import find_plot_bounds
         from matplotlib.colors import LogNorm
-        
+
         p,q = self.stability_function(use_butcher=use_butcher,formula=formula)
         # Convert coefficients to floats for speed
         if p.coeffs.dtype=='object':
@@ -1646,9 +1649,9 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         y=np.linspace(bounds[2],bounds[3],N)
         X=np.tile(x,(N,1))
         Y=np.tile(y[:,np.newaxis],(1,N))
-        Z=X+Y*1j
+        Z=X + Y * 1j
 
-        th_vals = np.zeros((len(theta),N,N))
+        th_vals = np.zeros((len(theta), N, N), dtype=np.complex64)
 
         for j in range(len(theta)):
             thetaj = np.poly1d([float(c) for c in theta[j].coeffs])
@@ -1690,7 +1693,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 >>> ssp2.maximum_internal_amplification(use_butcher=True)
                 (2.0370511185806568, 0.0)
         """
-        from utils import find_plot_bounds
+        from nodepy.utils import find_plot_bounds
 
         if (self.alpha is None or self.beta is None): use_butcher = True
 
@@ -1723,7 +1726,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             thetaj = np.poly1d([float(c) for c in thetaj.coeffs])
             maxamp = max(maxamp, np.max(np.abs(thetaj(Z_stable))))
             maxamp_origin = max(maxamp_origin, np.abs(thetaj(0.)))
-            
+
         return maxamp, maxamp_origin
 
 #=====================================================
@@ -1865,7 +1868,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                         A,b,alpha,beta,name,shortname,description,order=order[0])
         if bhat is None:
             Ahat,bhat=shu_osher_to_butcher(alphahat,betahat)
-        if bhat.shape != self.b.shape: 
+        if bhat.shape != self.b.shape:
             raise Exception("Dimensions of embedded method don't agree with those of principal method")
         self.bhat     = bhat
         self.alphahat = alphahat
@@ -1913,7 +1916,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
           | bhat
         """
         s = super(ExplicitRungeKuttaPair,self).__str__()
-        from utils import array2strings
+        from nodepy.utils import array2strings
 
         c    = array2strings(self.c)
         A    = array2strings(self.A)
@@ -1923,7 +1926,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         s+= '\n'+' '*(colmax+1)+'|'
         for j in range(len(self)):
             s+=bhat[j].ljust(colmax+1)
-        return s
+        return s.rstrip()
 
 
     def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):
@@ -1947,16 +1950,16 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         if self.alphahat is None:
             use_butcher = True
 
-	m=len(self)
-        u_old = u[-1]		# Initial value
+        m=len(self)
+        u_old = u       # Initial value
         size = np.size(u_old)
         y = [np.zeros((size)) for i in range(m+1)]
         fy = [np.zeros((size)) for i in range(m)]
 
         # First stage
         y[0][:]=u_old
-        if x is not None: fy[0][:]=f(t[-1],y[0],x)
-        else: fy[0][:]=f(t[-1],y[0])
+        if x is not None: fy[0][:]=f(t,y[0],x)
+        else: fy[0][:]=f(t,y[0])
 
         if use_butcher:                 # Use Butcher coefficients
             for i in range(1,m):        # Compute stage i
@@ -1964,11 +1967,11 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 for j in range(i):
                     y[i] += self.A[i,j]*dt*fy[j]
                     if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
-                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
-            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
+            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])
             if estimate_error:
-                u_hat=u[-1]+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
- 
+                u_hat=u+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
+
         else:             # Use Shu-Osher coefficients
             v = 1 - self.alpha.sum(1)
             for i in range(1,m+1):
@@ -1976,21 +1979,21 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 for j in range(i):
                     y[i] += self.alpha[i,j]*y[j] + dt*self.beta[i,j]*fy[j]
                 if i<m:
-                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
-                    else: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i])
+                    if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
             u_new = y[m]
-    
+
             if estimate_error:
                 u_hat = np.zeros(size)
                 #if dt<1e-10:
-                    #print "Warning: very small step size: ", dt, t[-1]
+                    #print("Warning: very small step size: {} {}".format(dt, t[-1]))
                 u_hat = (1-np.sum(self.alphahat[-1,:]))*u_old
                 for j in range(m):
                     u_hat += self.alphahat[-1,j]*y[j] + dt*self.betahat[-1,j]*fy[j]
 
         if estimate_error:
             return u_new, np.max(np.abs(u_new-u_hat))
-        else: 
+        else:
             return u_new
 
     def error_metrics(self,q=None,p=None):
@@ -2008,10 +2011,10 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         """
         if q is None:
             q=self.order()
-            print 'main method has order '+str(q)
+            print('main method has order {}'.format(q))
         if p is None:
             p=self.embedded_method.order()
-            print 'embedded method has order '+str(p)
+            print('embedded method has order {}'.format(p))
 
         tau_1 = self.error_coeffs(q+1)
         tau_2 = self.error_coeffs(q+2)
@@ -2058,8 +2061,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         else: return False
 
     def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
-                              plotroots=False,alpha=1.,scalefac=1.,to_file=False,
-                              longtitle=True):
+                              plotroots=False,alpha=1.,scalefac=1.,
+                              to_file=False,longtitle=True,fignum=None):
         r"""Plot the absolute stability region of an RK pair.  By default,
             the region of the main method is filled in red and the region of
             the embedded method is outlined in black.
@@ -2072,13 +2075,13 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 <matplotlib.figure.Figure object at 0x...>
 
         """
-        import stability_function 
+        import nodepy.stability_function as stability_function
         import matplotlib.pyplot as plt
 
         p,q=self.__num__().stability_function(mode='float')
 
-        fig = stability_function.plot_stability_region(p,q,N,color,filled,bounds,plotroots,
-                alpha,scalefac)
+        fig = stability_function.plot_stability_region(p,q,N,color,filled,
+                        bounds,plotroots,alpha,scalefac,fignum)
 
         plt.hold(True)
         p,q = self.embedded_method.__num__().stability_function(mode='float')
@@ -2106,13 +2109,13 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 #=====================================================
 def elementary_weight(tree):
     """
-        Constructs Butcher's elementary weights 
+        Constructs Butcher's elementary weights
         for a Runge-Kutta method
 
         Currently doesn't work right; note that two of the 5th-order
         weights appear identical.  The _str version below works
-        correctly and produces NumPy code.  But it would be nice to 
-        have this version working so that we could symbolically 
+        correctly and produces NumPy code.  But it would be nice to
+        have this version working so that we could symbolically
         simplify the expressions.
 
         In order to do things correctly, we need a symbolic
@@ -2121,7 +2124,7 @@ def elementary_weight(tree):
             * Two different types of multiplication; or
             * Full tensor expressions
 
-        The latter is now available in Sympy, and I've started a 
+        The latter is now available in Sympy, and I've started a
         test implementation.  The main issue now is that things like
 
         AxA**2
@@ -2146,7 +2149,7 @@ def elementary_weight(tree):
             [butcher2003]_
     """
     #raise Exception('This function does not work correctly; use the _str version')
-    import rooted_trees as rt
+    import nodepy.rooted_trees as rt
     from sympy import symbols
     b=symbols('b',commutative=False)
     ew=b*tree.Gprod(RKeta,rt.Dmap)
@@ -2171,8 +2174,8 @@ def elementary_weight_str(tree,style='python'):
             >>> rk.elementary_weight_str(rt.RootedTree('{{T^11}T}'))
             'dot(b,dot(A,c**11))'
     """
-    from strmanip import mysimp
-    from rooted_trees import Dmap_str
+    from nodepy.strmanip import mysimp
+    from nodepy.rooted_trees import Dmap_str
     ewstr='dot(b,'+tree.Gprod_str(RKeta_str,Dmap_str)+')'
     ewstr=ewstr.replace('1*','')
     ewstr=mysimp(ewstr)
@@ -2183,7 +2186,7 @@ def elementary_weight_str(tree,style='python'):
 def RKeta(tree):
     from sympy.physics.quantum import TensorProduct
     #raise Exception('This function does not work correctly; use the _str version')
-    from rooted_trees import Dprod
+    from nodepy.rooted_trees import Dprod
     from sympy import symbols
     if tree=='':  return symbols('e',commutative=False)
     if tree=='T': return symbols('c',commutative=False)
@@ -2193,7 +2196,7 @@ def RKeta_str(tree):
     """
     Computes eta(t) for Runge-Kutta methods
     """
-    from rooted_trees import Dprod_str
+    from nodepy.rooted_trees import Dprod_str
     if tree=='':  return 'e'
     if tree=='T': return 'c'
     return 'dot(A,'+Dprod_str(tree,RKeta_str)+')'
@@ -2212,7 +2215,7 @@ def discrete_adjoint(meth):
     return RungeKuttaMethod(A,b)
 
 def is_absolutely_monotonic_poly(r,tol,p):
-    """ 
+    """
         Returns 1 if the polynomial p is absolutely monotonic
         at z=-r.
     """
@@ -2227,9 +2230,9 @@ def is_absolutely_monotonic_poly(r,tol,p):
 
 def shu_osher_change_alpha_ij(alpha,beta,i,j,val):
     """
-        **Input**: 
-            - alpha, beta: Shu-Osher arrays 
-            - i,j: indices 
+        **Input**:
+            - alpha, beta: Shu-Osher arrays
+            - i,j: indices
             - val -- real number
 
         **Output**: Shu-Osher arrays alph, bet with alph[i,j]=alpha[i,j]+val.
@@ -2250,11 +2253,11 @@ def shu_osher_zero_alpha_ij(alpha,beta,i,j):
 
 def shu_osher_zero_beta_ij(alpha,beta,i,j):
     """
-        **Input**: 
+        **Input**:
             - Shu-Osher arrays alpha, beta
             - indices i,j
 
-        **Output**: 
+        **Output**:
             - Shu-Osher arrays alph, bet with bet[i,j]=0.
     """
     t=-beta[i,j]/beta[j,j]
@@ -2263,14 +2266,14 @@ def shu_osher_zero_beta_ij(alpha,beta,i,j):
 
 def shu_osher_to_butcher(alpha,beta):
     r""" Accepts a Shu-Osher representation of an explicit Runge-Kutta
-        and returns the Butcher coefficients 
+        and returns the Butcher coefficients
 
         \\begin{align*}
         A = & (I-\\alpha_0)^{-1} \\beta_0 \\\\
         b = & \\beta_1 + \\alpha_1
         \\end{align*}
 
-        **References**:  
+        **References**:
              #. [gottlieb2009]_
     """
     if np.triu(alpha).any(): # Check that alpha is lower-triangular
@@ -2290,7 +2293,7 @@ def shu_osher_to_butcher(alpha,beta):
     return A,b
 
 def loadRKM(which='All'):
-    """ 
+    """
         Load a set of standard Runge-Kutta methods for testing.
         The following methods are included:
 
@@ -2298,13 +2301,13 @@ def loadRKM(which='All'):
 
         'FE':         Forward Euler
         'RK44':       Classical 4-stage 4th-order
-	'Merson43'    Merson 4(3) pair from Hairer and Wanner book pg. 167
+        'Merson43'    Merson 4(3) pair from Hairer and Wanner book pg. 167
         'MTE22':      Minimal truncation error 2-stage 2nd-order
         'Heun33':     Third-order method of Heun
         'SSP22':      Trapezoidal rule 2nd-order
         'DP5':        Dormand-Prince 5th-order
-	'CMR6':       Calvo et al.'s 6(5) method
-	'PD8':        Prince-Dormand 8th-order and 7th-order pair
+        'CMR6':       Calvo et al.'s 6(5) method
+        'PD8':        Prince-Dormand 8th-order and 7th-order pair
         'Fehlberg45': 5th-order part of Fehlberg's pair
         'Lambert65':
 
@@ -2665,15 +2668,15 @@ def loadRKM(which='All'):
 #============================================================
 
 def RK22_family(gamma):
-    """ 
-        Construct a 2-stage second order Runge-Kutta method 
+    """
+        Construct a 2-stage second order Runge-Kutta method
 
         **Input**: gamma -- family parameter
         **Output**: An ExplicitRungeKuttaMethod
         **Examples**::
 
             >>> from nodepy import rk
-            >>> print rk.RK22_family(-1)
+            >>> print(rk.RK22_family(-1))
             Runge-Kutta Method
             <BLANKLINE>
              0    |
@@ -2689,8 +2692,8 @@ def RK22_family(gamma):
     return ExplicitRungeKuttaMethod(A,b)
 
 def RK44_family(w):
-    """ 
-        Construct a 4-stage fourth order Runge-Kutta method 
+    """
+        Construct a 4-stage fourth order Runge-Kutta method
 
         **Input**: w -- family parameter
         **Output**: An ExplicitRungeKuttaMethod
@@ -2698,7 +2701,7 @@ def RK44_family(w):
         **Examples**::
 
             >>> from nodepy import rk
-            >>> print rk.RK44_family(1)
+            >>> print(rk.RK44_family(1))
             Runge-Kutta Method
             <BLANKLINE>
              0    |
@@ -2707,7 +2710,7 @@ def RK44_family(w):
              1    |       -2    3
             ______|________________________
                   | 1/6   -1/3  1     1/6
-                       
+
     """
     from sympy import Rational
     one = Rational(1,1)
@@ -2723,17 +2726,17 @@ def RK44_family(w):
 #============================================================
 
 def SSPRK2(m):
-    """ Construct the optimal m-stage, second order SSP 
+    """ Construct the optimal m-stage, second order SSP
         Explicit Runge-Kutta method (m>=2).
 
         **Input**: m -- number of stages
         **Output**: A ExplicitRungeKuttaMethod
 
         **Examples**::
-            
+
             Load the 4-stage method:
             >>> SSP42=SSPRK2(4)
-            >>> print SSP42
+            >>> print(SSP42)
             SSPRK(4,2)
             <BLANKLINE>
              0   |
@@ -2746,7 +2749,7 @@ def SSPRK2(m):
             >>> SSP42.absolute_monotonicity_radius()
             2.999999999974534
 
-        **References**: 
+        **References**:
             #. [ketcheson2008]_
     """
     from sympy import Rational
@@ -2769,9 +2772,9 @@ def SSPRK2(m):
 
 
 def SSPRK3(m):
-    """ 
+    """
         Construct the optimal m-stage third order SSP
-        Runge-Kutta method (m=n**2, n>=2) 
+        Runge-Kutta method (m=n**2, n>=2)
 
         **Input**: m -- number of stages
         **Output**: A RungeKuttaMethod
@@ -2780,7 +2783,7 @@ def SSPRK3(m):
 
             Load the 4-stage method:
             >>> SSP43=SSPRK3(4)
-            >>> print SSP43
+            >>> print(SSP43)
             SSPRK43
             <BLANKLINE>
              0   |
@@ -2793,7 +2796,7 @@ def SSPRK3(m):
             >>> SSP43.absolute_monotonicity_radius()
             1.9999999999527063
 
-        **References**: 
+        **References**:
             #. [ketcheson2008]_
     """
     from sympy import sqrt, Rational
@@ -2813,17 +2816,17 @@ def SSPRK3(m):
 
 
 def SSPRKm(m):
-    """ Construct the optimal m-stage, linearly mth order SSP 
+    """ Construct the optimal m-stage, linearly mth order SSP
         Explicit Runge-Kutta method (m>=2).
 
         **Input**: m -- number of stages
         **Output**: A ExplicitRungeKuttaMethod
 
         **Examples**::
-            
+
             Load the 4-stage method:
             >>> SSP44=SSPRKm(4)
-            >>> print SSP44
+            >>> print(SSP44)
             SSPRK44
             <BLANKLINE>
              0    |
@@ -2837,7 +2840,7 @@ def SSPRKm(m):
             >>> SSP44.absolute_monotonicity_radius()
             0.9999999999308784
 
-        **References**: 
+        **References**:
             #. [gottlieb2001]_
     """
     from sympy import factorial, Rational
@@ -2861,18 +2864,18 @@ def SSPRKm(m):
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
 
 def SSPIRK1(m):
-    """ Construct the m-stage, first order unconditionally SSP 
-        Implicit Runge-Kutta method with smallest 
+    """ Construct the m-stage, first order unconditionally SSP
+        Implicit Runge-Kutta method with smallest
         coefficient of z^2 (in the stability polynomial)
 
         **Input**: m -- number of stages
         **Output**: A RungeKuttaMethod
 
         **Examples**::
-            
+
             Load the 4-stage method:
             >>> ISSP41=SSPIRK1(4)
-            >>> print ISSP41
+            >>> print(ISSP41)
             SSPIRK41
             <BLANKLINE>
              1/4 | 1/4
@@ -2889,17 +2892,17 @@ def SSPIRK1(m):
 
 
 def SSPIRK2(m):
-    """ Construct the optimal m-stage, second order SSP 
+    """ Construct the optimal m-stage, second order SSP
         Implicit Runge-Kutta method (m>=2).
 
         **Input**: m -- number of stages
         **Output**: A RungeKuttaMethod
 
         **Examples**::
-            
+
             Load the 4-stage method:
             >>> ISSP42=SSPIRK2(4)
-            >>> print ISSP42
+            >>> print(ISSP42)
             SSPIRK42
             <BLANKLINE>
              1/8 | 1/8
@@ -2925,17 +2928,17 @@ def SSPIRK2(m):
 
 
 def SSPIRK3(m):
-    """ Construct the optimal m-stage, third order SSP 
+    """ Construct the optimal m-stage, third order SSP
         Implicit Runge-Kutta method (m>=2).
 
         **Input**: m -- number of stages
         **Output**: A RungeKuttaMethod
 
         **Examples**::
-            
+
             Load the 4-stage method:
             >>> ISSP43=SSPIRK3(4)
-            >>> print ISSP43
+            >>> print(ISSP43)
             SSPIRK43
             <BLANKLINE>
              -sqrt(15)/10 + 1/2 | -sqrt(15)/10 + 1/2
@@ -2946,7 +2949,7 @@ def SSPIRK3(m):
                                 | 1/4                 1/4                 1/4                 1/4
 
             >>> x=ISSP43.absolute_monotonicity_radius()
-            >>> print "%.5f" % x
+            >>> print("{:.5f}".format(x))
             6.87298
 
         **References**:
@@ -2966,7 +2969,7 @@ def SSPIRK3(m):
 # Families of Runge-Kutta-Chebyshev methods
 #============================================================
 def RKC1(m,epsilon=0):
-    """ Construct the m-stage, first order 
+    """ Construct the m-stage, first order
         explicit Runge-Kutta-Chebyshev methods of Verwer (m>=1).
 
         'epsilon' is a damping parameter used to avoid tangency of the
@@ -2976,10 +2979,10 @@ def RKC1(m,epsilon=0):
         **Output**: A ExplicitRungeKuttaMethod
 
         **Examples**::
-            
+
             Load the 4-stage method:
             >>> RKC41=RKC1(4)
-            >>> print RKC41
+            >>> print(RKC41)
             Runge-Kutta-Chebyshev (4,1)
             <BLANKLINE>
              0    |
@@ -2989,7 +2992,7 @@ def RKC1(m,epsilon=0):
             ______|________________________
                   | 1/4   3/8   1/4   1/8
 
-        **References**: 
+        **References**:
             #. [verwer2004]_
     """
 
@@ -3039,20 +3042,20 @@ def RKC1(m,epsilon=0):
 
 
 def RKC2(m,epsilon=0):
-    """ Construct the m-stage, second order 
+    """ Construct the m-stage, second order
         Explicit Runge-Kutta-Chebyshev methods of Verwer (m>=2).
 
-        **Inputs**: 
+        **Inputs**:
                 m -- number of stages
                 epsilon -- damping factor
 
         **Output**: A ExplicitRungeKuttaMethod
 
         **Examples**::
-            
+
             Load the 4-stage method:
             >>> RKC42=RKC2(4)
-            >>> print RKC42
+            >>> print(RKC42)
             Runge-Kutta-Chebyshev (4,2)
             <BLANKLINE>
              0      |
@@ -3062,7 +3065,7 @@ def RKC2(m,epsilon=0):
             ________|________________________________
                     | -51/64  3/8     1       27/64
 
-        **References**: 
+        **References**:
             #. [verwer2004]_
     """
     import sympy
@@ -3083,7 +3086,7 @@ def RKC2(m,epsilon=0):
     nu=snp.zeros(m+1)
     mut=snp.zeros(m+1)
     gamt=snp.zeros(m+1)
-    
+
     T2 = sympy.special.polynomials.chebyshevt_poly(2,x)
     b[0]=sympy.Rational(T2.diff(x,2).subs(x,w0),(T2.diff().subs(x,w0))**2)
 
@@ -3142,7 +3145,7 @@ def DC_pair(s,theta=0.,grid='eq'):
 
             >>> from nodepy import rk
             >>> DC2 = rk.DC_pair(2)
-            >>> print DC2
+            >>> print(DC2)
             Picard 3(2)
             <BLANKLINE>
              0     |
@@ -3152,7 +3155,7 @@ def DC_pair(s,theta=0.,grid='eq'):
              1     | 1/6    2/3    1/6
             _______|___________________________________
                    | 1/6    0      0      2/3    1/6
-                   | 1/6    2/3    1/6                 
+                   | 1/6    2/3    1/6
     """
 
     if s<2:
@@ -3183,7 +3186,7 @@ def DC(s,theta=0,grid='eq',num_corr=None):
         is equal to s+1.
 
         **Examples**::
-            
+
             >>> from nodepy import rk
             >>> dc3 = rk.DC(3)
             >>> dc3.order()
@@ -3196,7 +3199,7 @@ def DC(s,theta=0,grid='eq',num_corr=None):
             >>> dc3_cheb.principal_error_norm() #doctest: +ELLIPSIS
             0.0066478...
 
-        **References**: 
+        **References**:
 
             #. [dutt2000]_
             #. [gottlieb2009]_
@@ -3262,7 +3265,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
 
             >>> from nodepy import rk
             >>> ex3 = rk.extrap(3)
-            >>> print ex3
+            >>> print(ex3)
             Ex-Euler 3
             <BLANKLINE>
              0   |
@@ -3280,7 +3283,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
             sqrt(11)/72
 
             >>> ex4 = rk.extrap(2,'midpoint')
-            >>> print ex4
+            >>> print(ex4)
             Ex-Midpoint 2
             <BLANKLINE>
              0    |
@@ -3293,8 +3296,8 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
 
             >>> ex4.order()
             4
- 
-        **References**: 
+
+        **References**:
 
             #. [Hairer]_ chapter II.9
     """
@@ -3354,7 +3357,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
                 beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2/N[j]
                 beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2/N[j]
 
-    
+
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
     if (embedded and p>2) or (not embedded):
@@ -3362,7 +3365,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
             #form T_{j+1,2}:
             alpha[nrs-1+j,J[j]-1] = 1 + 1/((N[j]/N[j-1])**an_exp - 1)
             alpha[nrs-1+j,J[j-1]-1] = - 1/((N[j]/N[j-1])**an_exp - 1)
-    
+
     #Now form all the rest, up to T_ss:
     nsd = nrs-1+p # Number of stages done
     for k in range(2,p-order_reducer):
@@ -3371,7 +3374,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
             alpha[nsd+ind,nsd-(p-k)+ind] = 1 + 1/((N[j]/N[j-k])**an_exp - 1)
             alpha[nsd+ind,nsd-(p-k)+ind-1] = - 1/((N[j]/N[j-k])**an_exp - 1)
         nsd += p-k
-      
+
     if shuosher:
         return alpha, beta
     else:
@@ -3380,7 +3383,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
         return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
 
 def extrap_pair(p, base='euler'):
-    """ 
+    """
         Returns an embedded RK pair.  If the base method is Euler, the prinicpal method has
         order p and the embedded method has order p-1.  If the base
         method is midpoint, the orders are $2p, 2(p-1)$.
@@ -3422,18 +3425,18 @@ def extrap_pair(p, base='euler'):
         order = (2*p,2*(p-1))
     return ExplicitRungeKuttaPair(alpha=alpha1, beta=beta1, alphahat=alphahat, betahat=betahat, name=name, shortname=shortname, order=order).dj_reduce()
 
-   
+
 
 #============================================================
 # Miscellaneous functions
 #============================================================
 def runge_kutta_order_conditions(p,ind='all'):
-    """ 
+    """
         This is the current method of producing the code on-the-fly
         to test order conditions for RK methods.  May be deprecated
         soon.
     """
-    import rooted_trees as rt
+    import nodepy.rooted_trees as rt
     strings=rt.recursiveVectors(p,ind)
     code=[]
     for oc in strings:
@@ -3441,7 +3444,7 @@ def runge_kutta_order_conditions(p,ind='all'):
     return code
 
 def RKOCstr2code(ocstr):
-    """ 
+    """
         Converts output of runge_kutta_order_conditions() to
         numpy-executable code.
     """
@@ -3474,14 +3477,14 @@ def compose(RK1,RK2,h1=1,h2=1):
         What method is obtained by two successive FE steps?
         >>> from nodepy import rk
         >>> fe=rk.loadRKM('FE')
-        >>> print fe*fe
+        >>> print(fe*fe)
         Runge-Kutta Method
         <BLANKLINE>
          0     |
          0.500 | 0.500
         _______|______________
                | 0.500  0.500
-                
+
 
     TODO: Generalize this for any number of inputs
     """
@@ -3515,8 +3518,8 @@ def python_to_matlab(code):
     outline=outline.replace("dot(A,","(A*")
     outline=outline.replace("( c)","c")
     outline=outline.replace("-0","")
-    #print outline
-    #print '******************'
+    #print(outline)
+    #print('******************')
     return outline
 
 def relative_accuracy_efficiency(rk1,rk2,mode='float',tol=1.e-14):
@@ -3570,7 +3573,7 @@ def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14,p=None):
         >>> rk.accuracy_efficiency(dp5) # doctest: +ELLIPSIS
         0.5264921944121...
     """
-    
+
     if p is None:
         p=rk1.order(mode=mode,tol=tol)
     A1=rk1.principal_error_norm(mode=mode,tol=tol)
@@ -3600,17 +3603,17 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, tol=1.e-14, plot=1):
             >>> L1=semidisc.centered_diffusion_matrix(100)
             >>> L2=semidisc.centered_advection_diffusion_matrix(1.,1./500,100)
 
-            >>> print "%.5f" % rk.linearly_stable_step_size(rk44,L1,plot=0)
+            >>> print("{:.5f}".format(rk.linearly_stable_step_size(rk44,L1,plot=0)))
             0.00007
-            >>> print "%.5f" % rk.linearly_stable_step_size(rk44,L2,plot=0)
+            >>> print("{:.5f}".format(rk.linearly_stable_step_size(rk44,L2,plot=0)))
             0.02423
 
             >>> sd = semidisc.load_semidisc('spectral difference advection',order=1)
-            >>> print "%.5f" % rk.linearly_stable_step_size(rk44,sd.L,plot=0)
+            >>> print("{:.5f}".format(rk.linearly_stable_step_size(rk44,sd.L,plot=0)))
             0.01393
     """
 
-    from utils import bisect
+    from nodepy.utils import bisect
     import matplotlib.pyplot as plt
 
     p,q = rk.__num__().stability_function(mode='float')
@@ -3664,7 +3667,7 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
     else: # Compute symbolically
         import sympy
         z = sympy.var('z')
-        
+
         if explicit:
             v = 1 - alpha[:,1:].sum(1)
             alpha[:,0]=0.
@@ -3713,7 +3716,7 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
             p1 = p1*vstar
             p1 = sympy.poly(p1[0])+v_mp1
             p1 = p1.all_coeffs()
-            
+
 
         else:
             raise Exception("Unknown value of 'formula'")
@@ -3727,10 +3730,10 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
 
     return p,q
 
- 
+
 
 def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
-    r""" 
+    r"""
         Compute internal stability polynomials from a Shu-Osher representation.
     """
     s = alpha.shape[1]

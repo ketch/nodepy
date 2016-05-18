@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+
 import numbers
 import runge_kutta_method as rk
 
@@ -57,7 +60,7 @@ class ODESolver(object):
             the solution is integrated to T[-1] and the solution is returned
             for the times specified in T.
 
-            TODO: 
+            TODO:
 
                 * Implement an option to not keep all output (for efficiency).
                 * Option to keep error estimate history
@@ -161,13 +164,13 @@ class ODESolver(object):
                       #Compute new dt using PI-controller
                       facopt = ((errtol/errest)**alpha
                                 *(errestold/errtol)**beta)
-                    else: print 'Unrecognized time step controller type'
+                    else: print('Unrecognized time step controller type')
 
                     # Set new step size
                     dt = dt * min(facmax,max(facmin,kappa*facopt))
 
                 if istep==max_steps-1:
-                    print 'Maximum number of steps reached; giving up.'
+                    print('Maximum number of steps reached; giving up.')
 
         else:  # dense output
             if errtol is None:      # Fixed-timestep mode
@@ -199,9 +202,9 @@ class ODESolver(object):
             else:                   # Error-control mode
                 raise NotImplementedError
 
-        if diagnostics==False: 
+        if diagnostics==False:
             return t, u
-        else: 
+        else:
             if errtol is None:
                 return t,u,rejected_steps,dthist
             else:

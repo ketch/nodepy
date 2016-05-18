@@ -11,29 +11,30 @@ Load some high-order RK pairs.
     "Feagin's 12(10) pair"
 
 """
-import numpy as np
-from nodepy import rk
 import os
+import numpy as np
+
+from nodepy import rk
 
 path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(path,'method_coefficients')
 
 def method_name_and_stages(file_name):
     if ((file_name=='rk108.txt')):
-	name=r"Feagin's 10(8) pair"
-	stages=20
+        name=r"Feagin's 10(8) pair"
+        stages=20
     if ((file_name=='rk108curtis.txt')):
-	name=r"Curtis' 10(8) pair"
-	stages=21
+        name=r"Curtis' 10(8) pair"
+        stages=21
     if ((file_name=='rk1210.txt')):
         name=r"Feagin's 12(10) pair"
-	stages=25
+        stages=25
     if ((file_name=='rk129hiroshi.txt')):
         name=r"Hiroshi's 12(9) pair"
-	stages=29
+        stages=29
     if ((file_name=='rk1412.txt')):
-	name=r"Feagin's 14(12) pair"
-	stages=35
+        name=r"Feagin's 14(12) pair"
+        stages=35
     return name, stages
 
 def load_rk_from_file(file_name='rk1210.txt', load_pair=True):
@@ -53,7 +54,7 @@ def load_rk_from_file(file_name='rk1210.txt', load_pair=True):
             current_array = 'b'
         elif words[-1]=='c[k]':
             current_array = 'c'
-	elif words[-1]=='bhat[k]':
+        elif words[-1]=='bhat[k]':
             current_array = 'bhat'
         elif words[-1]=='A[k,j]':
             current_array = 'A'
@@ -62,7 +63,7 @@ def load_rk_from_file(file_name='rk1210.txt', load_pair=True):
             k = int(words[0])
             if current_array == 'b':
                 b[k] = float(words[1])
-	    elif current_array =='bhat':
+            elif current_array =='bhat':
                 bhat[k] = float(words[1])
             elif current_array == 'A':
                 j = int(words[1])

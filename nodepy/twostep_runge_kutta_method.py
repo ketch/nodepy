@@ -13,14 +13,14 @@ with the rest of nodepy.
     >>> tsrk4 = tsrk.loadTSRK('order4')
     >>> tsrk5 = tsrk.loadTSRK('order5')
 
-    >>> print tsrk4
+    >>> print(tsrk4)
     Two-step Runge-Kutta Method
     General
      -113/88      | 1435/352      -479/352      | 1
      -103/88      | 1917/352      -217/352      |               1
     ______________|_____________________________|_____________________________
     -4483/8011    | 180991/96132  -17777/32044  | -44709/32044  48803/96132
-    >>> print tsrk4.latex()
+    >>> print(tsrk4.latex())
     \begin{align}
       \begin{array}{c|cc|cc}
       - \frac{113}{88} & \frac{1435}{352} & - \frac{479}{352} & 1 & 0\\
@@ -51,12 +51,15 @@ with the rest of nodepy.
     [jackiewicz1995,butcher1997,hairer1997]
 
 """
+from __future__ import print_function
 from __future__ import division
-from general_linear_method import GeneralLinearMethod
+
 import numpy as np
-import rooted_trees as rt
-from strmanip import *
-import snp
+
+import nodepy.rooted_trees as rt
+import nodepy.snp as snp
+from nodepy.strmanip import *
+from nodepy.general_linear_method import GeneralLinearMethod
 
 #=====================================================
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
@@ -92,7 +95,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         self.type=type
 
     def order(self,tol=1.e-13):
-        r""" 
+        r"""
             Return the order of a Two-step Runge-Kutta method.
             Computed by computing the elementary weights corresponding
             to the appropriate rooted trees.
@@ -135,7 +138,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 
 
     def stability_matrix(self,z):
-        r""" 
+        r"""
             Constructs the stability matrix of a two-step Runge-Kutta method.
             Right now just for a specific value of z.
             We ought to use Sage to do it symbolically.
@@ -192,7 +195,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 
     def plot_stability_region(self,N=50,bounds=None,
                     color='r',filled=True,scaled=False):
-        r""" 
+        r"""
             Plot the region of absolute stability
             of a Two-step Runge-Kutta method, i.e. the set
 
@@ -210,11 +213,11 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 
         import matplotlib.pyplot as plt
         if bounds is None:
-            from utils import find_plot_bounds
+            from nodepy.utils import find_plot_bounds
             stable = lambda z : max(abs(np.linalg.eigvals(method.stability_matrix(z))))<=1.0
             bounds = find_plot_bounds(np.vectorize(stable),guess=(-10,1,-5,5))
             if np.min(np.abs(np.array(bounds)))<1.e-14:
-                print 'No stable region found; is this method zero-stable?'
+                print('No stable region found; is this method zero-stable?')
 
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)
@@ -239,17 +242,17 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
                     tol=3.e-16):
-        r""" 
+        r"""
             Returns the radius of absolute monotonicity
             of a TSRK method.
         """
-        from utils import bisect
+        from nodepy.utils import bisect
         r=bisect(0,rmax,acc,tol,self.is_absolutely_monotonic)
         return r
 
     def latex(self):
-    	"""A laTeX representation of the compact form."""
-    	from sympy.printing import latex
+        """A laTeX representation of the compact form."""
+        from sympy.printing import latex
 
         d       = self.d
         A       = self.A
@@ -262,17 +265,17 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         s+='\n'
         s+=r'  \begin{array}{c|'
         s+='c'*(len(self)) +'|'
-        s+='c'*(len(self)) 
+        s+='c'*(len(self))
         s+='}\n'
         for i in range(len(self)):
             s+='  '+latex(d[i])
-            
+
             for j in range(len(self)):
                 s+=' & '+latex(Ahat[i,j])
-            
+
             for j in range(len(self)):
                 s+=' & '+latex(A[i,j])
-            
+
             s+=r'\\'
             s+='\n'
         s+=r'  \hline'
@@ -287,21 +290,21 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         s+='\n'
         s+=r'\end{align}'
         s=s.replace('- -','')
-    	return s
+        return s
 
 
     def __str__(self):
-	from nodepy.utils import array2strings
-	from runge_kutta_method import _get_column_widths
-        
+        from nodepy.utils import array2strings
+        from nodepy.runge_kutta_method import _get_column_widths
+
         d       = array2strings(self.d)
         A       = array2strings(self.A)
         Ahat    = array2strings(self.Ahat)
         b       = array2strings(self.b)
         bhat    = array2strings(self.bhat)
 
-	theta = str(self.theta)
-	lenmax, colmax = _get_column_widths([d, Ahat, A, bhat, b])
+        theta = str(self.theta)
+        lenmax, colmax = _get_column_widths([d, Ahat, A, bhat, b])
 
         s   = self.name+'\n'+self.type+'\n'
         for i in range(len(self)):
@@ -365,8 +368,8 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             T1 =  np.hstack([ahat,self.A,np.zeros([s,1])])
             T2 =  np.hstack([bh,self.b.T,np.zeros([1,1])])
             T = np.vstack([T0,T1,T2])
-            
-        return S,T
+
+        return S.astype(np.float64), T.astype(np.float64)
 
 
     def is_absolutely_monotonic(self,r,tol):
@@ -383,12 +386,13 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             **References**:
                 #. [spijker2007]
         """
-        S,T = self.spijker_form()
-        m=np.shape(T)[0]
-        X=np.eye(m)+r*T
-        if abs(np.linalg.det(X))<tol: return 0
-        P = np.linalg.solve(X,T)
-        R = np.linalg.solve(X,S)
+        S, T = self.spijker_form()
+        m = np.shape(T)[0]
+        X = np.eye(m) + r * T
+        if abs(np.linalg.det(X)) < tol:
+            return 0
+        P = np.linalg.solve(X, T)
+        R = np.linalg.solve(X, S)
         if P.min()<-tol or R.min()<-tol:
             return 0
         else:
@@ -401,7 +405,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #================================================================
 
 def TSRKOrderConditions(p,ind='all'):
-    from rooted_trees import Emap_str
+    from nodepy.rooted_trees import Emap_str
     forest=rt.list_trees(p)
     code=[]
     for tree in forest:
@@ -413,7 +417,7 @@ def TSRKOrderConditions(p,ind='all'):
 
 def tsrk_elementary_weight(tree):
     """
-        Constructs Butcher's elementary weights 
+        Constructs Butcher's elementary weights
         for Two-step Runge-Kutta methods
     """
     from sympy import Symbol
@@ -423,17 +427,17 @@ def tsrk_elementary_weight(tree):
 
 def tsrk_elementary_weight_str(tree):
     """
-        Constructs Butcher's elementary weights 
+        Constructs Butcher's elementary weights
         for Two-step Runge-Kutta methods
         as numpy-executable strings
     """
-    from rooted_trees import Dmap_str, Emap_str
+    from nodepy.rooted_trees import Dmap_str, Emap_str
     ewstr='dot(bhat,'+tree.Gprod_str(rt.Emap_str,rt.Gprod_str,betaargs=[TSRKeta_str,Dmap_str],alphaargs=[-1])+')+dot(b,'+tree.Gprod_str(TSRKeta_str,rt.Dmap_str)+')+theta*'+Emap_str(tree,-1)
     ewstr=mysimp(ewstr)
     return ewstr
 
 def TSRKeta(tree):
-    from rooted_trees import Dprod
+    from nodepy.rooted_trees import Dprod
     from sympy import symbols
     raise Exception('This function does not work correctly; use the _str version')
     if tree=='':  return 1
@@ -444,7 +448,7 @@ def TSRKeta_str(tree):
     """
     Computes eta(t) for Two-step Runge-Kutta methods
     """
-    from rooted_trees import Dprod_str, Emap_str
+    from nodepy.rooted_trees import Dprod_str, Emap_str
     if tree=='':  return 'e'
     if tree=='T': return 'c'
     return '(d*'+Emap_str(tree,-1)+'+dot(Ahat,'+tree.Gprod_str(Emap_str,Dprod_str,betaargs=[TSRKeta_str],alphaargs=[-1])+')'+'+dot(A,'+Dprod_str(tree,TSRKeta_str)+'))'
@@ -496,7 +500,7 @@ def loadTSRK(which='All'):
 def load_type2_TSRK(s,p,type='Type II'):
     r"""
     Load a TSRK method from its coefficients in an ASCII file
-    (usually from MATLAB).  The coefficients are stored in the 
+    (usually from MATLAB).  The coefficients are stored in the
     following order: [s d theta A b Ahat bhat].
     """
     path='/Users/ketch/Research/Projects/MRK/methods/TSRK/'

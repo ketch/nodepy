@@ -1,10 +1,13 @@
+from __future__ import print_function
+
 def order(rk,tol=1.e-13): # pragma: no cover
-    from numpy import dot,zeros,all,sum,abs
+    from numpy import dot, zeros, all, abs
+    import numpy
     coneq = zeros((40000))
     A=rk.A
     b=rk.b
     c=rk.c
-    coneq[0]=sum(b)-1.
+    coneq[0] = sum(b) - 1.0
     if any(abs(coneq)>tol):
         return 0
     # order 2 conditions:
@@ -20343,5 +20346,5 @@ def order(rk,tol=1.e-13): # pragma: no cover
     if any(abs(coneq)>tol):
         return 12
     else:
-        print 'This routine only goes up to order 13.  Use oc_butcher_high_order for higher orders.'
+        print('This routine only goes up to order 13.  Use oc_butcher_high_order for higher orders.')
         return 13
