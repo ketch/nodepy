@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import division
 
 import numbers
+import runge_kutta_method as rk
 
 #=====================================================
 class ODESolver(object):
@@ -64,6 +65,11 @@ class ODESolver(object):
                 * Implement an option to not keep all output (for efficiency).
                 * Option to keep error estimate history
         """
+        if isinstance(self,rk.ContinuousRungeKuttaMethod) and not isinstance(ivp.T, numbers.Number):
+            dense_output = True
+        else:
+            dense_output = False
+
         numself = self.__num__()
         f=ivp.rhs; u0=ivp.u0; T=ivp.T
         u=[u0]; t=[t0];
@@ -80,89 +86,121 @@ class ODESolver(object):
 
         if t_out is not None:
             iout = 0
-            next_out = T[iout]
+            next_output_time = T[iout]
         else:
-            next_out = t_final
+            next_output_time = t_final
 
         t_current = t0
 
         out_now = False
 
-        if errtol is None:      # Fixed-timestep mode
-            if dt is None: dt = (t_final-t0)/float(N)
-            dt_standard = dt + 0
-            for istep in range(max_steps):
+        if not dense_output:
+            if errtol is None:      # Fixed-timestep mode
+                if dt is None: dt = (t_final-t0)/float(N)
+                dt_standard = dt + 0
+                for istep in range(max_steps):
 
-                if (t_current + dt) >= next_out:
-                    #print(t_current, dt, next_out) # tests don't expect this
-                    dt = next_out - t_current
-                    out_now = True
+                    if t_current+dt >= next_output_time:
+                        dt = next_output_time - t_current
+                        out_now = True
 
-                uu = numself.__step__(f,t_current,uu,dt,x=x,use_butcher=use_butcher)
+                    if not isinstance(self,rk.ContinuousRungeKuttaMethod):
+                        uu = numself.__step__(f,t_current,uu,dt,x=x,use_butcher=use_butcher)
+                    else:
+                        uu, _ = numself.__step__(f,t_current,uu,dt,[],x=x,use_butcher=use_butcher)
 
-                t_current += dt
-                if (out_now) or (t_out is None):
-                    u.append(uu)
-                    t.append(t_current)
-                if t_current >= t_final: break
-                if out_now:
-                    iout += 1
-                    next_out = T[iout]
-                    dt = dt_standard
-
-                out_now = False
-
-        else:                   # Error-control mode
-            p=self.embedded_method.p
-            alpha = 0.7/p; beta = 0.4/p; kappa = 0.9
-            facmin = 0.2; facmax = 5.0
-            errestold = errtol
-            errest=1.
-
-
-            for istep in range(max_steps):
-                # Hit next output time exactly:
-                if t_current+dt >= next_out:
-                    dt = next_out - t_current
-                    out_now = True
-
-                unew,errest = numself.__step__(f,t_current,uu,dt,estimate_error=True,x=x,use_butcher=use_butcher)
-
-                if errest<=errtol:      # Step accepted
                     t_current += dt
                     if (out_now) or (t_out is None):
-                        u.append(unew)
+                        u.append(uu)
                         t.append(t_current)
-                        uu = unew.copy()
-                    # Stop if final time reached:
                     if t_current >= t_final: break
                     if out_now:
                         iout += 1
-                        next_out = T[iout]
-                    errestold = errest #Should this happen if step is rejected?
-                    dthist.append(dt)
-                    errest_hist.append(errest)
-                else:
-                    rejected_steps+=1
+                        next_output_time = T[iout]
+                        dt = dt_standard
 
-                out_now = False
+                    out_now = False
 
-                if controllertype=='P':
-                  #Compute new dt using P-controller
-                  facopt = (errtol/(errest+1.e-6*errtol))**alpha
+            else:                   # Error-control mode
+                p=self.embedded_method.p
+                alpha = 0.7/p; beta = 0.4/p; kappa = 0.9
+                facmin = 0.2; facmax = 5.0
+                errestold = errtol
+                errest=1.
 
-                elif controllertype=='PI':
-                  #Compute new dt using PI-controller
-                  facopt = ((errtol/errest)**alpha
-                            *(errestold/errtol)**beta)
-                else:
-                    print('Unrecognized time step controller type')
 
-                # Set new step size
-                dt = dt * min(facmax,max(facmin,kappa*facopt))
+                for istep in range(max_steps):
+                    # Hit next output time exactly:
+                    if t_current+dt >= next_output_time: 
+                        dt = next_output_time - t_current
+                        out_now = True
 
-            if istep==max_steps-1:
-                print('Maximum number of steps reached; giving up.')
+                    unew,errest = numself.__step__(f,t_current,uu,dt,estimate_error=True,x=x,use_butcher=use_butcher)
+
+                    if errest<=errtol:      # Step accepted
+                        t_current += dt
+                        if (out_now) or (t_out is None):
+                            u.append(unew)
+                            t.append(t_current)
+                            uu = unew.copy()
+                        # Stop if final time reached:
+                        if t_current >= t_final: break
+                        if out_now:
+                            iout += 1
+                            next_output_time = T[iout]
+                        errestold = errest #Should this happen if step is rejected?
+                        dthist.append(dt)
+                        errest_hist.append(errest)
+                    else: 
+                        rejected_steps+=1
+
+                    out_now = False
+
+                    if controllertype=='P':
+                      #Compute new dt using P-controller
+                      facopt = (errtol/(errest+1.e-6*errtol))**alpha 
+
+                    elif controllertype=='PI':
+                      #Compute new dt using PI-controller
+                      facopt = ((errtol/errest)**alpha
+                                *(errestold/errtol)**beta)
+                    else: print('Unrecognized time step controller type')
+
+                    # Set new step size
+                    dt = dt * min(facmax,max(facmin,kappa*facopt))
+
+                if istep==max_steps-1:
+                    print('Maximum number of steps reached; giving up.')
+
+        else:  # dense output
+            if errtol is None:      # Fixed-timestep mode
+                if dt is None: dt = (t_final-t0)/float(N)
+                dt_standard = dt + 0
+                for istep in range(max_steps):
+
+                    thetas = []
+                    if t_current+dt >= next_output_time:
+                        out_now = True
+                        while next_output_time <= t_current + dt:
+                            thetas.append( (next_output_time - t_current)/dt )
+                            iout += 1
+                            if iout >= len(T): break
+                            next_output_time = T[iout]
+
+                    uu, output = numself.__step__(f,t_current,uu,dt,thetas,
+                                                  x=x,use_butcher=use_butcher)
+
+                    if output:
+                        for i, outsol in enumerate(output):
+                            u.append(outsol)
+                            t.append(t_current + dt*thetas[i])
+                    t_current += dt
+                    if t_current >= t_final: break
+
+                    out_now = False
+
+            else:                   # Error-control mode
+                raise NotImplementedError
 
         if diagnostics==False:
             return t, u

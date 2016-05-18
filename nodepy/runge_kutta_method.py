@@ -59,7 +59,6 @@ import sympy
 import nodepy.snp as snp
 from nodepy.general_linear_method import GeneralLinearMethod
 
-
 #=====================================================
 class RungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
@@ -1735,6 +1734,87 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 #=====================================================
 
 
+class ContinuousRungeKuttaMethod(RungeKuttaMethod):
+
+    def __init__(self,A=None,b=None,alpha=None,beta=None,
+                 b_dense=None,
+                 name='Continuous Runge-Kutta Method',shortname='CRKM',
+                 description='',mode='exact',order=None):
+
+        super(ContinuousRungeKuttaMethod,self).__init__(A,b,alpha,beta,name,
+                                                   shortname,description)
+        self.b_dense = b_dense
+
+class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRungeKuttaMethod):
+    def __step__(self,f,t,u,dt,thetas,x=None,estimate_error=False,use_butcher=False):
+        """
+            Take a time step on the ODE u'=f(t,u), providing output at
+            times requested.
+
+            **Input**:
+                - f  -- function being integrated
+                - t  -- array of previous solution times
+                - u  -- array of previous solution steps (u[i] is the solution at time t[i])
+                - dt -- length of time step to take
+                - thetas -- list of relative times at which to provide output
+
+            **Output**:
+                - unew -- approximate solution at time t[-1]+dt
+                - u_theta -- list of dense output values
+
+            The implementation here is wasteful in terms of storage.
+        """
+        if self.alpha is None:
+            use_butcher = True
+
+	m=len(self)
+        u_old = u.copy()		# Initial value
+        size = np.size(u_old)
+        y = [np.zeros((size)) for i in range(m+1)]
+        fy = [np.zeros((size)) for i in range(m)]
+
+        # First stage
+        y[0][:]=u_old
+        if x is not None: fy[0][:]=f(t,y[0],x)
+        else: fy[0][:]=f(t,y[0])
+
+        if use_butcher:                 # Use Butcher coefficients
+            for i in range(1,m):        # Compute stage i
+                y[i][:] = u_old
+                for j in range(i):
+                    y[i] += self.A[i,j]*dt*fy[j]
+                    if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
+            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+
+        else:             # Use Shu-Osher coefficients
+            v = 1 - self.alpha.sum(1)
+            for i in range(1,m+1):
+                y[i] = v[i]*u_old
+                for j in range(i):
+                    y[i] += self.alpha[i,j]*y[j] + dt*self.beta[i,j]*fy[j]
+                if i<m:
+                    if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
+            u_new = y[m]
+
+        if thetas:
+            deg = self.b_dense.shape[1] # b_j polynomial degree
+            u_theta = [np.zeros(size) for i in range(len(thetas))]
+            for i, theta in enumerate(thetas):
+                u_theta[i]= u_old.copy()
+                for j in range(m):
+                    bj = 0.
+                    for d in range(1,deg):
+                        bj += self.b_dense[j,d] * theta**d
+                    u_theta[i] += dt*bj*fy[j]
+        else:
+            u_theta = None
+
+        return u_new, u_theta
+
+
+
 #=====================================================
 class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 #=====================================================
@@ -2681,8 +2761,14 @@ def SSPRK2(m):
     beta=alpha/r
     alpha[m,0]=one/m
     name='SSPRK('+str(m)+',2)'
-    shortname='SSPRK'+str(m)+'2'
-    return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
+    # Dense output coefficients
+    b_dense = np.zeros( (m,3) )
+    b_dense[0,:] = [0., 1., -(m-1.)/m]
+    for i in range(1,m):
+        b_dense[i,2] = 1./m
+    return ContinuousExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
+                                    b_dense=b_dense,name=name,
+                                    shortname=name)
 
 
 def SSPRK3(m):
