@@ -81,7 +81,7 @@ release = '0.6.1'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build','oc_butcher_high_order']
 
 autodoc_member_order = 'bysource'
 autoclass_content='both'
