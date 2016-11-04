@@ -2,7 +2,6 @@ from __future__ import print_function
 from __future__ import division
 
 import numbers
-import runge_kutta_method as rk
 
 #=====================================================
 class ODESolver(object):
@@ -65,6 +64,7 @@ class ODESolver(object):
                 * Implement an option to not keep all output (for efficiency).
                 * Option to keep error estimate history
         """
+        import runge_kutta_method as rk
         if isinstance(self,rk.ContinuousRungeKuttaMethod) and not isinstance(ivp.T, numbers.Number):
             dense_output = True
         else:
