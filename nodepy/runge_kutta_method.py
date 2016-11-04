@@ -1767,7 +1767,7 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
         if self.alpha is None:
             use_butcher = True
 
-	m=len(self)
+        m=len(self)
         u_old = u.copy()		# Initial value
         size = np.size(u_old)
         y = [np.zeros((size)) for i in range(m+1)]
