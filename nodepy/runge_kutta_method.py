@@ -1767,8 +1767,8 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
         if self.alpha is None:
             use_butcher = True
 
-	m=len(self)
-        u_old = u.copy()		# Initial value
+        m=len(self)
+        u_old = u.copy()# Initial value
         size = np.size(u_old)
         y = [np.zeros((size)) for i in range(m+1)]
         fy = [np.zeros((size)) for i in range(m)]
@@ -1785,7 +1785,7 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
                     y[i] += self.A[i,j]*dt*fy[j]
                     if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
                     else: fy[i][:] = f(t+self.c[i]*dt,y[i])
-            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])
 
         else:             # Use Shu-Osher coefficients
             v = 1 - self.alpha.sum(1)
