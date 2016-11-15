@@ -17,6 +17,7 @@ Functions for running convergence and performance tests.
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 import numpy as np
 import nodepy.runge_kutta_method as rk
 
