@@ -1,6 +1,8 @@
 from __future__ import print_function
 
+from __future__ import absolute_import
 import numpy as np
+from six.moves import range
 
 def imaginary_stability_interval(p,q=None,eps=1.e-14):
     r"""

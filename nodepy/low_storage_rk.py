@@ -75,7 +75,9 @@ At the moment, the following classes are implemented:
     >>> rk3S.principal_error_norm() # doctest: +ELLIPSIS
     0.00035742076...
 """
+from __future__ import absolute_import
 from nodepy.runge_kutta_method import *
+from six.moves import range
 
 #=====================================================
 class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
@@ -525,7 +527,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
     gamma=[[0.],[0.,1.]+coeff[0:m-1]]
     if lstype.startswith('3S*'): gamma.append([0,0,0,0]+coeff[3*m-3:4*m-6])
     if lstype=='2S' or lstype=='3S*':  delta=[1.]+coeff[m-1:2*m-3]+[0.]
-    elif lstype=='2S*': delta=[1.]+[0.]*len(range(m-1,2*m-3))+[0.]
+    elif lstype=='2S*': delta=[1.]+[0.]*len(list(range(m-1,2*m-3)))+[0.]
     elif lstype=='2S_pair': delta=[1.]+coeff[m-1:2*m-3] +[coeff[-2],coeff[-1]]
     elif lstype=='3S*_pair': delta=[1.]+coeff[m-1:2*m-3] +[coeff[-3],coeff[-2],coeff[-1]]
     if lstype=='2S' or lstype=='2S*':

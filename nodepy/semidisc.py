@@ -10,8 +10,10 @@ For now, only semi-discretizations of one-dimensional PDEs are supported.
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 import numpy as np
 from nodepy.ivp import IVP
+from six.moves import range
 
 class LinearSemiDiscretization(IVP):
     """
