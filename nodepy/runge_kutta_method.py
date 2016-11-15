@@ -2912,8 +2912,8 @@ def SSPIRK2(m):
             _____|____________________
                  | 1/4  1/4  1/4  1/4
 
-            >>> ISSP42.absolute_monotonicity_radius()
-            7.999999999992724
+            >>> ISSP42.absolute_monotonicity_radius() # doctest: +ELLIPSIS
+            7.99...
 
         **References**:
             #. [ketcheson2009]_
