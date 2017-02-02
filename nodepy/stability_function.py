@@ -3,6 +3,37 @@ from __future__ import print_function
 from __future__ import absolute_import
 import numpy as np
 from six.moves import range
+import sympy
+
+def E_polynomial(p, q=None):
+    r"""
+        Compute the E-polynomial discussed in Hairer & Wanner.
+
+        For R(z) = P(z)/Q(z), the E-polynomial is
+
+        E(y) = Q(iy) Q(-iy) - P(iy) P(-iy).
+
+        The method is A-stable if the E-polynomial is non-negative
+        for all real y.
+    """
+    if q is None:
+        q = np.poly1d([1])
+
+    from copy import deepcopy
+    piy  = deepcopy(p)
+    pmiy = deepcopy(p)
+    qiy  = deepcopy(q)
+    qmiy = deepcopy(q)
+
+    for i in range(1,len(p.c)+1):
+        piy.coeffs[-i] = (sympy.I)**(i-1)*piy.coeffs[-i]
+        qiy.coeffs[-i] = (sympy.I)**(i-1)*qiy.coeffs[-i]
+
+        pmiy.coeffs[-i] = (-sympy.I)**(i-1)*pmiy.coeffs[-i]
+        qmiy.coeffs[-i] = (-sympy.I)**(i-1)*qmiy.coeffs[-i]
+
+    Epoly = qiy*qmiy - piy*pmiy
+    return Epoly
 
 def imaginary_stability_interval(p,q=None,eps=1.e-14):
     r"""
