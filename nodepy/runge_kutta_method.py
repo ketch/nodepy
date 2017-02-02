@@ -894,6 +894,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         return p,q
 
+    def E_polynomial(self):
+        r"""Return the E-polynomial of the method."""
+
+        from nodepy import stability_function
+        p, q = self.stability_function()
+        return stability_function.E_polynomial(p, q)
+
 
     def plot_stability_function(self,bounds=[-20,1]):
         r"""Plot the value of the stability function along the negative real axis.
