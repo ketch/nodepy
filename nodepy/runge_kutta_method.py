@@ -1416,9 +1416,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
         m=len(self)
         u_old = u       # Initial value
-        size = np.size(u_old)
-        y = [np.zeros((size)) for i in range(m+1)]
-        fy = [np.zeros((size)) for i in range(m)]
+        y = [np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u])) for i in range(m+1)]
+        fy = [np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u])) for i in range(m)]
 
         # First stage
         y[0][:]=u_old
@@ -1769,9 +1768,8 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
 
         m=len(self)
         u_old = u.copy()		# Initial value
-        size = np.size(u_old)
-        y = [np.zeros((size)) for i in range(m+1)]
-        fy = [np.zeros((size)) for i in range(m)]
+        y = [np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u])) for i in range(m+1)]
+        fy = [np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u])) for i in range(m)]
 
         # First stage
         y[0][:]=u_old
@@ -1800,7 +1798,7 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
 
         if thetas:
             deg = self.b_dense.shape[1] # b_j polynomial degree
-            u_theta = [np.zeros(size) for i in range(len(thetas))]
+            u_theta = [np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u])) for i in range(len(thetas))]
             for i, theta in enumerate(thetas):
                 u_theta[i]= u_old.copy()
                 for j in range(m):
@@ -1952,9 +1950,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
         m=len(self)
         u_old = u       # Initial value
-        size = np.size(u_old)
-        y = [np.zeros((size)) for i in range(m+1)]
-        fy = [np.zeros((size)) for i in range(m)]
+        y = [np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u])) for i in range(m+1)]
+        fy = [np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u])) for i in range(m)]
 
         # First stage
         y[0][:]=u_old
@@ -1984,7 +1981,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             u_new = y[m]
 
             if estimate_error:
-                u_hat = np.zeros(size)
+                u_hat = np.zeros_like(u if isinstance(u, np.ndarray) else np.array([u]))
                 #if dt<1e-10:
                     #print("Warning: very small step size: {} {}".format(dt, t[-1]))
                 u_hat = (1-np.sum(self.alphahat[-1,:]))*u_old
