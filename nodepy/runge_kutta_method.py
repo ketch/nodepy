@@ -53,11 +53,13 @@
 from __future__ import print_function
 from __future__ import division
 
+from __future__ import absolute_import
 import numpy as np
 import sympy
 
 import nodepy.snp as snp
 from nodepy.general_linear_method import GeneralLinearMethod
+from six.moves import range
 
 #=====================================================
 class RungeKuttaMethod(GeneralLinearMethod):
@@ -891,6 +893,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 p = np.poly1d(p.coeffs[(d_num-d_true):])
 
         return p,q
+
+    def E_polynomial(self):
+        r"""Return the E-polynomial of the method."""
+
+        from nodepy import stability_function
+        p, q = self.stability_function()
+        return stability_function.E_polynomial(p, q)
 
 
     def plot_stability_function(self,bounds=[-20,1]):
@@ -1783,7 +1792,7 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
                     y[i] += self.A[i,j]*dt*fy[j]
                     if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
                     else: fy[i][:] = f(t+self.c[i]*dt,y[i])
-            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])	
+            u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])
 
         else:             # Use Shu-Osher coefficients
             v = 1 - self.alpha.sum(1)
@@ -2909,8 +2918,8 @@ def SSPIRK2(m):
             _____|____________________
                  | 1/4  1/4  1/4  1/4
 
-            >>> ISSP42.absolute_monotonicity_radius()
-            7.999999999992724
+            >>> ISSP42.absolute_monotonicity_radius() # doctest: +ELLIPSIS
+            7.99...
 
         **References**:
             #. [ketcheson2009]_

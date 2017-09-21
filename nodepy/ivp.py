@@ -30,7 +30,9 @@ This module implements the initial value problem as a class.
 """
 from __future__ import print_function
 
+from __future__ import absolute_import
 import numpy as np
+from six.moves import range
 
 class IVP(object):
     """
