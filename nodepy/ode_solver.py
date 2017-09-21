@@ -3,10 +3,7 @@ from __future__ import division
 
 from __future__ import absolute_import
 import numbers
-<<<<<<< HEAD
-=======
 from six.moves import range
->>>>>>> 55e524ce8b5ef00e58297fe58f73fd48def34205
 
 #=====================================================
 class ODESolver(object):
@@ -69,14 +66,9 @@ class ODESolver(object):
                 * Implement an option to not keep all output (for efficiency).
                 * Option to keep error estimate history
         """
-<<<<<<< HEAD
-        import runge_kutta_method as rk
-        if isinstance(self,rk.ContinuousRungeKuttaMethod) and not isinstance(ivp.T, numbers.Number):
-=======
         # If a list of output times is specified and the method supports dense output,
         # then we don't have to stop exactly at the output times.
         if hasattr(self, 'b_dense') and not isinstance(ivp.T, numbers.Number):
->>>>>>> 55e524ce8b5ef00e58297fe58f73fd48def34205
             dense_output = True
         else:
             dense_output = False
