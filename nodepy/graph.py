@@ -26,7 +26,7 @@ def plot_dependency_graph(rkm,remove_edges=False):
 
     hpos = [0]*(max(lp)+1)
     pos = {}
-    for node in G.nodes_iter():
+    for node in G.nodes():
         hpos[lp[node]]+=1
         pos[node] = np.array([hpos[lp[node]],lp[node]])
 
@@ -49,12 +49,12 @@ def _longest_paths(G):
     """Return a dict of nodes with values corresponding to longest paths from node"""
     lp = {}
     lp_old = lp.copy()
-    for node in G.nodes_iter():
+    for node in G.nodes():
         lp[node] = 0
 
     while lp != lp_old:
         lp_old = lp.copy()
-        for edge in G.edges_iter():
+        for edge in G.edges():
             lp[edge[1]] = max(lp[edge[1]],lp[edge[0]]+1)
 
     return lp
@@ -63,7 +63,7 @@ def _remove_extra_edges(G):
     """Remove edges that aren't needed in establishing ordering."""
     lp = _longest_paths(G)
     to_remove = []
-    for edge in G.edges_iter():
+    for edge in G.edges():
         if lp[edge[0]]<(lp[edge[1]]-1):
             to_remove.append(edge)
     for edge in to_remove:
