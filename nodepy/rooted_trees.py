@@ -394,7 +394,6 @@ class RootedTree(str):
         import matplotlib.pyplot as pl
         if iplot==1: pl.clf()
         pl.subplot(nrows,ncols,iplot)
-        pl.hold(True)
         pl.scatter([0],[0])
         if self!='T': self._plot_subtree(0,0,1.)
 
@@ -402,7 +401,6 @@ class RootedTree(str):
         pl.title(ttitle,{'fontsize': fs})
         pl.xticks([])
         pl.yticks([])
-        pl.hold(False)
         pl.axis('off')
         #pl.show()
         #pl.ioff()
