@@ -85,21 +85,24 @@ def load_ivp(ivpname='All'):
 
     name = 'test'
     description = r"Dahlquist's test problem; $f(y) = \lambda y$"
+    u0 = 1.
     rhs = lambda t,u: u
-    exact = lambda t : ivp.u0*np.exp(t)
-    ivps[name] = IVP(f=rhs, u0=1., T=5., desc=description, exact=exact, name=name)
+    exact = lambda t: u0*np.exp(t)
+    ivps[name] = IVP(f=rhs, u0=u0, T=5., desc=description, exact=exact, name=name)
 
     name = 'zoltan'
+    u0 = 1.
     rhs = lambda t,u: -100*abs(u)
-    exact = lambda t : ivp.u0*np.exp(-100*t)
+    exact = lambda t: u0*np.exp(-100*t)
     description = 'The linear scalar test problem with abs value'
-    ivps[name] = IVP(f=rhs, u0=1., T=10., desc=description, exact=exact, name=name)
+    ivps[name] = IVP(f=rhs, u0=u0, T=10., desc=description, exact=exact, name=name)
 
     name = 'nlsin'
+    u0 = 1.
     rhs = lambda t,u: 4.*u*float(np.sin(t))**3*np.cos(t)
-    exact = lambda t: ivp.u0*np.exp((np.sin(t))**4)
+    exact = lambda t: u0*np.exp((np.sin(t))**4)
     description = 'A simple nonlinear scalar problem'
-    ivps[name] = IVP(f=rhs, u0=1., T=5., desc=description, exact=exact, name=name)
+    ivps[name] = IVP(f=rhs, u0=u0, T=5., desc=description, exact=exact, name=name)
 
     name = 'ode1'
     rhs = lambda t,u: 4.*t*np.sqrt(u)

@@ -27,10 +27,11 @@ def E_polynomial(p, q=None):
 
     for i in range(1,len(p.c)+1):
         piy.coeffs[-i] = (sympy.I)**(i-1)*piy.coeffs[-i]
-        qiy.coeffs[-i] = (sympy.I)**(i-1)*qiy.coeffs[-i]
-
         pmiy.coeffs[-i] = (-sympy.I)**(i-1)*pmiy.coeffs[-i]
+
+    for i in range(1,len(q.c)+1):
         qmiy.coeffs[-i] = (-sympy.I)**(i-1)*qmiy.coeffs[-i]
+        qiy.coeffs[-i] = (sympy.I)**(i-1)*qiy.coeffs[-i]
 
     Epoly = qiy*qmiy - piy*pmiy
     return Epoly
