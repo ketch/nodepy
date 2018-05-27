@@ -236,11 +236,9 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         else:
             plt.contour(X,Y,R,[0,1],colors=color)
         plt.title('Absolute Stability Region for '+self.name)
-        plt.hold(True)
         plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.axis('Image')
-        plt.hold(False)
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
                     tol=3.e-16):

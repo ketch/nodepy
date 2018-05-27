@@ -47,7 +47,7 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
 
     """
     import matplotlib.pyplot as pl
-    pl.clf(); pl.hold(True)
+    pl.clf(); 
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
     err=[]
@@ -75,7 +75,6 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
     pl.xlabel('Function evaluations')
     pl.ylabel('Error at $t_{final}$')
     pl.legend(loc='best')
-    pl.hold(False)
     pl.draw()
     return work, err
 
@@ -104,7 +103,7 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
 
     """
     import matplotlib.pyplot as pl
-    pl.clf(); pl.draw(); pl.hold(True)
+    pl.clf(); pl.draw(); 
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
     if not isinstance(ivps,list): ivps=[ivps]
@@ -142,7 +141,6 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
     pl.xlabel('Function evaluations')
     pl.ylabel('Error at $t_{final}$')
     pl.legend(loc='best')
-    pl.hold(False)
     pl.draw()
     return work,err
 

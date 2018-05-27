@@ -266,12 +266,10 @@ class LinearMultistepMethod(GeneralLinearMethod):
         else:
             plt.setp(ax,title='Stability region')
 
-        plt.hold(True)
         plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
         plt.axis(bounds)
-        plt.hold(False)
 
         if to_file:
             plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
@@ -298,12 +296,10 @@ class LinearMultistepMethod(GeneralLinearMethod):
         plt.figure()
         plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
         plt.axis('image')
-        plt.hold(True)
         bounds = plt.axis()
         plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.title('Boundary locus for '+self.name)
-        plt.hold(False)
         plt.draw()
 
 
@@ -451,7 +447,6 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
         R = vmag(X,Y)
 
         h = plt.figure(fignum)
-        plt.hold(True)
         if filled:
             plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
         else:
@@ -461,7 +456,6 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
         plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.axis(bounds)
-        plt.hold(False)
         return h
 
     def stiff_damping_factor(self,epsilon=1.e-7):

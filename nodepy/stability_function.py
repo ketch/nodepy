@@ -208,7 +208,6 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
 
     # Plot
     h = plt.figure(fignum)
-    plt.hold(True)
     if filled:
         plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
     else:
@@ -218,7 +217,6 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
     plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
     plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
     plt.axis('Image')
-    plt.hold(False)
     return h
 
 
@@ -254,12 +252,10 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
 
     h = plt.figure(fignum)
     plt.contourf(X,Y,R,[0,1,1.e299],colors=color)
-    plt.hold(True)
     if plotroots: plt.plot(np.real(p.r),np.imag(p.r),'ok')
     plt.plot([0,0],[bounds[2],bounds[3]],'--k')
     plt.plot([bounds[0],bounds[1]],[0,0],'--k')
     plt.axis('Image')
-    plt.hold(False)
     return h
 
 
