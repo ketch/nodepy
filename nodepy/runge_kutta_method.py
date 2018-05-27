@@ -1670,7 +1670,6 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         fig = plt.figure()
         CS = plt.contour(X,Y,th_max,colors='k',levels=levels)
         plt.clabel(CS, fmt='%d', colors='k')#,manual=True)
-        plt.hold(True)
 
         p,q=self.__num__().stability_function(mode='float')
         stability_function.plot_stability_region(p,q,N,color='k',filled=False,bounds=bounds,
@@ -2092,7 +2091,6 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         fig = stability_function.plot_stability_region(p,q,N,color,filled,
                         bounds,plotroots,alpha,scalefac,fignum)
 
-        plt.hold(True)
         p,q = self.embedded_method.__num__().stability_function(mode='float')
         stability_function.plot_stability_region(p,q,N,color='k',filled=False,bounds=bounds,
                 plotroots=plotroots,alpha=alpha,scalefac=scalefac,fignum=fig.number)
@@ -3634,7 +3632,6 @@ def linearly_stable_step_size(rk, L, acc=1.e-7, tol=1.e-14, plot=1):
     h=bisect(0,hmax,acc,tol,_is_linearly_stable, params=(p,q,lamda))
     if plot:
         rk.plot_stability_region()
-        plt.hold(True)
         plt.plot(np.real(h*lamda), np.imag(h*lamda),'o')
     return h
 

@@ -101,6 +101,7 @@ class ODESolver(object):
             if errtol is None:      # Fixed-timestep mode
                 if dt is None: dt = (t_final-t0)/float(N)
                 dt_standard = dt + 0
+                max_steps = max(max_steps, int(round(2*(t_final-t0)/dt)))
                 for istep in range(max_steps):
 
                     if t_current+dt >= next_output_time:

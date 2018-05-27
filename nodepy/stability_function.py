@@ -27,10 +27,11 @@ def E_polynomial(p, q=None):
 
     for i in range(1,len(p.c)+1):
         piy.coeffs[-i] = (sympy.I)**(i-1)*piy.coeffs[-i]
-        qiy.coeffs[-i] = (sympy.I)**(i-1)*qiy.coeffs[-i]
-
         pmiy.coeffs[-i] = (-sympy.I)**(i-1)*pmiy.coeffs[-i]
+
+    for i in range(1,len(q.c)+1):
         qmiy.coeffs[-i] = (-sympy.I)**(i-1)*qmiy.coeffs[-i]
+        qiy.coeffs[-i] = (sympy.I)**(i-1)*qiy.coeffs[-i]
 
     Epoly = qiy*qmiy - piy*pmiy
     return Epoly
@@ -208,7 +209,6 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
 
     # Plot
     h = plt.figure(fignum)
-    plt.hold(True)
     if filled:
         plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
     else:
@@ -218,7 +218,6 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
     plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
     plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
     plt.axis('Image')
-    plt.hold(False)
     return h
 
 
@@ -254,12 +253,10 @@ def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
 
     h = plt.figure(fignum)
     plt.contourf(X,Y,R,[0,1,1.e299],colors=color)
-    plt.hold(True)
     if plotroots: plt.plot(np.real(p.r),np.imag(p.r),'ok')
     plt.plot([0,0],[bounds[2],bounds[3]],'--k')
     plt.plot([bounds[0],bounds[1]],[0,0],'--k')
     plt.axis('Image')
-    plt.hold(False)
     return h
 
 

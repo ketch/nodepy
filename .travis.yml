@@ -15,3 +15,10 @@ script: coverage run --source=nodepy tests.py
 after_success:
   - coveralls
   - codecov
+
+deploy:
+  provider: pypi
+  user: ketch
+  password: ...
+  on:
+    tags: true
