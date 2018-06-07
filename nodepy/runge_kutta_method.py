@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys())
-    ['BE', 'BS5', 'BuRK65', 'CMR6', 'DP5', 'FE', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95']
+    ['BE', 'BS5', 'BuRK65', 'CMR6', 'DP5', 'FE', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2428,6 +2428,14 @@ def loadRKM(which='All'):
     RK['SDIRK34'] = RungeKuttaMethod(A, b, name='SDIRK34',
                         description=r"4th-order SDIRK method of Norsett",
                         shortname = 'SDIRK34')
+
+    #================================================
+    # This method is from Bank et al. 1985
+    A=snp.array([[0,0,0],[one/4,one/4,0],[one/3,one/3,one/3]])
+    b=snp.array([one/3,one/3,one/3])
+    description=r"2nd-order, L-stable DIRK method of Bank et al."
+    RK['TR-BDF2'] = RungeKuttaMethod(A, b, name='TR-BDF2',
+                        description=description, shortname='TR-BDF2')
 
     #================================================
     # SSP methods
