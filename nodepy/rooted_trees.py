@@ -769,7 +769,7 @@ def recursiveVectors(p,ind='all'):
         >>> from nodepy import rt
         >>> v = rt.recursiveVectors(12)
         >>> print(len(v))
-        4769
+        4765
   """
   if p>14: raise Exception('recursiveVectors is not complete for orders p > 14.')
   W=[[],[]]
