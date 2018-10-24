@@ -46,8 +46,8 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
             - Option to plot versus f-evals or dt
 
     """
-    import matplotlib.pyplot as pl
-    pl.clf(); 
+    import matplotlib.pyplot as plt
+    plt.clf();
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
     err=[]
@@ -71,11 +71,11 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
         if parallel:
             speedup = len(method)/float(method.num_seq_dep_stages())
             work = work/speedup
-        pl.loglog(work,err0,label=method.name,linewidth=3)
-    pl.xlabel('Function evaluations')
-    pl.ylabel('Error at $t_{final}$')
-    pl.legend(loc='best')
-    pl.draw()
+        plt.loglog(work,err0,label=method.name,linewidth=3)
+    plt.xlabel('Function evaluations')
+    plt.ylabel('Error at $t_{final}$')
+    plt.legend(loc='best')
+    plt.draw()
     return work, err
 
 
@@ -102,8 +102,8 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
             >>> work,err=ptest(bs5,myivp)
 
     """
-    import matplotlib.pyplot as pl
-    pl.clf(); pl.draw(); 
+    import matplotlib.pyplot as plt
+    plt.clf(); plt.draw();
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
     if not isinstance(ivps,list): ivps=[ivps]
@@ -137,11 +137,11 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
         for jtol,tol in enumerate(tols):
             err[imeth,jtol]=err[imeth,jtol]**(1./len(ivps))
     for imeth,method in enumerate(methods):
-        pl.semilogy(work[imeth,:],err[imeth,:],label=method.name,linewidth=3)
-    pl.xlabel('Function evaluations')
-    pl.ylabel('Error at $t_{final}$')
-    pl.legend(loc='best')
-    pl.draw()
+        plt.semilogy(work[imeth,:],err[imeth,:],label=method.name,linewidth=3)
+    plt.xlabel('Function evaluations')
+    plt.ylabel('Error at $t_{final}$')
+    plt.legend(loc='best')
+    plt.draw()
     return work,err
 
 
