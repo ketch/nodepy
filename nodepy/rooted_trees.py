@@ -6,6 +6,7 @@ from sympy import factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
 from nodepy.utils import permutations
 from six.moves import range
+import matplotlib.pyplot as plt
 
 #=====================================================
 class RootedTree(str):
@@ -391,19 +392,16 @@ class RootedTree(str):
             plotting the root, parsing the subtrees, plotting the
             subtrees' roots, and calling _plot_subtree on each child
         """
-        import matplotlib.pyplot as pl
-        if iplot==1: pl.clf()
-        pl.subplot(nrows,ncols,iplot)
-        pl.scatter([0],[0])
+        if iplot==1: plt.clf()
+        plt.subplot(nrows,ncols,iplot)
+        plt.scatter([0],[0])
         if self!='T': self._plot_subtree(0,0,1.)
 
-        fs=int(np.ceil(30./nrows))
-        pl.title(ttitle,{'fontsize': fs})
-        pl.xticks([])
-        pl.yticks([])
-        pl.axis('off')
-        #pl.show()
-        #pl.ioff()
+        fs=int(np.ceil(20./nrows))
+        plt.title(ttitle,{'fontsize': fs})
+        plt.xticks([])
+        plt.yticks([])
+        plt.axis('off')
 
 
     def _plot_subtree(self,xroot,yroot,xwidth):
@@ -416,16 +414,15 @@ class RootedTree(str):
                 xwidth -- width in which this subtree must fit, in order
                             to avoid possibly overlapping with others
         """
-        import matplotlib.pyplot as pl
         ychild=yroot+1
         nleaves,subtrees=self._parse_subtrees()
         nchildren=nleaves+len(subtrees)
 
         dist=xwidth*(nchildren-1)/2.
         xchild=np.linspace(xroot-dist,xroot+dist,nchildren)
-        pl.scatter(xchild,ychild*np.ones(nchildren))
+        plt.scatter(xchild,ychild*np.ones(nchildren))
         for i in range(nchildren):
-            pl.plot([xroot,xchild[i]],[yroot,ychild],'-k')
+            plt.plot([xroot,xchild[i]],[yroot,ychild],'-k')
             if i>nleaves-1:
                 subtrees[i-nleaves]._plot_subtree(xchild[i],ychild,xwidth/3.)
 
@@ -527,7 +524,6 @@ def plot_all_trees(p,title='str'):
             >>> rt.plot_all_trees(4)  # doctest: +ELLIPSIS
             <matplotlib.figure.Figure object at ...>
     """
-    import matplotlib.pyplot as pl
     forest=list_trees(p)
     nplots=len(forest)
     nrows=int(np.ceil(np.sqrt(float(nplots))))
@@ -535,10 +531,10 @@ def plot_all_trees(p,title='str'):
     if nrows*ncols<nplots: ncols=ncols+1
     for tree in forest:
         if title=='str': ttitle=tree
-        else: ttitle=''
+        else: ttitle=title(tree)
         tree.plot(nrows,ncols,forest.index(tree)+1,ttitle=ttitle)
-    fig=pl.figure(1)
-    pl.setp(fig,facecolor='white')
+    fig=plt.figure(1)
+    plt.setp(fig,facecolor='white')
     return fig
 
 #=====================================================
@@ -585,6 +581,8 @@ def list_trees(p,ind='all'):
 
     **Reference**: [albrecht1996]_
     """
+
+    if p>10: raise Exception('list_trees is not complete for orders p > 10.')
 
     if p==0: return [RootedTree('')]
     W=[[],[]] #This way indices agree with Albrecht
@@ -761,8 +759,8 @@ def recursiveVectors(p,ind='all'):
 
     .. warning::
 
-        This code is complete only up to order 12.  We need to extend it
-        by adding more subloops for p>12.
+        This code is complete only up to order 14.  We need to extend it
+        by adding more subloops for p>14.
 
     **Example**
 
@@ -771,9 +769,9 @@ def recursiveVectors(p,ind='all'):
         >>> from nodepy import rt
         >>> v = rt.recursiveVectors(12)
         >>> print(len(v))
-        4769
+        4765
   """
-  if p>12: print('recursiveVectors is not complete for orders p > 12.')
+  if p>14: raise Exception('recursiveVectors is not complete for orders p > 14.')
   W=[[],[]]
   R=[[],[]]
   R.append(["tau[2]"])
@@ -781,21 +779,23 @@ def recursiveVectors(p,ind='all'):
   for i in range(3,p):
      #Construct R[i]
      R.append(["tau["+str(i)+"]"])
-     for j in range(len(W[i-1])):
-        R[i].append("A,"+W[i-1][j])
+     for w in W[i-1]:
+        R[i].append("A,"+w)
      #Construct W[i]
      #l=0:
      W.append(R[i][:])
      for l in range(1,i-1): #level 1
         ps=_powerString("C",l,trailchar=",")
-        for j in range(len(R[i-l])):
-          W[i].append(ps+R[i-l][j])
+        for r in R[i-l]:
+          W[i].append(ps+r)
      for l in range(0,i-3): #level 2
         ps=_powerString("C",l,trailchar=",")
         for n in range(2,i-l-1):
           m=i-n-l
           if m<=n: #Avoid duplicate conditions
              for Rm in R[m]:
+                # if m<n, start from R[0]
+                # if m==n, start from Rm
                 lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
                 for Rn in R[n][lowlim:]:
                   W[i].append(ps+Rm+"*"+Rn)
@@ -824,7 +824,7 @@ def recursiveVectors(p,ind='all'):
                         lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
                         for Rs in R[s][lowlim2:]:
                           lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
-                          for Rt in R[t]:
+                          for Rt in R[t][lowlim3:]:
                              W[i].append(ps+Rm+"*"+Rn+"*"+Rs+"*"+Rt)
      for l in range(0,i-9): # level 5
         ps=_powerString("C",l,trailchar=",")
@@ -840,10 +840,63 @@ def recursiveVectors(p,ind='all'):
                             lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
                             for Rs in R[s][lowlim2:]:
                               lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
-                              for Rt in R[t]:
+                              for Rt in R[t][lowlim3:]:
                                   lowlim4=(t<u and [0] or [R[t].index(Rt)])[0]
-                                  for Ru in R[u]:
+                                  for Ru in R[u][lowlim4:]:
                                      W[i].append(ps+Rm+"*"+Rn+"*"+Rs+"*"+Rt+"*"+Ru)
+
+     for l in range(0,i-11): # level 6
+        ps=_powerString("C",l,trailchar=",")
+        for m in range(2,i-l-9):
+          for n in range(2,i-l-m-7):
+             for s in range(2,i-l-n-m-5):
+               for t in range(2,i-l-n-m-s-3):
+                 for u in range(2,i-l-n-m-s-t-1):
+                    v=i-t-s-m-n-l-u
+                    if m<=n<=s<=t<=u<=v: #Avoid duplicate conditions
+                      for Rm in R[m]:
+                        lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+                        for Rn in R[n][lowlim:]:
+                          lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+                          for Rs in R[s][lowlim2:]:
+                            lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
+                            for Rt in R[t][lowlim3:]:
+                              lowlim4=(t<u and [0] or [R[t].index(Rt)])[0]
+                              for Ru in R[u][lowlim4:]:
+                                  lowlim5=(u<v and [0] or [R[u].index(Ru)])[0]
+                                  for Rv in R[v][lowlim5:]:
+                                    W[i].append(ps+Rm+"*"+Rn+"*"+Rs+"*"+Rt+"*"+Ru+"*"+Rv)
+
+# It seems like the code above should give correct values for order up to 16,
+# but it does not agree with OEIS sequence A000081 starting at order 15.
+# I'm not sure what's wrong; it may be that this approach leads to duplicate conditions
+# starting only at order 15 (see comment on p. 1719 of Albrecht's paper).
+
+# The code below seems correct but in light of the issue above there is no point in using it.
+#     for l in range(0,i-13): # level 7
+#        ps=_powerString("C",l,trailchar=",")
+#        for n in range(2,i-l-11):
+#          for m in range(2,i-l-n-9):
+#             for s in range(2,i-l-n-m-7):
+#               for t in range(2,i-l-n-m-s-5):
+#                 for u in range(2,i-l-n-m-s-t-3):
+#                   for v in range(2,i-l-n-m-s-t-u-1):
+#                     x=i-t-s-m-n-l-u
+#                     if m<=n<=s<=t<=u<=v<=x: #Avoid duplicate conditions
+#                       for Rm in R[m]:
+#                         lowlim=(m<n and [0] or [R[m].index(Rm)])[0]
+#                         for Rn in R[n][lowlim:]:
+#                           lowlim2=(n<s and [0] or [R[n].index(Rn)])[0]
+#                           for Rs in R[s][lowlim2:]:
+#                             lowlim3=(s<t and [0] or [R[s].index(Rs)])[0]
+#                             for Rt in R[t][lowlim3:]:
+#                               lowlim4=(t<u and [0] or [R[t].index(Rt)])[0]
+#                               for Ru in R[u][lowlim4:]:
+#                                   lowlim5=(u<v and [0] or [R[u].index(Ru)])[0]
+#                                   for Rv in R[v][lowlim5:]:
+#                                     lowlim6=(v<x and [0] or [R[v].index(Rv)])[0]
+#                                     for Rx in R[x][lowlim5:]:
+#                                       W[i].append(ps+Rm+"*"+Rn+"*"+Rs+"*"+Rt+"*"+Ru+"*"+Rv+"*"+Rx)
 
   if ind=='all': return W[p-1]
   else: return W[p-1][ind]
