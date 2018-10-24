@@ -6,7 +6,6 @@ from sympy import factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
 from nodepy.utils import permutations
 from six.moves import range
-import matplotlib.pyplot as plt
 
 #=====================================================
 class RootedTree(str):
@@ -392,6 +391,7 @@ class RootedTree(str):
             plotting the root, parsing the subtrees, plotting the
             subtrees' roots, and calling _plot_subtree on each child
         """
+        import matplotlib.pyplot as plt
         if iplot==1: plt.clf()
         plt.subplot(nrows,ncols,iplot)
         plt.scatter([0],[0])
@@ -404,27 +404,27 @@ class RootedTree(str):
         plt.axis('off')
 
 
-    def _plot_subtree(self,xroot,yroot,xwidth):
-        """
-            Recursively plots subtrees.  Should only be called from plot().
+        def _plot_subtree(self,xroot,yroot,xwidth):
+            """
+                Recursively plots subtrees.  Should only be called from plot().
 
-            INPUT:
-                xroot, yroot -- coordinates at which root of this subtree
-                                is plotted
-                xwidth -- width in which this subtree must fit, in order
-                            to avoid possibly overlapping with others
-        """
-        ychild=yroot+1
-        nleaves,subtrees=self._parse_subtrees()
-        nchildren=nleaves+len(subtrees)
+                INPUT:
+                    xroot, yroot -- coordinates at which root of this subtree
+                                    is plotted
+                    xwidth -- width in which this subtree must fit, in order
+                                to avoid possibly overlapping with others
+            """
+            ychild=yroot+1
+            nleaves,subtrees=self._parse_subtrees()
+            nchildren=nleaves+len(subtrees)
 
-        dist=xwidth*(nchildren-1)/2.
-        xchild=np.linspace(xroot-dist,xroot+dist,nchildren)
-        plt.scatter(xchild,ychild*np.ones(nchildren))
-        for i in range(nchildren):
-            plt.plot([xroot,xchild[i]],[yroot,ychild],'-k')
-            if i>nleaves-1:
-                subtrees[i-nleaves]._plot_subtree(xchild[i],ychild,xwidth/3.)
+            dist=xwidth*(nchildren-1)/2.
+            xchild=np.linspace(xroot-dist,xroot+dist,nchildren)
+            plt.scatter(xchild,ychild*np.ones(nchildren))
+            for i in range(nchildren):
+                plt.plot([xroot,xchild[i]],[yroot,ychild],'-k')
+                if i>nleaves-1:
+                    subtrees[i-nleaves]._plot_subtree(xchild[i],ychild,xwidth/3.)
 
 
     def _parse_subtrees(self):
@@ -524,6 +524,7 @@ def plot_all_trees(p,title='str'):
             >>> rt.plot_all_trees(4)  # doctest: +ELLIPSIS
             <matplotlib.figure.Figure object at ...>
     """
+    import matplotlib.pyplot as plt
     forest=list_trees(p)
     nplots=len(forest)
     nrows=int(np.ceil(np.sqrt(float(nplots))))
