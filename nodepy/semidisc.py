@@ -185,7 +185,7 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
         fluxPnts = np.array([ -1.0 , -0.88 , -0.53 , 0.0 , 0.53 , 0.88 , 1.0 ])
         solPnts = np.array([ -1.0 , -0.88 , -0.53 ,       0.53 , 0.88 , 1.0 ])
     else:
-       raise Exception("Error: min order 1, max order 6")
+        raise Exception("Error: min order 1, max order 6")
 
 
     # Number of solution and flux points

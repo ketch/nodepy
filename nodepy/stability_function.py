@@ -221,8 +221,8 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
     return h
 
 
-def plot_order_star(p,q,N=200,bounds=[-5,5,-5,5], plotroots=False,
-                color=('w','b'),filled=True,fignum=None):
+def plot_order_star(p,q,N=200,bounds=(-5,5,-5,5), plotroots=False,
+                color=('w','b'),fignum=None):
     r""" Plot the order star of a rational function
         i.e. the set
 
