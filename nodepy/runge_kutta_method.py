@@ -356,7 +356,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
         return compose(self,RK2,1,1)
 
     def _check_consistency(self,tol=1.e-13):
-        import numpy as np
         assert np.max(np.abs(self.A.sum(1)-self.c))<tol,'Abscissae are inconsistent with A.'
         if self.alpha is not None:
             A, b = shu_osher_to_butcher(self.alpha,self.beta)
@@ -1366,7 +1365,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         G=I2 + np.dot(np.kron(self.b[:,np.newaxis],I2).T,
                       np.dot(Z,np.dot(Xinv,e)))
 
-        return G,Xinv
+        return G, Xinv
 
 
     def is_explicit(self):
@@ -3596,7 +3595,7 @@ def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14,p=None):
         # If we DO NOT consider parallelization then we divide by total number of stages
         return 1.0/len(rk1) * (1.0/A1)**(1./(p+1))
 
-def linearly_stable_step_size(rk, L, acc=1.e-7, tol=1.e-14, plot=1):
+def linearly_stable_step_size(rk, L, acc=1.e-7, tol=1.e-13, plot=1):
     r"""
         Determine the maximum linearly stable step size for Runge-Kutta method
         rk applied to the IVP `u' = Lu`, by computing the eigenvalues of `L`

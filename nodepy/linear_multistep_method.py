@@ -266,6 +266,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
         plt.axis(bounds)
+        plt.axis('image')
 
         if to_file:
             plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
@@ -273,7 +274,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         plt.draw()
         return fig
 
-    def plot_boundary_locus(self,N=1000):
+    def plot_boundary_locus(self,N=1000,figsize=None):
         r"""Plot the boundary locus, which is
             given by the set of points
 
@@ -287,9 +288,12 @@ class LinearMultistepMethod(GeneralLinearMethod):
         """
         import matplotlib.pyplot as plt
 
-        z = self._boundary_locus()
+        z = self._boundary_locus(N)
 
-        plt.figure()
+        if figsize is None:
+            plt.figure()
+        else:
+            plt.figure(figsize=figsize)
         plt.plot(np.real(z),np.imag(z),color='k',linewidth=3)
         plt.axis('image')
         bounds = plt.axis()
