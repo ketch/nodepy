@@ -149,7 +149,8 @@ def real_stability_interval(p,q=None,eps=1.e-12):
 
 
 def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
-                          plotroots=False,alpha=1.,scalefac=1.,fignum=None):
+                          plotroots=False,alpha=1.,scalefac=1.,plot_axes=True,
+                          fignum=None):
     r"""
         Plot the region of absolute stability of a rational function; i.e. the set
 
@@ -175,16 +176,16 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
     import matplotlib.pyplot as plt
 
     # Convert coefficients to floats for speed
-    if p.coeffs.dtype=='object':
-        p = np.poly1d([float(c) for c in p.coeffs])
-    if q.coeffs.dtype=='object':
-        q = np.poly1d([float(c) for c in q.coeffs])
+    if p.coef.dtype=='object':
+        p = np.polynomial.Polynomial([float(c) for c in p.coef])
+    if q.coef.dtype=='object':
+        q = np.polynomial.Polynomial([float(c) for c in q.coef])
 
     if bounds is None:
         from nodepy.utils import find_plot_bounds
         # Check if the stability region is bounded or not
-        m,n = p.order,q.order
-        if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
+        m, n = p.degree(),q.degree()
+        if (m < n) or ((m == n) and (abs(p.coef[m])<abs(q.coef[n]))):
             print('The stability region is unbounded')
             if m > 0:
                 bounds = (-10*m,m,-5*m,5*m)
@@ -196,7 +197,7 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
             if np.min(np.abs(np.array(bounds)))<1.e-14:
                 print('No stable region found; is this method zero-stable?')
 
-        if (m == n) and (abs(p[m])==abs(q[n])):
+        if (m == n) and (abs(p.coef[m])==abs(q.coef[n])):
             print('The stability region may be unbounded')
 
     # Evaluate the stability function over a grid
@@ -215,8 +216,9 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
         plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha,linewidths=3)
     if plotroots: plt.plot(np.real(p.r),np.imag(p.r),'ok')
     if len(q)>1: plt.plot(np.real(q.r),np.imag(q.r),'xk')
-    plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
-    plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
+    if plot_axes:
+        plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
+        plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
     plt.axis('Image')
     return h
 
@@ -238,9 +240,9 @@ def plot_order_star(p,q,N=200,bounds=(-5,5,-5,5), plotroots=False,
     """
     # Convert coefficients to floats for speed
     if p.coeffs.dtype=='object':
-        p = np.poly1d([float(c) for c in p.coeffs])
+        p = np.polynomial.Polynomial([float(c) for c in p.coeffs])
     if q.coeffs.dtype=='object':
-        q = np.poly1d([float(c) for c in q.coeffs])
+        q = np.polynomial.Polynomial([float(c) for c in q.coeffs])
 
 
     import matplotlib.pyplot as plt

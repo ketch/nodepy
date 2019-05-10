@@ -887,9 +887,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         if self.is_explicit():  # Trim leading coefficients that ought to be zero
             d_true = self.num_seq_dep_stages()
-            d_num  = len(p.coeffs)-1
+            d_num  = p.degree()
             if d_num>d_true:
-                p = np.poly1d(p.coeffs[(d_num-d_true):])
+                p = np.polynomial.Polynomial(p.coef[(d_num-d_true):])
 
         return p,q
 
@@ -949,7 +949,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         p,q=self.__num__().stability_function(mode='float')
 
         fig = stability_function.plot_stability_region(p,q,N,color,filled,bounds,
-                    plotroots,alpha,scalefac,fignum)
+                    plotroots,alpha,scalefac,fignum=fignum)
 
         ax = fig.get_axes()
         if longtitle:
@@ -3660,7 +3660,7 @@ def _get_column_widths(coeffarrays):
 
 def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
     r"""
-        Compute stability function from the Shu-Osher representation.
+        Compute stability function from a Shu-Osher representation.
     """
     s = alpha.shape[1]
 
@@ -3731,12 +3731,12 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         else:
             raise Exception("Unknown value of 'formula'")
 
-        p = np.poly1d(p1)    # Numerator
-        q = np.poly1d(q1)    # Denominator
+        p = np.polynomial.Polynomial(p1[::-1])
+        q = np.polynomial.Polynomial(q1[::-1])
 
-    if m < p.order:
-        c = p.coeffs[-(m+1):]
-        p = np.poly1d(c)
+    if m < p.degree():
+        c = p.coef[-(m+1):]
+        p = np.polynomial.Polynomial(c)
 
     return p,q
 
