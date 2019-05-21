@@ -17,7 +17,7 @@ def E_polynomial(p, q=None):
         for all real y.
     """
     if q is None:
-        q = np.poly1d([1])
+        q = np.polynomial.Polynomial([1])
 
     from copy import deepcopy
     piy  = deepcopy(p)
@@ -49,33 +49,33 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
             2.8284271247...
     """
     if q is None:
-        q = np.poly1d([1.])
+        q = np.polynomial.Polynomial([1.])
 
-    c = p.c[::-1].copy()
+    c = p.coef.copy()
     c[1::2] = 0      # Zero the odd coefficients to get real part
     c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
-    p1 = np.poly1d(c[::-1])
+    p1 = np.polynomial.Polynomial(c)
 
-    c = p.c[::-1].copy()
+    c = p.coef.copy()
     c[::2] = 0      # Zero the even coefficients to get imaginary part
     c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
-    p2 = np.poly1d(c[::-1])
+    p2 = np.polynomial.Polynomial(c)
 
-    c = q.c[::-1].copy()
+    c = q.coef.copy()
     c[1::2] = 0      # Zero the odd coefficients to get real part
     c[::2][1::2] = -1*c[::2][1::2]  # Negate coefficients with even powers of i
-    q1 = np.poly1d(c[::-1])
+    q1 = np.polynomial.Polynomial(c)
 
-    c = q.c[::-1].copy()
+    c = q.coef.copy()
     c[::2] = 0      # Zero the even coefficients to get imaginary part
     c[1::2][1::2] = -1*c[1::2][1::2]  # Negate coefficients with even powers of i
-    q2 = np.poly1d(c[::-1])
+    q2 = np.polynomial.Polynomial(c)
 
     ppq = p1**2 + p2**2 + q1**2 + q2**2
     pmq = p1**2 + p2**2 - q1**2 - q2**2
 
-    ppq_roots = np.array([x.real for x in ppq.r if abs(x.imag)<eps and x.real>0])
-    pmq_roots = np.array([x.real for x in pmq.r if abs(x.imag)<eps and x.real>0])
+    ppq_roots = np.array([x.real for x in ppq.roots() if abs(x.imag)<eps and x.real>0])
+    pmq_roots = np.array([x.real for x in pmq.roots() if abs(x.imag)<eps and x.real>0])
 
     if len(pmq_roots)>0: pmqr = np.min(pmq_roots)
     else: pmqr = np.inf
@@ -124,7 +124,7 @@ def real_stability_interval(p,q=None,eps=1.e-12):
             >>> rkc.real_stability_interval()
             8.0
     """
-    if q is None: q = np.poly1d([1.])
+    if q is None: q = np.polynomial.Polynomial([1.])
 
     # Find points where p = +/- q
     pmq = p-q
@@ -284,11 +284,11 @@ def pade_exp(k,j):
     for n in range(1,k+1):
         newcoeff=Pcoeffs[0]*(k-n+one)/(j+k-n+one)/n
         Pcoeffs=[newcoeff]+Pcoeffs
-    P=np.poly1d(Pcoeffs)
+    P=np.polynomial.Polynomial(Pcoeffs[::-1])
     for n in range(1,j+1):
         newcoeff=-one*Qcoeffs[0]*(j-n+one)/(j+k-n+one)/n
         Qcoeffs=[newcoeff]+Qcoeffs
-    Q=np.poly1d(Qcoeffs)
+    Q=np.polynomial.Polynomial(Qcoeffs[::-1])
     return P,Q
 
 def taylor(p):
@@ -300,15 +300,12 @@ def taylor(p):
             >>> from nodepy import stability_function
             >>> stability_function.taylor(3)
             poly1d([1/6, 1/2, 1, 1], dtype=object)
-
-
-poly1d([-1/60, 3/20, -3/5, 1], dtype=object)
     """
     from sympy import factorial
 
     coeffs = np.array( [1/factorial(k) for k in range(p+1) ] )
 
-    return np.poly1d(coeffs[::-1])
+    return np.polynomial.Polynomial(coeffs)
 
 if __name__ == "__main__":
     import doctest
