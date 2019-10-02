@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys())
-    ['BE', 'BS5', 'BuRK65', 'CMR6', 'DP5', 'FE', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CMR6', 'DP5', 'FE', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2564,6 +2564,14 @@ def loadRKM(which='All'):
     bhat=np.array([15231665*one/510830334, 0, 59452991*one/116050448, -28398517*one/122437738, 56673824*one/137010559, 68003849*one/426673583, 7097631*one/37564021, -71226429*one/583093742, 1*one/20])
     RK['CMR6']=ExplicitRungeKuttaPair(A.astype('float64'),b,bhat,name='Calvo 6(5)',
                                       shortname='Calvo RK6(5)')
+    #================================================
+    A=np.array([[0,0,0,0],
+                [1*one/2,0,0,0],
+                [0,3*one/4,0,0],
+                [2*one/9,1*one/3,4*one/9,0]])
+    b=A[-1,:]
+    bhat=np.array([7*one/24,1*one/4,1*one/3,1*one/8])
+    RK['BS3']=ExplicitRungeKuttaPair(A,b,bhat,name='Bogacki-Shampine RK3(2)4',shortname='BS3')
     #================================================
     A=np.array([[0,0,0,0,0,0,0,0],[one/6,0,0,0,0,0,0,0],[2*one/27,4*one/27,0,0,0,0,0,0],
         [183*one/1372,-162*one/343,1053*one/1372,0,0,0,0,0],
