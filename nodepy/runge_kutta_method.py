@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys())
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'HH5', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2', 'Tsit5']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'HH5', 'HH5S', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2', 'Tsit5']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2610,12 +2610,25 @@ def loadRKM(which='All'):
         [one/12, one/4, 0, 0, 0, 0, 0],
         [one/8, 0, 3*one/8, 0, 0, 0, 0],
         [91*one/500, -27*one/100, 78*one/125, 8*one/125, 0, 0, 0],
-        [-11*one/20, 27*one/20, 12*one/5, -36*one/5, 5, 0, 0,],
+        [-11*one/20, 27*one/20, 12*one/5, -36*one/5, 5, 0, 0],
         [one/12, 0, 27*one/32, -4*one/3, 125*one/96, 5*one/48, 0]
     ])
     b = np.array([one/12, 0, 27*one/32, -4*one/3, 125*one/96, 5*one/48, 0])
     bhat = np.array([2*one/15, 0, 27*one/80, -2*one/15, 25*one/48, one/24, one/10])
     RK['HH5']=ExplicitRungeKuttaPair(A,b,bhat,name='Higham-Hall RK5(4)7',shortname='HH5')
+    #================================================
+    A = np.array([
+        [0, 0, 0, 0, 0, 0, 0],
+        [11*one/45, 0, 0, 0, 0, 0, 0],
+        [11*one/120, 11*one/40, 0, 0, 0, 0, 0],
+        [106865*one/87808, -408375*one/87808, 193875*one/43904, 0, 0, 0, 0],
+        [79503*one/121000, -1053*one/440, 147753*one/56870, 27048*one/710875, 0, 0, 0],
+        [89303*one/78045, -2025*one/473, 994650*one/244541, -2547216*one/28122215, 475*one/2967, 0, 0],
+        [1247*one/10890, 0, 57375*one/108053, -1229312*one/1962015, 125*one/207, 43*one/114, 0]
+    ])
+    b = np.array([1247*one/10890, 0, 57375*one/108053, -1229312*one/1962015, 125*one/207, 43*one/114, 0])
+    bhat = np.array([21487*one/185130, 0, 963225*one/1836901, -39864832*one/33354255, 2575*one/3519, 4472*one/4845, -one/10])
+    RK['HH5S']=ExplicitRungeKuttaPair(A,b,bhat,name='Higham-Hall RK5(4)7S',shortname='HH5S')
     #================================================
     A=np.array([[0,0,0,0,0,0,0],[one/5,0,0,0,0,0,0],[3*one/40,9*one/40,0,0,0,0,0],
         [44*one/45,-56*one/15,32*one/9,0,0,0,0],
