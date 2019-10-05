@@ -47,8 +47,8 @@
 
 
 **References**:
-    #. [butcher2003]_
-    #. [hairer1993]_
+    * :cite:`butcher2003`
+    * :cite:`hairer1993`
 """
 from __future__ import print_function
 from __future__ import division
@@ -565,7 +565,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4.error_metrics()
                 (sqrt(1745)/2880, 1/120, sqrt(8531)/5760, 1/144, 1)
 
-            Reference: [kennedy2000]_
+            Reference: :cite:`kennedy2000`
         """
         q=self.order()
         tau_1=self.error_coeffs(q+1)
@@ -732,8 +732,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 2
 
             **References**:
-                #. Dekker and Verwer
-                #. [butcher2003]_
+                * :cite:`dekker1984`
+                * :cite:`butcher2003`
         """
         from sympy import simplify
         simp_array = np.vectorize(sympy.simplify)
@@ -987,7 +987,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         p,q=self.__num__().stability_function(mode='float')
 
-        fig = stability_function.plot_order_star(p,q,N,bounds,plotroots,color,filled,fignum)
+        fig = stability_function.plot_order_star(p,q,N,bounds,plotroots,color,fignum)
         plt.title('Order star for '+self.name)
         return fig
 
@@ -1075,8 +1075,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
         r""" Returns 1 if the Runge-Kutta method has radius of circle
             contractivity at least `r`.
 
-            **References**:
-                #. Dekker and Verwer
+            See :cite:`dekker1984`.
+                
         """
         B=np.diag(self.b)
         M=np.dot(B,self.A)+np.dot(self.A.T,B)-np.outer(self.b,self.b)
@@ -1103,8 +1103,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             The inequalities are interpreted componentwise.
 
-            **References**:
-                #. [kraaijevanger1991]
+            See :cite:`kraaijevanger1991`.
         """
         s=len(self)
         K=np.vstack([self.A.astype(float),self.b.astype(float)])
@@ -1152,8 +1151,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                        [0.666666666666667, 0, 0],
                        [4.00177668780088e-11, 0.750000000000000, 0]], dtype=object))
 
-            **References**:
-                #. [higueras2005]_
+            See :cite:`higueras2005`.
 
         """
         m=len(self)
@@ -1192,10 +1190,13 @@ class RungeKuttaMethod(GeneralLinearMethod):
         monotonicity at least `r`.
 
         The linear program to be solved is
-        \begin{align}
-            (I-2\alpha^{down}_r)\alpha_r + \alpha^{down}_r & = (\alpha^{up}_r ) \ge 0 \\
-            (I-2\alpha^{down}_r)v_r & = \gamma_r \ge 0.
-        \end{align}
+
+        .. math::
+
+            \begin{align}
+                (I-2\alpha^{down}_r)\alpha_r + \alpha^{down}_r & = (\alpha^{up}_r ) \ge 0 \\
+                (I-2\alpha^{down}_r)v_r & = \gamma_r \ge 0.
+            \end{align}
 
         This function requires cvxpy.
         """
@@ -2002,7 +2003,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
     def error_metrics(self,q=None,p=None):
         r"""Return full set of error metrics for an embedded RK pair.
-            See [kennedy2000]_ p. 181
+            See :cite:`kennedy2000` p. 181
 
             **Example**::
 
@@ -2148,8 +2149,7 @@ def elementary_weight(tree):
             >>> rk.elementary_weight(tree)
             b*c
 
-        **References**:
-            [butcher2003]_
+        See :cite:`butcher2003`.
     """
     #raise Exception('This function does not work correctly; use the _str version')
     import nodepy.rooted_trees as rt
@@ -2276,8 +2276,7 @@ def shu_osher_to_butcher(alpha,beta):
         b = & \\beta_1 + \\alpha_1
         \\end{align*}
 
-        **References**:
-             #. [gottlieb2009]_
+        See :cite:`gottlieb2009`.
     """
     if np.triu(alpha).any(): # Check that alpha is lower-triangular
         raise NotImplementedError('This routine is only written for explicit methods so far.')
@@ -2297,40 +2296,64 @@ def shu_osher_to_butcher(alpha,beta):
 
 def loadRKM(which='All'):
     """
+
+
         Load a set of standard Runge-Kutta methods for testing.
         The following methods are included:
 
-        Explicit:
+        Explicit methods:
 
-        'FE':         Forward Euler
-        'RK44':       Classical 4-stage 4th-order
-        'Merson43'    Merson 4(3) pair from Hairer and Wanner book pg. 167
-        'MTE22':      Minimal truncation error 2-stage 2nd-order
-        'Heun33':     Third-order method of Heun
-        'SSP22':      Trapezoidal rule 2nd-order
-        'DP5':        Dormand-Prince 5th-order
-        'CMR6':       Calvo et al.'s 6(5) method
-        'PD8':        Prince-Dormand 8th-order and 7th-order pair
-        'Fehlberg45': 5th-order part of Fehlberg's pair
-        'Lambert65':
-        'Fehlberg43': 4(3) method of Fehlberg
-        'Tsit5':      5(4) method of Tsitouras
-        'HH5':        5(4) method of Highham and Hall with lower error constant
-        'HH5S':       5(4) method of Highham and Hall with increased stepsize stability
+          * 'FE':         Forward (explicit) Euler
+          * 'RK44':       Classical 4-stage 4th-order
+          * 'SSP22':      Trapezoidal rule 2nd-order :cite:`shu1988`
+          * 'MTE22':      Minimal truncation error 2-stage 2nd-order
+          * 'Mid22':      Explicit midpoint 2-stage 2nd-order
+          * 'SSP33':      Optimal 3rd-order SSP method of Shu & Osher :cite:`shu1988`
+          * 'Heun33':     Third-order method of Heun :cite:`heun1900`
+          * 'SSP22star':  Optimal 2nd-order downwind SSP
+          * 'NSSP32':     :cite:`wang2007`
+          * 'NSSP33':     :cite:`wang2007`
+          * 'SSP104':     Optimal 10-stage, 4th-order SSP method :cite:`ketcheson2008`
+          * 'Merson43'    Merson 4(3) pair :cite:`hairer1993` pg. 167
+          * 'DP5':        Dormand-Prince 5th-order :cite:`dormand1980`
+          * 'PD8':        Prince-Dormand 8th-order and 7th-order pair :cite:`prince1981`
+          * 'CMR6':       Calvo et al.'s 6(5) pair :cite:`calvo1990`
+          * 'Fehlberg43': 4(3) pair of Fehlberg :cite:`fehlberg1969`
+          * 'Fehlberg45': 5(4) pair of Fehlberg :cite:`fehlberg1969`
+          * 'Lambert65':
+          * 'Tsit5':      5(4) pair of Tsitouras :cite:`tsitouras2011`
+          * 'HH5':        5(4) pair of Highham and Hall with lower error constant :cite:`higham1990`
+          * 'HH5S':       5(4) pair of Highham and Hall with increased stepsize stability :cite:`higham1990`
+          * 'BuRK65':     6-stage, 5th-order method of Butcher
+          * 'CK5':        Cash-Karp 5(4)6 :cite:`cash1990`
+          * 'BS3':        Bogacki-Shampine 3(2)4 pair :cite:`bogacki1989`
+          * 'BS5':        Bogacki-Shampine 5(4)8 pair :cite:`bogacki1996`
+          * 'SSP75':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
+          * 'SSP85':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
+          * 'SSP95':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
+          * 'SSP54':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
+          * 'SSP53':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
+          * 'SSP63':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
 
-        Implicit:
+        Diagonally Implicit methods:
 
-        'BE':         Backward Euler
-        'GL2':        2-stage Gauss-Legendre
-        'GL3':        3-stage Gauss-Legendre
+          * 'BE':         Backward Euler
+          * 'SDIRK23':    :cite:`norsett1974`
+          * 'SDIRK34':    :cite:`norsett1974`
+          * 'SDIRK54':    :cite:`hairerODEs2`
+          * 'TR-BDF2':    :cite:`bank1985`
 
-        Also various Lobatto and Radau methods.
+        Fully Implicit methods:
 
-        **References**:
-            #. [cash1990]_
-            #. [fehlberg1969]_
-            #. [higham1990]_
-            #. [tsitouras2011]_
+          * 'GL2':        2-stage Gauss-Legendre; see e.g. :cite:`butcher1964`
+          * 'GL3':        3-stage Gauss-Legendre; see e.g. :cite:`butcher1964`
+          * 'LobattoIIIA2':  :cite:`ehle1969`
+          * 'LobattoIIIA3':  :cite:`ehle1969`
+          * 'LobattoIIIC2':  :cite:`chipman1971`
+          * 'LobattoIIIC3':  :cite:`chipman1971`
+          * 'LobattoIIIC4':  :cite:`chipman1971`
+          * 'RadauIIA2':  :cite:`ehle1969`
+          * 'RadauIIA3':  :cite:`ehle1969`
     """
     from sympy import sqrt, Rational
 
@@ -2859,8 +2882,7 @@ def SSPRK2(m):
             >>> SSP42.absolute_monotonicity_radius()
             2.999999999974534
 
-        **References**:
-            #. [ketcheson2008]_
+        See :cite:`ketcheson2008`.
     """
     from sympy import Rational
     assert m>=2, "SSPRKm2 methods must have m>=2"
@@ -2906,8 +2928,7 @@ def SSPRK3(m):
             >>> SSP43.absolute_monotonicity_radius()
             1.9999999999527063
 
-        **References**:
-            #. [ketcheson2008]_
+        See :cite:`ketcheson2008`.
     """
     from sympy import sqrt, Rational
     one = Rational(1)
@@ -2950,8 +2971,7 @@ def SSPRKm(m):
             >>> SSP44.absolute_monotonicity_radius()
             0.9999999999308784
 
-        **References**:
-            #. [gottlieb2001]_
+        See :cite:`gottlieb2001`.
     """
     from sympy import factorial, Rational
 
@@ -3025,8 +3045,7 @@ def SSPIRK2(m):
             >>> ISSP42.absolute_monotonicity_radius() # doctest: +ELLIPSIS
             7.99...
 
-        **References**:
-            #. [ketcheson2009]_
+		See :cite:`ketcheson2009`.
     """
     from sympy import Rational
     r=2*m
@@ -3062,8 +3081,7 @@ def SSPIRK3(m):
             >>> print("{:.5f}".format(x))
             6.87298
 
-        **References**:
-            #. [ketcheson2009]_
+		See :cite:`ketcheson2009`.
     """
     from sympy import sqrt, Rational
     r=m-1+sqrt(m**2-1)
@@ -3102,8 +3120,7 @@ def RKC1(m,epsilon=0):
             ______|________________________
                   | 1/4   3/8   1/4   1/8
 
-        **References**:
-            #. [verwer2004]_
+		See :cite:`verwer2004`.
     """
 
     import sympy
@@ -3175,8 +3192,7 @@ def RKC2(m,epsilon=0):
             ________|________________________________
                     | -51/64  3/8     1       27/64
 
-        **References**:
-            #. [verwer2004]_
+		See :cite:`verwer2004`.
     """
     import sympy
     one = sympy.Rational(1)
@@ -3309,10 +3325,7 @@ def DC(s,theta=0,grid='eq',num_corr=None):
             >>> dc3_cheb.principal_error_norm() #doctest: +ELLIPSIS
             0.0066478...
 
-        **References**:
-
-            #. [dutt2000]_
-            #. [gottlieb2009]_
+        See :cite:`dutt2000,gottlieb2009`.
     """
     if num_corr is None:
         num_corr = s
@@ -3407,9 +3420,7 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
             >>> ex4.order()
             4
 
-        **References**:
-
-            #. [Hairer]_ chapter II.9
+        See :cite:`hairer1993` chapter II.9.
     """
     base = base.lower()
     if not base in ['euler','midpoint']:

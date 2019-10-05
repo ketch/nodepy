@@ -36,7 +36,8 @@ extensions = [
               'sphinx.ext.ifconfig', 
               'matplotlib.sphinxext.plot_directive',
               'sphinx.ext.viewcode',
-              'sphinx.ext.mathjax']
+              'sphinx.ext.mathjax',
+              'sphinxcontrib.bibtex']
 
 # Point to the MathJax CDN (latest MathJax.js stable release)
 mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'
@@ -58,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'NodePy'
-copyright = u'2009-2015, David Ketcheson'
+copyright = u'2009-2019, David Ketcheson'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -246,4 +247,4 @@ man_pages = [
 ]
 
 default_role = 'math'
-keep_warnings = 'True'
+keep_warnings = True

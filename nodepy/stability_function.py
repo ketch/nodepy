@@ -234,7 +234,6 @@ def plot_order_star(p,q,N=200,bounds=(-5,5,-5,5), plotroots=False,
             - N       -- Number of gridpoints to use in each direction
             - bounds  -- limits of plotting region
             - color   -- color to use for this plot
-            - filled  -- if true, order star is filled in (solid); otherwise it is outlined
     """
     # Convert coefficients to floats for speed
     if p.coeffs.dtype=='object':

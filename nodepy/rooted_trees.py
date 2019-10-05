@@ -84,8 +84,8 @@ class RootedTree(str):
             'dot(b,dot(A,c)*dot(A,c*dot(A,c))*c**2)'
 
         **References**:
-            #. [butcher2003]_
-            #. [hairer1993]_
+            * :cite:`butcher2003`
+            * :cite:`hairer1993`
     """
     def __init__(self,strg):
         """
@@ -136,9 +136,7 @@ class RootedTree(str):
             >>> tree.density()
             56
 
-        **Reference**:
-
-            - [butcher2003]_ p. 127, eq. 301(c)
+        **Reference**: :cite:`butcher2003` p. 127, eq. 301(c)
         """
         gamma=self.order()
         nleaves,subtrees=self._parse_subtrees()
@@ -157,9 +155,7 @@ class RootedTree(str):
             >>> tree.symmetry()
             2
 
-        **Reference**:
-
-            - [butcher2003]_ p. 127, eq. 301(b)
+        **Reference**: :cite:`butcher2003` p. 127, eq. 301(b)
         """
         from nodepy.strmanip import getint
         if self=='T': return 1
@@ -181,8 +177,7 @@ class RootedTree(str):
         Butcher's function $D(t)$.  Represents differentiation.
         Defined by $D(t)$=0 except for D('T')=1.
 
-        **Reference**:
-            #. [butcher1997]_
+        **Reference**: :cite:`butcher1997`
         """
         return self=='T'
 
@@ -212,8 +207,7 @@ class RootedTree(str):
                 >>> tree.lamda(rt.Emap)
                 (['T', '{T}', '{{T}}', '{T}', '{T^2}', '{T{T}}'], [1/2, 1, 1, 1/2, 1, 1])
 
-            **Reference**:
-                [butcher2003]_ pp. 275-276
+            **Reference**: :cite:`butcher2003` pp. 275-276
         """
         if self=='': return [RootedTree('')],[0]
         if self=='T': return [RootedTree('T')],[1]
@@ -343,7 +337,7 @@ class RootedTree(str):
                 >>> tree.Gprod(rt.Emap,Dmap)
                 1/2
 
-            **Reference**: [butcher2003]_ p. 276, Thm. 386A
+            **Reference**: :cite:`butcher2003` p. 276, Thm. 386A
         """
         trees,factors=self.lamda(alpha,*alphaargs)
         s=0
@@ -371,6 +365,29 @@ class RootedTree(str):
             alph=alpha(self,*alphaargs)
             s+="+"+str(sympify(alph+'*'+bet))
         return s
+
+    def _plot_subtree(self,xroot,yroot,xwidth):
+        """
+            Recursively plots subtrees.  Should only be called from plot().
+
+            INPUT:
+                xroot, yroot -- coordinates at which root of this subtree
+                                is plotted
+                xwidth -- width in which this subtree must fit, in order
+                            to avoid possibly overlapping with others
+        """
+        import matplotlib.pyplot as plt
+        ychild=yroot+1
+        nleaves,subtrees=self._parse_subtrees()
+        nchildren=nleaves+len(subtrees)
+
+        dist=xwidth*(nchildren-1)/2.
+        xchild=np.linspace(xroot-dist,xroot+dist,nchildren)
+        plt.scatter(xchild,ychild*np.ones(nchildren))
+        for i in range(nchildren):
+            plt.plot([xroot,xchild[i]],[yroot,ychild],'-k')
+            if i>nleaves-1:
+                subtrees[i-nleaves]._plot_subtree(xchild[i],ychild,xwidth/3.)
 
     def plot(self,nrows=1,ncols=1,iplot=1,ttitle=''):
         """
@@ -403,28 +420,6 @@ class RootedTree(str):
         plt.yticks([])
         plt.axis('off')
 
-
-        def _plot_subtree(self,xroot,yroot,xwidth):
-            """
-                Recursively plots subtrees.  Should only be called from plot().
-
-                INPUT:
-                    xroot, yroot -- coordinates at which root of this subtree
-                                    is plotted
-                    xwidth -- width in which this subtree must fit, in order
-                                to avoid possibly overlapping with others
-            """
-            ychild=yroot+1
-            nleaves,subtrees=self._parse_subtrees()
-            nchildren=nleaves+len(subtrees)
-
-            dist=xwidth*(nchildren-1)/2.
-            xchild=np.linspace(xroot-dist,xroot+dist,nchildren)
-            plt.scatter(xchild,ychild*np.ones(nchildren))
-            for i in range(nchildren):
-                plt.plot([xroot,xchild[i]],[yroot,ychild],'-k')
-                if i>nleaves-1:
-                    subtrees[i-nleaves]._plot_subtree(xchild[i],ychild,xwidth/3.)
 
 
     def _parse_subtrees(self):
@@ -580,7 +575,7 @@ def list_trees(p,ind='all'):
     TODO: Implement Butcher's formula (Theorem 302B) for the number
             of trees and determine to what order this is valid.
 
-    **Reference**: [albrecht1996]_
+    **Reference**: :cite:`albrecht1996`
     """
 
     if p>10: raise Exception('list_trees is not complete for orders p > 10.')
@@ -731,9 +726,7 @@ def Emap(tree,a=1):
         >>> rt.Emap(tree,a=2)
         16/7
 
-    **Reference**:
-
-        [butcher1997]_
+    **Reference**: :cite:`butcher1997`
     """
     return Rational(a**tree.order(),(tree.density()))
 
@@ -756,7 +749,7 @@ def recursiveVectors(p,ind='all'):
     approach.  But as a set of conditions up to some order they
     are, of course, equivalent.
 
-    Follows [albrecht1996]_ p. 1718
+    Follows :cite:`albrecht1996` p. 1718
 
     .. warning::
 
