@@ -2313,6 +2313,10 @@ def loadRKM(which='All'):
         'PD8':        Prince-Dormand 8th-order and 7th-order pair
         'Fehlberg45': 5th-order part of Fehlberg's pair
         'Lambert65':
+        'Fehlberg43': 4(3) method of Fehlberg
+        'Tsit5':      5(4) method of Tsitouras
+        'HH5':        5(4) method of Highham and Hall with lower error constant
+        'HH5S':       5(4) method of Highham and Hall with increased stepsize stability
 
         Implicit:
 
@@ -2321,6 +2325,12 @@ def loadRKM(which='All'):
         'GL3':        3-stage Gauss-Legendre
 
         Also various Lobatto and Radau methods.
+
+        **References**:
+            #. [cash1990]_
+            #. [fehlberg1969]_
+            #. [higham1990]_
+            #. [tsitouras2011]_
     """
     from sympy import sqrt, Rational
 

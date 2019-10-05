@@ -39,3 +39,10 @@ Journal Articles
 
 .. [ketcheson2009] D.I. Ketcheson, C.B. Macdonald, and S. Gottlieb, *Optimal implicit strong stability preserving Runge-Kutta methods*, APNUM 59(2):373 (2009)
 
+.. [tsitouras2011] Ch. Tsitouras, *Runge–Kutta pairs of order 5 (4) satisfying only the first column simplifying assumption*, Computers & Mathematics with Applications 62.2 (2011): 770-775
+
+.. [fehlberg1969] E. Fehlberg, *Low-order classical Runge-Kutta formulas with stepsize control and their application to some heat transfer problems*, NASA Technical Report (1969)
+
+.. [higham1990] D. Higham and G. Hall, *Embedded Runge-Kutta formulae with stable equilibrium states*, Journal of Computational and Applied Mathematics 29.1 (1990): 25-33
+
+.. [cash1990] J.R. Cash, and A.H. Karp, *A variable order Runge-Kutta method for initial value problems with rapidly varying right-hand sides*, ACM Transactions on Mathematical Software (TOMS) 16.3 (1990): 201-222
