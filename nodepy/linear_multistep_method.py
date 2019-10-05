@@ -48,8 +48,8 @@ class LinearMultistepMethod(GeneralLinearMethod):
         Notes: Representation follows Hairer & Wanner p. 368, NOT Butcher.
 
         **References**:
-            #. [hairer1993]_ Chapter III
-            #. [butcher2003]_
+            * :cite:`hairer1993` Chapter III
+            * :cite:`butcher2003`
     """
     def __init__(self,alpha,beta,name='Linear multistep method',shortname='LMM',
                  description=''):
@@ -102,8 +102,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
                   4         3         2
             2.64 x - 3.853 x + 3.633 x - 1.769 x + 0.3486
 
-        **References**:
-            #. [hairer1993]_ p. 370, eq. 2.4
+        **Reference**: :cite:`hairer1993` p. 370, eq. 2.4
 
         """
         rho=np.poly1d(self.alpha[::-1])
@@ -218,8 +217,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             Here `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
-            References:
-                [leveque2007]_ section 7.6.1
+            Reference: :cite:`leveque2007` section 7.6.1
 
 
             **Input**: (all optional)
@@ -283,8 +281,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             where `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
-            References:
-                [leveque2007]_ section 7.6.1
+            Reference: :cite:`leveque2007` section 7.6.1
         """
         import matplotlib.pyplot as plt
 
@@ -311,8 +308,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             where `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
-            References:
-                [leveque2007]_ section 7.6.1
+            Reference: :cite:`leveque2007` section 7.6.1
         """
         theta=np.linspace(0.,2*np.pi,N)
         zeta = np.exp(theta*1j)
@@ -519,7 +515,7 @@ def Adams_Bashforth(k):
     `y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
 
     They are generated using equations (1.5) and (1.7) from
-    [hairer1993]_ III.1, along with the binomial expansion.
+    :cite:`hairer1993` III.1, along with the binomial expansion.
 
     **Examples**::
 
@@ -528,8 +524,7 @@ def Adams_Bashforth(k):
         >>> ab3.order()
         3
 
-        References:
-            #. [hairer1993]_
+        Reference: :cite:`hairer1993`
     """
     import sympy
     from sympy import Rational
@@ -561,7 +556,7 @@ def Nystrom(k):
     `y_{n+1} = y_{n-1} + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
 
     They are generated using equations (1.13) and (1.7) from
-    [hairer1993]_ III.1, along with the binomial expansion
+    :cite:`hairer1993` III.1, along with the binomial expansion
     and the relation in exercise 4 on p. 367.
 
     Note that the term "Nystrom method" is also commonly used to refer
@@ -575,8 +570,7 @@ def Nystrom(k):
         >>> nys3.order()
         6
 
-        References:
-            #. [hairer1993]_
+        Reference: :cite:`hairer1993`
     """
     import sympy
     from sympy import Rational
@@ -622,8 +616,7 @@ def Adams_Moulton(k):
             >>> am3.order()
             4
 
-        References:
-            [hairer1993]_
+        Reference: :cite:`hairer1993`
     """
     import sympy
 
@@ -662,8 +655,7 @@ def Milne_Simpson(k):
             >>> ms3.order()
             4
 
-        References:
-            [hairer1993]_
+        Reference: :cite:`hairer1993`
     """
     import sympy
 
@@ -704,8 +696,7 @@ def backward_difference_formula(k):
             >>> bdf4.A_alpha_stability()
             73
 
-        **References**:
-            #.[hairer1993]_ pp. 364-365
+        **Reference**: :cite:`hairer1993` pp. 364-365
     """
     import sympy
 
@@ -758,8 +749,7 @@ def sand_cc(s):
         >>> cc4.ssp_coefficient()
         1/8
 
-    **References**:
-        #. [sand1986]_
+    **Reference**: :cite:`sand1986`
     """
     import sympy
 

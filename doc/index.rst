@@ -129,7 +129,7 @@ NodePy Manual
    changes
    future
    about
-   bib
+
 
 Modules Reference
 ===================
@@ -147,3 +147,8 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+.. bibliography:: zrefs.bib
+   :all:
+

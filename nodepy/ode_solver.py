@@ -47,7 +47,7 @@ class ODESolver(object):
                   error estimator, such as an embedded Runge-Kutta method.
                 - controllerType -- The type of adaptive step size control
                   to be used; available options are 'P' and 'PI'.  See
-                  [hairer1993b]_ for details.
+                  :cite:`hairer1993` for details.
                 - diagnostics -- if True, return the number of rejected steps
                   and a list of step sizes used, in addition to the solution
                   values and times.

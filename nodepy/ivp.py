@@ -155,7 +155,7 @@ def detest(testkey):
             test set due to the availability of published results for
             many existing methods.
 
-        Reference: [enright1987]_
+        Reference: :cite:`enright1987`.
     """
     import numpy as np
     ivp=IVP()

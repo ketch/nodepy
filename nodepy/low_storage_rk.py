@@ -15,7 +15,7 @@ Additional methods have been developed that use more than two
 memory locations per unknown but still provide a substantial savings
 over traditional methods.  These are referred to as, e.g., 3S, 3R, 4R,
 and so forth.
-For a review of low-storage methods, see [ketcheson2010]_ .
+For a review of low-storage methods, see :cite:`ketcheson2010` .
 
 In NodePy, low-storage methods are a subclass of explicit Runge-Kutta
 methods (and/or explicit Runge-Kutta pairs).  In addition to the usual
@@ -88,8 +88,8 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
         Only 2R and 3R methods have been implemented so far.
 
         References:
-            * [kennedy2000]_
-            * [ketcheson2010]_
+            * :cite:`kennedy2000`
+            * :cite:`ketcheson2010`
     """
     def __init__(self,a,b,bhat=None,regs=2,
             name='2R Runge-Kutta Method',description='',shortname='LSRK2R',order=None):
@@ -222,7 +222,7 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
         the class TwoSRungeKuttaPair instead.
 
         The low-storage coefficient arrays `\beta,\gamma,\delta`
-        follow the notation of [ketcheson2010]_ .
+        follow the notation of :cite:`ketcheson2010`.
 
         The argument *lstype* must be one of the following values:
 
@@ -326,7 +326,7 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
         the class TwoSRungeKuttaMethod for single 2S/3S methods.
 
         The low-storage coefficient arrays `\beta,\gamma,\delta`
-        follow the notation of [ketcheson2010]_ .
+        follow the notation of :cite:`ketcheson2010` .
 
         The argument *lstype* must be one of the following values:
 

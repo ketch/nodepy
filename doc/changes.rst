@@ -4,6 +4,7 @@
 What's new in version 0.7
 =========================
 *Released November 29, 2016*
+
 - Support for Python 3 (thanks to Github user @alexfikl)
 - Dense output for Runge-Kutta methods.
 - Removal of a circular dependency.
