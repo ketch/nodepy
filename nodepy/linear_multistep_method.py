@@ -217,7 +217,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             Here `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
-            Reference: :cite:`leveque2007]` section 7.6.1
+            Reference: :cite:`leveque2007` section 7.6.1
 
 
             **Input**: (all optional)
