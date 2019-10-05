@@ -4,9 +4,9 @@ version: 2
 sphinx:
   configuration: doc/conf.py
 
-conda:
-    environment: doc/environment.yml
-
 python:
   version: 3.7
-  pip_install: true
+  system_packages: true
+  install:
+    - path: .
+    - requirements: requirements_rtd.txt
