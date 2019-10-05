@@ -2068,7 +2068,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
     def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
                               plotroots=False,alpha=1.,scalefac=1.,
                               to_file=False,longtitle=True,fignum=None):
-        r"""Plot the absolute stability region of an RK pair.  By default,
+        r"""Plot the absolute stability region of an RK pair. By default,
             the region of the main method is filled in red and the region of
             the embedded method is outlined in black.
 
@@ -2101,6 +2101,129 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
         else:
             plt.draw()
+        return fig
+
+    def plot_I_controller_stability(self, N=200, color='r', filled=True, bounds=None,
+                                    plotroots=False, alpha=1., scalefac=1.,
+                                    to_file=False, longtitle=True, fignum=None):
+        r"""Plot the absolute stability region and the function characterizing
+            stepsize control stability for an I controller of an RK pair.
+            By default, the region of the main method is filled in red and the
+            region of the embedded method is outlined in black.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> bs5 = rk.loadRKM('BS5')
+                >>> bs5.plot_I_controller_stability() # doctest: +ELLIPSIS
+                <matplotlib.figure.Figure object at 0x...>
+
+            **Reference**:
+
+                #. [hairer1993b]_ pp. 24ff.
+        """
+        import nodepy.stability_function as stability_function
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        num, den = self.__num__().stability_function(mode='float')
+        numhat, denhat = self.embedded_method.__num__().stability_function(mode='float')
+
+        if (den.order > 0) or (denhat.order > 0):
+            print('Stepsize controller stability plots are only implemented for explicit schemes.')
+            return
+
+        if bounds is None:
+            from nodepy.utils import find_plot_bounds
+            m, n = num.order, den.order
+            stable = lambda z : np.abs(num(z) / den(z)) <= 1.0
+            bounds = find_plot_bounds(stable, guess=(-10,1,-5,5))
+            if np.min(np.abs(np.array(bounds))) < 1.e-14:
+                print('No stable region found; is this method zero-stable?')
+
+        # Plot the stability function.
+        fig = plt.figure(fignum)
+        ax1, ax2 = fig.subplots(1, 2, gridspec_kw={'width_ratios':  [1, 1]})
+
+        x = np.linspace(bounds[0], bounds[1], N)
+        y = np.linspace(bounds[2], bounds[3], N)
+        X = np.tile(x, (N,1))
+        Y = np.tile(y[:,np.newaxis], (1,N))
+        Z = (X + Y * 1j) * scalefac
+
+        c = ax1.contour(X, Y, np.abs(num(Z)), [1], colors=color, alpha=alpha, linewidths=3)
+        ax1.set_aspect('equal')
+        ax1.plot([0,0], [bounds[2],bounds[3]], '--k', linewidth=2)
+        ax1.plot([bounds[0],bounds[1]], [0,0], '--k', linewidth=2)
+
+        # stability function of the main method
+        if filled:
+            ax1.contourf(X, Y, np.abs(num(Z)), [0,1], colors=color, alpha=alpha)
+        else:
+            ax1.contour(X, Y, np.abs(num(Z)), [0,1], colors=color, alpha=alpha, linewidths=3)
+        if plotroots:
+            ax1.plot(np.real(num.r), np.imag(num.r), 'ok')
+
+        # stability function of the embedded method
+        ax1.contour(X, Y, np.abs(numhat(Z)), [0,1], colors='k', alpha=alpha, linewidths=3)
+        if plotroots:
+            ax1.plot(np.real(numhat.r), np.imag(numhat.r), 'ok')
+
+        if longtitle:
+            ax1.set_title('Absolute Stability Region')
+            plt.suptitle(self.name)
+        else:
+            ax1.set_title('Stability region')
+            plt.suptitle(self.shortname)
+
+        # Plot I controller stability function.
+        v = c.collections[0].get_paths()[0].vertices
+        xx = v[:,0]
+        yy = v[:,1]
+        zz = (xx + 1j * yy) * scalefac
+        angle = np.arctan2(yy, xx)
+        # use only one quadrant in the left half of the complex plane
+        filter_idx = np.argwhere(angle >= np.pi/2).flatten()
+        zz = zz[filter_idx]
+        angle = angle[filter_idx]
+        sort_idx = np.argsort(angle)
+        zz = zz[sort_idx]
+        angle = angle[sort_idx]
+
+        R = num
+        Rprime = R.deriv()
+        E = numhat - num
+        Eprime = E.deriv()
+        alpha = 1. / (min(self.main_method.p, self.embedded_method.p) + 1)
+        u = np.real(Rprime(zz) * zz / R(zz))
+        v = np.real(Eprime(zz) * zz / E(zz))
+
+        C = np.zeros((np.size(zz), 2, 2))
+        C[:,0,0] = 1
+        C[:,0,1] = u
+        C[:,1,0] = -alpha
+        C[:,1,1] = 1 - alpha * v
+        rho = np.abs(np.linalg.eigvals(C)).max(axis=1)
+
+        ax2.plot(angle, rho)
+        ax2.plot(angle, np.ones(np.size(rho)), '--k', linewidth=2)
+        ax2.set_xticks([np.pi/2, np.pi*5/8, np.pi*3/4, np.pi*7/8, np.pi])
+        ax2.set_xticklabels(['$\pi/2$', '$5\pi/8$', '$3\pi/4$', '$7\pi/8$', '$\pi$'])
+        if longtitle:
+            ax2.set_title("I Controller Stability Function")
+        else:
+            ax2.set_title("I Controller")
+
+        asp = np.diff(ax2.get_xlim())[0] / np.diff(ax2.get_ylim())[0]
+        ax2.set_aspect(asp)
+
+        # Save or draw the plot.
+        fig.tight_layout()
+        if to_file:
+            plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
+        else:
+            plt.draw()
+
         return fig
 
 
