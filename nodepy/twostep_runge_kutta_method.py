@@ -67,7 +67,7 @@ from six.moves import range
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
     r""" General class for Two-step Runge-Kutta Methods
-        The representation uses the form and partly the notation of [Jackiewicz1995]_,
+        The representation uses the form and partly the notation of :cite:`jackiewicz1995`,
         equation (1.3).
 
         `\begin{align*}
@@ -458,7 +458,7 @@ def TSRKeta_str(tree):
 
 def loadTSRK(which='All'):
     r"""
-        Load two particular TSRK methods (From [Jackiewicz1995]_).
+        Load two particular TSRK methods (From :cite:`jackiewicz1995`).
 
         The method of order five satisfies the order conditions only
         to four or five digits of accuracy.

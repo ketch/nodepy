@@ -1,6 +1,15 @@
 
 .. _changes:
 
+Changes since release 0.7
+=========================
+
+- Comppute E-polynomial for RK methods
+- Now possible to integrate complex solutions
+- Many new specific ODE methods added
+- Fixed some bugs in generation of trees and order conditions of very high order
+- Added some new example notebooks
+
 What's new in version 0.7
 =========================
 *Released November 29, 2016*
