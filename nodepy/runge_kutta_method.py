@@ -1076,7 +1076,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             contractivity at least `r`.
 
             See :cite:`dekker1984`.
-                
+
         """
         B=np.diag(self.b)
         M=np.dot(B,self.A)+np.dot(self.A.T,B)-np.outer(self.b,self.b)
@@ -2103,24 +2103,10 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             plt.draw()
         return fig
 
-    def plot_I_controller_stability(self, N=200, color='r', filled=True, bounds=None,
-                                    plotroots=False, alpha=1., scalefac=1.,
-                                    to_file=False, longtitle=True, fignum=None):
-        r"""Plot the absolute stability region and the function characterizing
-            stepsize control stability for an I controller of an RK pair.
-            By default, the region of the main method is filled in red and the
-            region of the embedded method is outlined in black.
-
-            **Example**::
-
-                >>> from nodepy import rk
-                >>> bs5 = rk.loadRKM('BS5')
-                >>> bs5.plot_I_controller_stability() # doctest: +ELLIPSIS
-                <matplotlib.figure.Figure object at 0x...>
-
-            **Reference**:
-
-                #. [hairer1993b]_ pp. 24ff.
+    def _plot_controller_stability_common(self, N=200, color='r', filled=True, bounds=None,
+                                          plotroots=False, alpha=1., scalefac=1.,
+                                          to_file=False, longtitle=True, fignum=None):
+        """Common functionality for all `plot_XXX_controller_stability` methods.
         """
         import nodepy.stability_function as stability_function
         import matplotlib.pyplot as plt
@@ -2186,23 +2172,47 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         filter_idx = np.argwhere(angle >= np.pi/2).flatten()
         zz = zz[filter_idx]
         angle = angle[filter_idx]
-        sort_idx = np.argsort(angle)
-        zz = zz[sort_idx]
-        angle = angle[sort_idx]
 
         R = num
         Rprime = R.deriv()
         E = numhat - num
         Eprime = E.deriv()
-        alpha = 1. / (min(self.main_method.p, self.embedded_method.p) + 1)
-        u = np.real(Rprime(zz) * zz / R(zz))
-        v = np.real(Eprime(zz) * zz / E(zz))
+        zRprime_R = np.real(Rprime(zz) * zz / R(zz))
+        zEprime_E = np.real(Eprime(zz) * zz / E(zz))
 
-        C = np.zeros((np.size(zz), 2, 2))
+        return fig, ax1, ax2, angle, zRprime_R, zEprime_E
+
+    def plot_I_controller_stability(self, N=200, color='r', filled=True, bounds=None,
+                                    plotroots=False, alpha=1., scalefac=1.,
+                                    to_file=False, longtitle=True, fignum=None):
+        r"""Plot the absolute stability region and the function characterizing
+            stepsize control stability for an I controller of an RK pair,
+            cf. :cite:`hairerODEs2`.
+            By default, the region of the main method is filled in red and the
+            region of the embedded method is outlined in black.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> bs5 = rk.loadRKM('BS5')
+                >>> bs5.plot_I_controller_stability() # doctest: +ELLIPSIS
+                <matplotlib.figure.Figure object at 0x...>
+        """
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        fig, ax1, ax2, angle, zRprime_R, zEprime_E = self._plot_controller_stability_common(
+            N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots, alpha=alpha,
+            scalefac=scalefac, to_file=to_file, longtitle=longtitle, fignum=fignum)
+
+        # Plot I controller stability function, see :cite:`hairerODEs2`, pp. 24f.
+        alpha = 1. / (min(self.main_method.p, self.embedded_method.p) + 1)
+
+        C = np.zeros((np.size(angle), 2, 2))
         C[:,0,0] = 1
-        C[:,0,1] = u
+        C[:,0,1] = zRprime_R
         C[:,1,0] = -alpha
-        C[:,1,1] = 1 - alpha * v
+        C[:,1,1] = 1 - alpha * zEprime_E
         rho = np.abs(np.linalg.eigvals(C)).max(axis=1)
 
         ax2.plot(angle, rho)
