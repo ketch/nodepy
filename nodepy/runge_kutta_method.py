@@ -2251,7 +2251,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                                      plotroots=False, alpha=1., scalefac=1.,
                                      to_file=False, longtitle=True, fignum=None):
         r"""Plot the absolute stability region and the function characterizing
-            stepsize control stability for an PI controller of an RK pair,
+            stepsize control stability for a PI controller of an RK pair,
             cf. :cite:`hairerODEs2`. The PI controller is of the form
 
             .. math::
@@ -2270,7 +2270,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
                 >>> from nodepy import rk
                 >>> bs5 = rk.loadRKM('BS5')
-                >>> bs5.plot_I_controller_stability() # doctest: +ELLIPSIS
+                >>> bs5.plot_PI_controller_stability() # doctest: +ELLIPSIS
                 <matplotlib.figure.Figure object at 0x...>
         """
         import matplotlib.pyplot as plt
@@ -2280,7 +2280,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots, alpha=alpha,
             scalefac=scalefac, to_file=to_file, longtitle=longtitle, fignum=fignum)
 
-        # Plot I controller stability function, see :cite:`hairerODEs2`, pp. 24f.
+        # Plot PI controller stability function, see :cite:`hairerODEs2`, pp. 24f.
         k = min(self.main_method.p, self.embedded_method.p) + 1.0
 
         C = np.zeros((np.size(angle), 4, 4))
@@ -2292,6 +2292,79 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         C[:,1,3] = -beta2/k * zEprime_E
         C[:,2,0] = 1
         C[:,3,1] = 1
+        rho = np.abs(np.linalg.eigvals(C)).max(axis=1)
+
+        ax2.plot(angle, rho)
+        ax2.plot(angle, np.ones(np.size(rho)), '--k', linewidth=2)
+        ax2.set_xticks([np.pi/2, np.pi*5/8, np.pi*3/4, np.pi*7/8, np.pi])
+        ax2.set_xticklabels(['$\pi/2$', '$5\pi/8$', '$3\pi/4$', '$7\pi/8$', '$\pi$'])
+        if longtitle:
+            ax2.set_title("PI Controller Stability Function\n($\\beta_1 = %.2f, \\beta_2 = %.2f$)" % (beta1, beta2))
+        else:
+            ax2.set_title("PI Controller")
+
+        asp = np.diff(ax2.get_xlim())[0] / np.diff(ax2.get_ylim())[0]
+        ax2.set_aspect(asp)
+
+        # Save or draw the plot.
+        fig.tight_layout()
+        if to_file:
+            plt.savefig(to_file, transparent=True, bbox_inches='tight', pad_inches=0.3)
+        else:
+            plt.draw()
+
+        return fig
+
+    def plot_PID_controller_stability(self, beta1=0.49, beta2=-0.34, beta3=0.10,
+                                      N=200, color='r', filled=True, bounds=None,
+                                      plotroots=False, alpha=1., scalefac=1.,
+                                      to_file=False, longtitle=True, fignum=None):
+        r"""Plot the absolute stability region and the function characterizing
+            stepsize control stability for a PID controller of an RK pair.
+            The PID controller is of the form
+
+            .. math::
+
+                \begin{equation}
+                    h_{n+1} = \left(\frac{\mathrm{TOL}}{\mathrm{err}_{n}})^{\beta_1/k} \left(\frac{\mathrm{TOL}}{\mathrm{err}_{n-1}})^{\beta_2/k} \left(\frac{\mathrm{TOL}}{\mathrm{err}_{n-2}})^{\beta_3/k} h_{n},
+                \end{equation}
+
+            where `h` is the stepsize, `TOL` the tolerance, and `err = O(h^k)`
+            the error estimate.
+
+            By default, the region of the main method is filled in red and the
+            region of the embedded method is outlined in black.
+
+            **Example**::
+
+                >>> from nodepy import rk
+                >>> bs5 = rk.loadRKM('BS5')
+                >>> bs5.plot_PID_controller_stability() # doctest: +ELLIPSIS
+                <matplotlib.figure.Figure object at 0x...>
+        """
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        fig, ax1, ax2, angle, zRprime_R, zEprime_E = self._plot_controller_stability_common(
+            N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots, alpha=alpha,
+            scalefac=scalefac, to_file=to_file, longtitle=longtitle, fignum=fignum)
+
+        # Plot PID controller stability function
+        k = min(self.main_method.p, self.embedded_method.p) + 1.0
+
+        C = np.zeros((np.size(angle), 6, 6))
+        C[:,0,0] = 1
+        C[:,0,1] = zRprime_R
+        C[:,1,0] = -beta1/k
+        C[:,1,1] = 1 - beta1/k * zEprime_E
+        C[:,1,2] = -beta2/k
+        C[:,1,3] = -beta2/k * zEprime_E
+        C[:,1,4] = -beta3/k
+        C[:,1,5] = -beta3/k * zEprime_E
+        C[:,2,0] = 1
+        C[:,3,1] = 1
+        C[:,4,2] = 1
+        C[:,5,3] = 1
         rho = np.abs(np.linalg.eigvals(C)).max(axis=1)
 
         ax2.plot(angle, rho)
