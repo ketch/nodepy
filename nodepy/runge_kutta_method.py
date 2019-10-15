@@ -2166,8 +2166,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             ax1.set_title('Stability region')
             plt.suptitle(self.shortname)
 
-        # Plot I controller stability function.
-        v = c.collections[0].get_paths()[0].vertices
+        # Plot I, PI, PID controller stability function
+        v = np.vstack([p.vertices for p in c.collections[0].get_paths()])
         xx = v[:,0]
         yy = v[:,1]
         zz = (xx + 1j * yy) * scalefac
