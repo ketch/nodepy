@@ -2124,6 +2124,10 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             m, n = num.order, den.order
             stable = lambda z : np.abs(num(z) / den(z)) <= 1.0
             bounds = find_plot_bounds(stable, guess=(-10,1,-5,5))
+            max_extent = 0.5 * max(bounds[1]-bounds[0], bounds[3]-bounds[2])
+            xmid = 0.5 * (bounds[0] + bounds[1])
+            ymid = 0.5 * (bounds[2] + bounds[3])
+            bounds = [xmid - max_extent, xmid + max_extent, ymid - max_extent, ymid + max_extent]
             if np.min(np.abs(np.array(bounds))) < 1.e-14:
                 print('No stable region found; is this method zero-stable?')
 
@@ -2182,7 +2186,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
         return fig, ax1, ax2, angle, zRprime_R, zEprime_E
 
-    def plot_I_controller_stability(self, N=200, color='r', filled=True, bounds=None,
+    def plot_I_controller_stability(self, beta1=1.,
+                                    N=200, color='r', filled=True, bounds=None,
                                     plotroots=False, alpha=1., scalefac=1.,
                                     to_file=False, longtitle=True, fignum=None):
         r"""Plot the absolute stability region and the function characterizing
@@ -2192,7 +2197,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             .. math::
 
                 \begin{equation}
-                    h_{n+1} = \left(\frac{\mathrm{TOL}}{\mathrm{err}_{n}})^{1/k} h_{n},
+                    h_{n+1} = \left(\frac{\mathrm{TOL}}{\mathrm{err}_{n}})^{\beta_1/k} h_{n},
                 \end{equation}
 
             where `h` is the stepsize, `TOL` the tolerance, and `err = O(h^k)`
@@ -2230,7 +2235,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         ax2.set_xticks([np.pi/2, np.pi*5/8, np.pi*3/4, np.pi*7/8, np.pi])
         ax2.set_xticklabels(['$\pi/2$', '$5\pi/8$', '$3\pi/4$', '$7\pi/8$', '$\pi$'])
         if longtitle:
-            ax2.set_title("I Controller Stability Function")
+            ax2.set_title("I Controller Stability Function\n($\\beta_1 = %.2f$)" % (beta1))
         else:
             ax2.set_title("I Controller")
 
@@ -2372,9 +2377,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         ax2.set_xticks([np.pi/2, np.pi*5/8, np.pi*3/4, np.pi*7/8, np.pi])
         ax2.set_xticklabels(['$\pi/2$', '$5\pi/8$', '$3\pi/4$', '$7\pi/8$', '$\pi$'])
         if longtitle:
-            ax2.set_title("PI Controller Stability Function\n($\\beta_1 = %.2f, \\beta_2 = %.2f$)" % (beta1, beta2))
+            ax2.set_title("PID Controller Stability Function\n($\\beta_1 = %.2f, \\beta_2 = %.2f, \\beta_3 = %.2f$)" % (beta1, beta2, beta3))
         else:
-            ax2.set_title("PI Controller")
+            ax2.set_title("PID Controller")
 
         asp = np.diff(ax2.get_xlim())[0] / np.diff(ax2.get_ylim())[0]
         ax2.set_aspect(asp)
