@@ -22,7 +22,7 @@
     >>> ssp32.ssp_coefficient()
     1/2
     >>> ssp32.plot_stability_region() #doctest: +ELLIPSIS
-    <matplotlib.figure.Figure object at 0x...>
+    <Figure...
 
 """
 from __future__ import print_function

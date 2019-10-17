@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys())
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'Heun33', 'HH5', 'HH5S', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2', 'Tsit5']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2', 'Tsit5']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -835,20 +835,19 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> dc.stability_function(mode='exact')
                 (poly1d([1/3888, 1/648, 1/24, 1/6, 1/2, 1, 1], dtype=object), poly1d([1], dtype=object))
 
-                >>> dc.stability_function(mode='float')
-                (poly1d([  2.57201646e-04,   1.54320988e-03,   4.16666667e-02,
-                         1.66666667e-01,   5.00000000e-01,   1.00000000e+00,
-                         1.00000000e+00]), poly1d([ 1.]))
+                >>> dc.stability_function(mode='float')  # doctest: +NORMALIZE_WHITESPACE
+                (poly1d([2.57201646e-04, 1.54320988e-03, 4.16666667e-02, 1.66666667e-01,
+                       5.00000000e-01, 1.00000000e+00, 1.00000000e+00]), poly1d([1.]))
                 >>> ssp3 = rk.SSPIRK3(4)
                 >>> ssp3.stability_function()
-                (poly1d([-67/300 + 13*sqrt(15)/225, -sqrt(15)/25 + 1/6, -sqrt(15)/5 + 9/10,
-                       -1 + 2*sqrt(15)/5, 1], dtype=object), poly1d([-2*sqrt(15)/25 + 31/100, -7/5 + 9*sqrt(15)/25, -3*sqrt(15)/5 + 12/5,
+                (poly1d([-67/300 + 13*sqrt(15)/225, 1/6 - sqrt(15)/25, 9/10 - sqrt(15)/5,
+                       -1 + 2*sqrt(15)/5, 1], dtype=object), poly1d([31/100 - 2*sqrt(15)/25, -7/5 + 9*sqrt(15)/25, 12/5 - 3*sqrt(15)/5,
                        -2 + 2*sqrt(15)/5, 1], dtype=object))
 
-                >>> ssp3.stability_function(mode='float')
-                (poly1d([  4.39037781e-04,   1.17473328e-02,   1.25403331e-01,
-                         5.49193338e-01,   1.00000000e+00]), poly1d([  1.61332303e-04,  -5.72599537e-03,   7.62099923e-02,
-                        -4.50806662e-01,   1.00000000e+00]))
+                >>> ssp3.stability_function(mode='float')  # doctest: +NORMALIZE_WHITESPACE
+                (poly1d([4.39037781e-04, 1.17473328e-02, 1.25403331e-01, 5.49193338e-01,
+                       1.00000000e+00]), poly1d([ 1.61332303e-04, -5.72599537e-03, 7.62099923e-02, -4.50806662e-01,
+                       1.00000000e+00]))
                 >>> ssp2 = rk.SSPIRK2(1)
                 >>> ssp2.stability_function()
                 (poly1d([1/2, 1], dtype=object), poly1d([-1/2, 1], dtype=object))
@@ -941,7 +940,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.plot_stability_region() #doctest: +ELLIPSIS
-                <matplotlib.figure.Figure object at 0x...>
+                <Figure size...
         """
         import nodepy.stability_function as stability_function
         import matplotlib.pyplot as plt
@@ -980,7 +979,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.plot_order_star() # doctest: +ELLIPSIS
-                <matplotlib.figure.Figure object at 0x...>
+                <Figure size...
         """
         import nodepy.stability_function as stability_function
         import matplotlib.pyplot as plt
@@ -1695,10 +1694,10 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
                 >>> from nodepy import rk
                 >>> ssp2 = rk.SSPRK2(6)
-                >>> ssp2.maximum_internal_amplification()
-                (1.0974050096180772, 0.83333333333333337)
-                >>> ssp2.maximum_internal_amplification(use_butcher=True)
-                (2.0370511185806568, 0.0)
+                >>> ssp2.maximum_internal_amplification() # doctest: +ELLIPSIS
+                (1.097405..., 0.83333333...)
+                >>> ssp2.maximum_internal_amplification(use_butcher=True) # doctest: +ELLIPSIS
+                (2.037051..., 0.0)
         """
         from nodepy.utils import find_plot_bounds
 
@@ -2077,7 +2076,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> bs5 = rk.loadRKM('BS5')
                 >>> bs5.plot_stability_region() # doctest: +ELLIPSIS
-                <matplotlib.figure.Figure object at 0x...>
+                <Figure size...
 
         """
         import nodepy.stability_function as stability_function
@@ -2202,7 +2201,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> bs5 = rk.loadRKM('BS5')
                 >>> bs5.plot_I_controller_stability() # doctest: +ELLIPSIS
-                <matplotlib.figure.Figure object at 0x...>
+                (<Figure size...
         """
         import matplotlib.pyplot as plt
 
@@ -2254,7 +2253,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> bs5 = rk.loadRKM('BS5')
                 >>> bs5.plot_PI_controller_stability() # doctest: +ELLIPSIS
-                <matplotlib.figure.Figure object at 0x...>
+                (<Figure size...
         """
         import matplotlib.pyplot as plt
 
@@ -2305,7 +2304,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 >>> from nodepy import rk
                 >>> bs5 = rk.loadRKM('BS5')
                 >>> bs5.plot_PID_controller_stability() # doctest: +ELLIPSIS
-                <matplotlib.figure.Figure object at 0x...>
+                (<Figure size...
         """
         import matplotlib.pyplot as plt
 
@@ -3294,15 +3293,15 @@ def SSPIRK3(m):
 
             Load the 4-stage method:
             >>> ISSP43=SSPIRK3(4)
-            >>> print(ISSP43)
+            >>> print(ISSP43)  # doctest: +NORMALIZE_WHITESPACE
             SSPIRK43
             <BLANKLINE>
-             -sqrt(15)/10 + 1/2 | -sqrt(15)/10 + 1/2
-             -sqrt(15)/30 + 1/2 | sqrt(15)/15         -sqrt(15)/10 + 1/2
-             sqrt(15)/30 + 1/2  | sqrt(15)/15         sqrt(15)/15         -sqrt(15)/10 + 1/2
-             sqrt(15)/10 + 1/2  | sqrt(15)/15         sqrt(15)/15         sqrt(15)/15         -sqrt(15)/10 + 1/2
-            ____________________|________________________________________________________________________________
-                                | 1/4                 1/4                 1/4                 1/4
+             1/2 - sqrt(15)/10 | 1/2 - sqrt(15)/10
+             1/2 - sqrt(15)/30 | sqrt(15)/15        1/2 - sqrt(15)/10
+             sqrt(15)/30 + 1/2 | sqrt(15)/15        sqrt(15)/15        1/2 - sqrt(15)/10
+             sqrt(15)/10 + 1/2 | sqrt(15)/15        sqrt(15)/15        sqrt(15)/15        1/2 - sqrt(15)/10
+            ___________________|____________________________________________________________________________
+                               | 1/4                1/4                1/4                1/4
 
             >>> x=ISSP43.absolute_monotonicity_radius()
             >>> print("{:.5f}".format(x))

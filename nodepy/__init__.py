@@ -3,7 +3,7 @@ NodePy (Numerical ODE solvers in Python) is...
 """
 
 from __future__ import absolute_import
-__version__="0.7"
+__version__="0.8"
 
 import nodepy.runge_kutta_method as rk
 import nodepy.twostep_runge_kutta_method as tsrk
