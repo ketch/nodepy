@@ -156,9 +156,6 @@ def centered_advection_diffusion_matrix(a,b,N,dx=0):
 
 
 def spectral_difference_matrix(nbrCells,xCenter,dx,order):
-    np.set_printoptions(threshold=np.nan)
-
-
     # Set coordinates of flux and solutions points according to the order of the scheme
     if order == 1:
         # 1st order

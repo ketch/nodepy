@@ -517,7 +517,7 @@ def plot_all_trees(p,title='str'):
 
             >>> from nodepy import rt
             >>> rt.plot_all_trees(4)  # doctest: +ELLIPSIS
-            <matplotlib.figure.Figure object at ...>
+            <Figure...
     """
     import matplotlib.pyplot as plt
     forest=list_trees(p)

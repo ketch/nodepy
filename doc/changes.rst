@@ -1,14 +1,16 @@
 
 .. _changes:
 
-Changes since release 0.7
+What's new in version 0.8
 =========================
 
-- Comppute E-polynomial for RK methods
+- Compute E-polynomial for RK methods
+- Plot step size controller stability for explicit RK pairs
 - Now possible to integrate complex solutions
 - Many new specific ODE methods added
 - Fixed some bugs in generation of trees and order conditions of very high order
 - Added some new example notebooks
+- Compatibility with Matplotlib 3
 
 What's new in version 0.7
 =========================
