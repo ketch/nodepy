@@ -1117,6 +1117,50 @@ class RungeKuttaMethod(GeneralLinearMethod):
             return 1
         # Need an exception here if rhi==rmax
 
+
+    def is_algebraically_stable(self):
+        r"""Checks whether the Runge-Kutta method is algebraically stable,
+            i.e. whether the matrix
+
+            .. math::
+
+                B A + A^T B - b b^T
+
+            is positive semidefinite and all weights $b_i \\geq 0$.
+
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk4 = rk.loadRKM('RK44')
+                >>> rk4.is_algebraically_stable() # doctest: +ELLIPSIS
+                False
+
+                >>> from nodepy import rk
+                >>> lobatto = rk.loadRKM('LobattoIIIC4')
+                >>> lobatto.is_algebraically_stable() # doctest: +ELLIPSIS
+                True
+
+            See :cite:`butcher2003`.
+        """
+        import numpy as np
+
+        if np.any(self.b < 0):
+            return False
+
+        # Check the eigenvalues for positive definiteness.
+        #
+        # We could also check whether the Cholesky factorization fails (=> not pos. def.).
+        # However, since we are interested in positive SEMIdefinite matrices, we have to
+        # regularize M by adding a small multiple of the identity matrix. Since "small"
+        # depends on the floating point type and this is probably not a bottleneck, using
+        # the eigenvalues seems to be fine.
+        rk = self.__num__()
+        B = np.diag(rk.b)
+        M = B.dot(rk.A) + rk.A.T.dot(B) - np.outer(rk.b, rk.b)
+        isposdef = np.all(np.linalg.eigvals(M) >= -10 * np.finfo(M.dtype).eps)
+
+        return isposdef
+
     #============================================================
     # Representations
     #============================================================
