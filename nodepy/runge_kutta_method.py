@@ -2105,7 +2105,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
     def _plot_controller_stability_common(self, beta1, beta2, beta3,
                                           N=200, color='r', filled=True, bounds=None,
                                           plotroots=False, alpha=1., scalefac=1., longtitle=True,
-                                          to_file_region=False,  fignum_region=None, fignum_controller=None):
+                                          to_file_region=False,  fignum_region=None, fignum_controller=None,
+                                          plot_region=True):
         """Common functionality for all `plot_XXX_controller_stability` methods.
         """
         import nodepy.stability_function as stability_function
@@ -2128,6 +2129,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         ax_region = fig_region.get_axes()[0]
         c = ax_region.collections[0]
         v = np.vstack([p.vertices for p in c.get_paths()])
+
+        if plot_region == False:
+            plt.close(fig_region)
 
         xx = v[:,0]
         yy = v[:,1]
@@ -2179,7 +2183,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                                     N=200, color='r', filled=True, bounds=None,
                                     plotroots=False, alpha=1., scalefac=1., longtitle=True,
                                     to_file_region=False, to_file_controller=False,
-                                    fignum_region=None, fignum_controller=None):
+                                    fignum_region=None, fignum_controller=None,
+                                    plot_region=True):
         r"""Plot the absolute stability region and the function characterizing
             stepsize control stability for an I controller of an RK pair,
             cf. :cite:`hairerODEs2`. The I controller is of the form
@@ -2209,7 +2214,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             beta1=beta1, beta2=0.0, beta3=0.0,
             N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots,
             alpha=alpha, scalefac=scalefac, longtitle=longtitle, to_file_region=to_file_region,
-            fignum_region=fignum_region, fignum_controller=fignum_controller)
+            fignum_region=fignum_region, fignum_controller=fignum_controller, plot_region=plot_region)
 
         ax_controller = fig_controller.get_axes()[0]
         if longtitle:
@@ -2231,7 +2236,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                                      N=200, color='r', filled=True, bounds=None,
                                      plotroots=False, alpha=1., scalefac=1.,longtitle=True,
                                      to_file_region=False, to_file_controller=False,
-                                     fignum_region=None, fignum_controller=None):
+                                     fignum_region=None, fignum_controller=None,
+                                    plot_region=True):
         r"""Plot the absolute stability region and the function characterizing
             stepsize control stability for a PI controller of an RK pair,
             cf. :cite:`hairerODEs2`. The PI controller is of the form
@@ -2261,7 +2267,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             beta1=beta1, beta2=beta2, beta3=0.0,
             N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots,
             alpha=alpha, scalefac=scalefac, longtitle=longtitle, to_file_region=to_file_region,
-            fignum_region=fignum_region, fignum_controller=fignum_controller)
+            fignum_region=fignum_region, fignum_controller=fignum_controller, plot_region=plot_region)
 
         ax_controller = fig_controller.get_axes()[0]
         if longtitle:
@@ -2282,7 +2288,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                                       N=200, color='r', filled=True, bounds=None,
                                       plotroots=False, alpha=1., scalefac=1., longtitle=True,
                                       to_file_region=False, to_file_controller=False,
-                                      fignum_region=None, fignum_controller=None):
+                                      fignum_region=None, fignum_controller=None,
+                                    plot_region=True):
         r"""Plot the absolute stability region and the function characterizing
             stepsize control stability for a PID controller of an RK pair.
             The PID controller is of the form
@@ -2312,7 +2319,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             beta1=beta1, beta2=beta2, beta3=beta3,
             N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots,
             alpha=alpha, scalefac=scalefac, longtitle=longtitle, to_file_region=to_file_region,
-            fignum_region=fignum_region, fignum_controller=fignum_controller)
+            fignum_region=fignum_region, fignum_controller=fignum_controller, plot_region=plot_region)
 
         ax_controller = fig_controller.get_axes()[0]
         if longtitle:
