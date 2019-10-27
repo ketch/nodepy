@@ -547,7 +547,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             err_coeffs.append(self.error_coefficient(tree))
         return snp.array(err_coeffs)
 
-    def error_metrics(self):
+    def error_metrics(self, q=None, tol=1.e-14):
         r"""
         Returns several measures of the accuracy of the Runge-Kutta method.
         In order, they are:
@@ -563,21 +563,23 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> from nodepy import rk
                 >>> rk4 = rk.loadRKM('RK44')
                 >>> rk4.error_metrics()
+                main method has order 4
                 (sqrt(1745)/2880, 1/120, sqrt(8531)/5760, 1/144, 1)
 
             Reference: :cite:`kennedy2000`
         """
-        q=self.order()
-        tau_1=self.error_coeffs(q+1)
-        tau_2=self.error_coeffs(q+2)
+        if q is None:
+            q = self.order(tol=tol)
+            print('main method has order {}'.format(q))
+        tau_1 = self.error_coeffs(q+1)
+        tau_2 = self.error_coeffs(q+2)
 
-        A_qp1 = snp.norm(tau_1)
-        A_qp1_max=max([abs(tau) for tau in tau_1])
-        A_qp2 = snp.norm(tau_2)
-        A_qp2_max=max([abs(tau) for tau in tau_2])
+        A_qp1     = snp.norm(tau_1)
+        A_qp1_max = max([abs(tau) for tau in tau_1])
+        A_qp2     = snp.norm(tau_2)
+        A_qp2_max = max([abs(tau) for tau in tau_2])
 
-        D=max(np.max(np.abs(self.A)),
-                np.max(np.abs(self.b)),np.max(np.abs(self.c)))
+        D = max(np.max(np.abs(self.A)), np.max(np.abs(self.b)), np.max(np.abs(self.c)))
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
 
@@ -2044,7 +2046,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         else:
             return u_new
 
-    def error_metrics(self,q=None,p=None):
+    def error_metrics(self, q=None, p=None, tol=1.e-14):
         r"""Return full set of error metrics for an embedded RK pair.
             See :cite:`kennedy2000` p. 181
 
@@ -2058,47 +2060,37 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 (43*sqrt(83011)/558835200, 43/3386880, sqrt(29695176594765489880490334265)/810521680634265600, 1451/15966720, sqrt(870269901055795)/277898765760, 10147/131580855, sqrt(51577359825120524319571156056057595)/219308015066060340, 26201089/40912704, sqrt(5250600078722255566247933273951710555)/2193080150660603400, 305343067/400035328, 482048/414219, 5987277*sqrt(72241974756542598745)/243675572295622600, 5987277/36366848)
         """
         if q is None:
-            q=self.order()
+            q = self.order(tol=tol)
             print('main method has order {}'.format(q))
         if p is None:
-            p=self.embedded_method.order()
+            p = self.embedded_method.order(tol=tol)
             print('embedded method has order {}'.format(p))
 
-        tau_1 = self.error_coeffs(q+1)
-        tau_2 = self.error_coeffs(q+2)
+        A_qp1, A_qp1_max, A_qp2, A_qp2_max, D = self.main_method.error_metrics(q)
 
-        A_qp1 = snp.norm(tau_1)
-        A_qp2 = snp.norm(tau_2)
-        A_qp1_max=max([abs(tau) for tau in tau_1])
-        A_qp2_max=max([abs(tau) for tau in tau_2])
-
-        D=max(np.max(np.abs(self.A)),
-                np.max(np.abs(self.b)),np.max(np.abs(self.c)))
-        tau_pp2=self.error_coeffs(p+2)
-
-        tau_pp1_hat=self.embedded_method.error_coeffs(p+1)
-        tau_pp2_hat=self.embedded_method.error_coeffs(p+2)
+        tau_pp1_hat = self.embedded_method.error_coeffs(p+1)
+        tau_pp2_hat = self.embedded_method.error_coeffs(p+2)
+        tau_pp2     = self.error_coeffs(p+2)
 
         A_pp1_hat = snp.norm(tau_pp1_hat)
         A_pp2_hat = snp.norm(tau_pp2_hat)
-        A_pp2 = snp.norm(tau_pp2)
+        A_pp2     = snp.norm(tau_pp2)
 
-        A_pp1_hat_max=max([abs(tau) for tau in tau_pp1_hat])
+        A_pp1_hat_max = max([abs(tau) for tau in tau_pp1_hat])
+        A_pp2_hat_max = max([abs(tau) for tau in tau_pp2_hat])
+        A_pp2_max     = max([abs(tau) for tau in tau_pp2])
 
-        A_pp2_max=    max([abs(tau) for tau in tau_pp2])
-        A_pp2_hat_max=max([abs(tau) for tau in tau_pp2_hat])
+        B_pp2     = A_pp2_hat     / A_pp1_hat
+        B_pp2_max = A_pp2_hat_max / A_pp1_hat_max
 
-        B_pp2=    A_pp2_hat    /A_pp1_hat
-        B_pp2_max=A_pp2_hat_max/A_pp1_hat_max
+        tau2diff = np.array(tau_pp2_hat) - np.array(tau_pp2)
+        C_pp2     = snp.norm(tau2diff) / A_pp1_hat
+        C_pp2_max = max([abs(tau) for tau in tau2diff])/A_pp1_hat_max
 
-        tau2diff=np.array(tau_pp2_hat)-np.array(tau_pp2)
-        C_pp2 = snp.norm(tau2diff) / A_pp1_hat
-        C_pp2_max=max([abs(tau) for tau in tau2diff])/A_pp1_hat_max
+        D = max(np.max(self.A), np.max(self.b), np.max(self.bhat), np.max(self.c))
 
-        D=max(np.max(self.A),np.max(self.b),np.max(self.bhat),np.max(self.c))
-
-        E_pp2=    A_pp2    /A_pp1_hat
-        E_pp2_max=A_pp2_max/A_pp1_hat_max
+        E_pp2     = A_pp2     / A_pp1_hat
+        E_pp2_max = A_pp2_max / A_pp1_hat_max
 
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, A_pp1_hat, A_pp1_hat_max, B_pp2, B_pp2_max, C_pp2, C_pp2_max, D, E_pp2, E_pp2_max
 
@@ -2149,7 +2141,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
     def _plot_controller_stability_common(self, beta1, beta2, beta3,
                                           N=200, color='r', filled=True, bounds=None,
                                           plotroots=False, alpha=1., scalefac=1., longtitle=True,
-                                          to_file_region=False,  fignum_region=None, fignum_controller=None):
+                                          to_file_region=False,  fignum_region=None, fignum_controller=None,
+                                          plot_region=True):
         """Common functionality for all `plot_XXX_controller_stability` methods.
         """
         import nodepy.stability_function as stability_function
@@ -2172,6 +2165,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         ax_region = fig_region.get_axes()[0]
         c = ax_region.collections[0]
         v = np.vstack([p.vertices for p in c.get_paths()])
+
+        if plot_region == False:
+            plt.close(fig_region)
 
         xx = v[:,0]
         yy = v[:,1]
@@ -2223,7 +2219,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                                     N=200, color='r', filled=True, bounds=None,
                                     plotroots=False, alpha=1., scalefac=1., longtitle=True,
                                     to_file_region=False, to_file_controller=False,
-                                    fignum_region=None, fignum_controller=None):
+                                    fignum_region=None, fignum_controller=None,
+                                    plot_region=True):
         r"""Plot the absolute stability region and the function characterizing
             stepsize control stability for an I controller of an RK pair,
             cf. :cite:`hairerODEs2`. The I controller is of the form
@@ -2253,7 +2250,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             beta1=beta1, beta2=0.0, beta3=0.0,
             N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots,
             alpha=alpha, scalefac=scalefac, longtitle=longtitle, to_file_region=to_file_region,
-            fignum_region=fignum_region, fignum_controller=fignum_controller)
+            fignum_region=fignum_region, fignum_controller=fignum_controller, plot_region=plot_region)
 
         ax_controller = fig_controller.get_axes()[0]
         if longtitle:
@@ -2275,7 +2272,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                                      N=200, color='r', filled=True, bounds=None,
                                      plotroots=False, alpha=1., scalefac=1.,longtitle=True,
                                      to_file_region=False, to_file_controller=False,
-                                     fignum_region=None, fignum_controller=None):
+                                     fignum_region=None, fignum_controller=None,
+                                    plot_region=True):
         r"""Plot the absolute stability region and the function characterizing
             stepsize control stability for a PI controller of an RK pair,
             cf. :cite:`hairerODEs2`. The PI controller is of the form
@@ -2305,7 +2303,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             beta1=beta1, beta2=beta2, beta3=0.0,
             N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots,
             alpha=alpha, scalefac=scalefac, longtitle=longtitle, to_file_region=to_file_region,
-            fignum_region=fignum_region, fignum_controller=fignum_controller)
+            fignum_region=fignum_region, fignum_controller=fignum_controller, plot_region=plot_region)
 
         ax_controller = fig_controller.get_axes()[0]
         if longtitle:
@@ -2326,7 +2324,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                                       N=200, color='r', filled=True, bounds=None,
                                       plotroots=False, alpha=1., scalefac=1., longtitle=True,
                                       to_file_region=False, to_file_controller=False,
-                                      fignum_region=None, fignum_controller=None):
+                                      fignum_region=None, fignum_controller=None,
+                                    plot_region=True):
         r"""Plot the absolute stability region and the function characterizing
             stepsize control stability for a PID controller of an RK pair.
             The PID controller is of the form
@@ -2356,7 +2355,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
             beta1=beta1, beta2=beta2, beta3=beta3,
             N=N, color=color, filled=filled, bounds=bounds, plotroots=plotroots,
             alpha=alpha, scalefac=scalefac, longtitle=longtitle, to_file_region=to_file_region,
-            fignum_region=fignum_region, fignum_controller=fignum_controller)
+            fignum_region=fignum_region, fignum_controller=fignum_controller, plot_region=plot_region)
 
         ax_controller = fig_controller.get_axes()[0]
         if longtitle:
