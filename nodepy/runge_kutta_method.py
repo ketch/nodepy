@@ -3719,8 +3719,6 @@ def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
             alpha[J[j-1],0] = 1
             beta[ J[j-1],0] = h
         if base == 'midpoint':
-            alpha[J[j-1],0] = 1
-            beta[ J[j-1],0] = h
             alpha[J[j-1]+1,0] = 1
             beta[ J[j-1]+1,J[j-1]] = 2*h
 
@@ -3739,9 +3737,6 @@ def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
                 alpha[J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+1] = 1
                 beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2*h
                 beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2*h
-
-
-    print beta
 
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
