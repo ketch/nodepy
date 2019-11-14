@@ -2537,8 +2537,8 @@ def shu_osher_zero_beta_ij(alpha,beta,i,j):
 
 
 def shu_osher_to_butcher(alpha,beta):
-    r""" Accepts a Shu-Osher representation of an explicit Runge-Kutta
-        and returns the Butcher coefficients
+    r""" Accepts a Shu-Osher representation of a Runge-Kutta
+         method and returns the Butcher coefficients.
 
         \\begin{align*}
         A = & (I-\\alpha_0)^{-1} \\beta_0 \\\\
@@ -2547,17 +2547,19 @@ def shu_osher_to_butcher(alpha,beta):
 
         See :cite:`gottlieb2009`.
     """
-    if np.triu(alpha).any(): # Check that alpha is lower-triangular
-        raise NotImplementedError('This routine is only written for explicit methods so far.')
-
     m=np.size(alpha,1)
     if not np.all([np.size(alpha,0),np.size(beta,0),
                     np.size(beta,1)]==[m+1,m+1,m]):
         raise Exception('Inconsistent dimensions of Shu-Osher arrays')
 
-    X=snp.eye(m)-alpha[0:m,:]
-    A=snp.solve(X,beta[0:m,:])
-    b=beta[m,:]+np.dot(alpha[m,:],A)
+    alph = snp.zeros( (m+1,m+1) )
+    bet = snp.zeros( (m+1,m+1) )
+    alph[:,:m] = alpha
+    bet[:,:m] = beta
+    X=snp.eye(m+1)-alph
+    K=snp.solve(X,bet)
+    A = K[:m,:m]
+    b = K[m,:m]
 
     A = snp.simplify(A)
     b = snp.simplify(b)
@@ -3643,11 +3645,10 @@ def DC(s,theta=0,grid='eq',num_corr=None):
 #============================================================
 # Extrapolation methods
 #============================================================
-def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
-    """ Construct extrapolation methods.
-        For now, based on explicit Euler, but allowing arbitrary sequences.
+def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
+    """ Construct extrapolation methods as Runge-Kutta methods.
 
-        **Input**: p -- number of grid points & number of extrapolation iterations
+        **Input**: k -- number of grid points & number of extrapolation iterations
                    base -- the base method to be used ('euler' or 'midpoint')
                    seq -- extrapolation sequence
 
@@ -3691,26 +3692,38 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
 
         See :cite:`hairer1993` chapter II.9.
     """
+    from sympy import Rational
+
     base = base.lower()
-    if not base in ['euler','midpoint']:
+    if not base in ['euler','midpoint','implicit euler']:
         raise Exception('Unrecognized base method '+base)
 
-    if base == 'euler':
-        name = 'Ex-Euler '+str(p)
-        an_exp = 1
-        if seq == 'harmonic':
-            N = snp.arange(p)+1
-        elif seq == 'Romberg':
-            N = snp.arange(p)+1;  N = 2**(N-1)
-    elif base == 'midpoint':
-        name = 'Ex-Midpoint '+str(p)
-        an_exp = 2
-        N = 2*snp.arange(p)+2
+    if seq == 'harmonic':
+        N = snp.arange(k) + 1
+        if base == 'midpoint':
+            N = 2*N
+    elif seq == 'romberg':
+        N = snp.arange(k)+1;  N = 2**(N-1)
+    else:
+        N = seq
+        assert len(N) == k, 'Iteration sequence length does not match k.'
 
-    J = np.cumsum(N)+1
+    if base == 'euler':
+        name = 'Ex-Euler '+str(k)
+        an_exp = 1
+    elif base == 'midpoint':
+        name = 'Ex-Midpoint '+str(k)
+        an_exp = 2
+    elif base == 'implicit euler':
+        name = 'Im-Euler '+str(k)
+        an_exp = 1
+
+    J = np.cumsum(N) # Indices of T_j1 stages (natural, not Python)
+    if base != 'implicit euler':
+        J = J + 1  # Explicit methods have a dummy stage y_1 = u_n
     order_reducer = 0
     if embedded:
-        if p>1:
+        if k>1:
             order_reducer = 1
         else:
             raise Exception('Embedded pair must have order>0')
@@ -3718,59 +3731,86 @@ def extrap(p,base='euler',seq='harmonic',embedded=False, shuosher=False):
     nrs = J[-1]
 
     # Shu-Osher arrays
-    alpha = snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
-    beta =  snp.zeros([nrs+p*(p-1)/2-order_reducer,nrs+p*(p-1)/2-1-order_reducer])
+    alpha = snp.zeros([nrs+k*(k-1)/2-order_reducer,nrs+k*(k-1)/2-1-order_reducer])
+    beta =  snp.zeros([nrs+k*(k-1)/2-order_reducer,nrs+k*(k-1)/2-1-order_reducer])
 
-    # T_11
-    alpha[1,0] = 1
-    beta[1,0] = 1/N[0]
-    if base == 'midpoint':
-        alpha[2,0] = 1
-        beta[2,1] = 2/N[0]
+    # Form T_11:
+    h = Rational(1,N[0])
+    if base == 'euler':
+        alpha[1,0] = 1
+        beta[1,0] = h
+        for i in range(1,N[0]):
+            beta[ i,i-1] = h
+            alpha[i,i-1] = 1
+    elif base == 'midpoint':
+        alpha[1,0] = 1
+        beta[1,0] = 1/N[0]
+        for i in range(1,N[0]):
+            beta[i+1,i] = 2*h
+            alpha[i+1,i-1] = 1
+    elif base == 'implicit euler':
+        for i in range(N[0]):
+            beta[i,i] = h
+            if i>0:
+                alpha[i,i-1] = 1
+
 
     for j in range(1,len(N)):
+        h = Rational(1,N[j])
         #Form T_j1:
-        alpha[J[j-1],0] = 1
-        beta[ J[j-1],0] = 1/N[j]
+        if base in ('euler', 'midpoint'):
+            alpha[J[j-1],0] = 1
+            beta[ J[j-1],0] = h
         if base == 'midpoint':
             alpha[J[j-1]+1,0] = 1
-            beta[ J[j-1]+1,J[j-1]] = 2/N[j]
+            beta[ J[j-1]+1,J[j-1]] = 2*h
 
         if base == 'euler':
             for i in range(1,N[j]):
                 alpha[J[j-1]+i,J[j-1]+i-1] = 1
-                beta[ J[j-1]+i,J[j-1]+i-1] = 1/N[j]
+                beta[ J[j-1]+i,J[j-1]+i-1] = h
+        elif base == 'implicit euler':
+            for i in range(N[j]):
+                beta[ J[j-1]+i,J[j-1]+i] = h
+                if i>0:
+                    alpha[J[j-1]+i,J[j-1]+i-1] = 1
         elif base == 'midpoint':
             for i in range(1,int(N[j]/2)):
                 alpha[J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)  ] = 1
                 alpha[J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+1] = 1
-                beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2/N[j]
-                beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2/N[j]
-
+                beta[ J[j-1]+2+2*(i-1),J[j-1]+2*(i-1)+1] = 2*h
+                beta[ J[j-1]+3+2*(i-1),J[j-1]+2*(i-1)+2] = 2*h
 
     #Really there are no more "stages", and we could form T_ss directly.
     #but it is simpler to add auxiliary stages and then reduce.
-    if (embedded and p>2) or (not embedded):
-        for j in range(1,p):
+    if (embedded and k>2) or (not embedded):
+        for j in range(1,k):
             #form T_{j+1,2}:
-            alpha[nrs-1+j,J[j]-1] = 1 + 1/((N[j]/N[j-1])**an_exp - 1)
-            alpha[nrs-1+j,J[j-1]-1] = - 1/((N[j]/N[j-1])**an_exp - 1)
-
+            ratio = Rational(N[j],N[j-1])
+            alpha[nrs+j-1,J[j]-1] = 1 + 1/(ratio**an_exp - 1)
+            alpha[nrs+j-1,J[j-1]-1] = - 1/(ratio**an_exp - 1)
+    
     #Now form all the rest, up to T_ss:
-    nsd = nrs-1+p # Number of stages done
-    for k in range(2,p-order_reducer):
-        for ind,j in enumerate(range(k,p)):
-            #form T_{j+1,k+1}:
-            alpha[nsd+ind,nsd-(p-k)+ind] = 1 + 1/((N[j]/N[j-k])**an_exp - 1)
-            alpha[nsd+ind,nsd-(p-k)+ind-1] = - 1/((N[j]/N[j-k])**an_exp - 1)
-        nsd += p-k
+    nsd = nrs-1+k # Number of stages done
+    for m in range(2,k-order_reducer):
+        for ind,j in enumerate(range(m,k)):
+            ratio = Rational(N[j],N[j-m])
+            #form T_{j+1,m+1}:
+            alpha[nsd+ind,nsd-(k-m)+ind] = 1 + 1/(ratio**an_exp - 1)
+            alpha[nsd+ind,nsd-(k-m)+ind-1] = - 1/(ratio**an_exp - 1)
+        nsd += k-m
 
     if shuosher:
         return alpha, beta
     else:
         if base == 'midpoint':
-            p = 2*p
-        return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
+            p = 2*k
+        else:
+            p = k
+        if base == 'implicit euler':
+            return RungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
+        else:
+            return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,order=p).dj_reduce()
 
 def extrap_pair(p, base='euler'):
     """
