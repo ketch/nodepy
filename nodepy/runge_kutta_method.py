@@ -21,7 +21,7 @@
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys())
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'TR-BDF2', 'Tsit5']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Söderlind43', 'TR-BDF2', 'Tsit5', 'Zonneveld43']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2587,6 +2587,8 @@ def loadRKM(which='All'):
           * 'DP5':        Dormand-Prince 5th-order :cite:`dormand1980`
           * 'PD8':        Prince-Dormand 8th-order and 7th-order pair :cite:`prince1981`
           * 'CMR6':       Calvo et al.'s 6(5) pair :cite:`calvo1990`
+          * 'Zonneveld43': 4(3) pair of Zonneveld :cite:`hairer1993` Table 4.2
+          * 'Söderlind43': 4(3) pair of Söderlind
           * 'Fehlberg43': 4(3) pair of Fehlberg :cite:`fehlberg1969`
           * 'Fehlberg45': 5(4) pair of Fehlberg :cite:`fehlberg1969`
           * 'Lambert65':
@@ -2860,6 +2862,31 @@ def loadRKM(which='All'):
     b=np.array([one/6,0*one,0*one,2*one/3,1*one/6])
     bhat=np.array([one/10,0*one,3*one/10,2*one/5,1*one/5])
     RK['Merson43']=ExplicitRungeKuttaPair(A,b,bhat,name='Merson RK4(3)',shortname='Merson43')
+    #================================================
+    # 4(3) method of Sörderlind
+    # https://github.com/ketch/pyclaw/commit/dbb56d55f4c3b45467f21232ef88f6f6ed16f134
+    A=np.array(
+        [[0, 0, 0, 0, 0],
+        [one/2, 0, 0, 0, 0],
+        [0, one/2, 0, 0, 0],
+        [0, 0, 1, 0, 0],
+        [-1, 2, 0, 0, 0]])
+    b=np.array([one/6, one/3, one/3, one/6, 0])
+    bhat=np.array([one/6, 2*one/3, 0, 0, one/6])
+    RK['Söderlind43']=ExplicitRungeKuttaPair(A,b,bhat,name='Söderlind RK4(3)',shortname='Söderlind43')
+    #================================================
+    # 4(3) method of Zonneveld (1963)
+    # obtained from Table 4.2 of Hairer, Nørsett, Wanner (2008)
+    # doi: 10.1007/978-3-540-78862-1
+    A=np.array(
+        [[0, 0, 0, 0, 0],
+        [one/2, 0, 0, 0, 0],
+        [0, one/2, 0, 0, 0],
+        [0, 0, 1, 0, 0],
+        [5*one/32, 7*one/32, 13*one/32, -1*one/32, 0]])
+    b=np.array([one/6, one/3, one/3, one/6, 0])
+    bhat=np.array([-one/2, 7*one/3, 7*one/3, 13*one/6, -16*one/3])
+    RK['Zonneveld43']=ExplicitRungeKuttaPair(A,b,bhat,name='Zonneveld RK4(3)',shortname='Zonneveld43')
     #================================================
     A    = np.zeros((7,7))
     b    = np.zeros(7)
