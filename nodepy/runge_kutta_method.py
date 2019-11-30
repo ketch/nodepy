@@ -1,4 +1,6 @@
-"""
+# coding: utf-8
+
+u"""
 **Examples**::
 
     >>> from nodepy.runge_kutta_method import *
@@ -20,8 +22,8 @@
 * Load a dictionary with many methods::
 
     >>> RK=loadRKM()
-    >>> sorted(RK.keys())
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Söderlind43', 'TR-BDF2', 'Tsit5', 'Zonneveld43']
+    >>> sorted(RK.keys()) # doctest:+ELLIPSIS
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2564,7 +2566,7 @@ def shu_osher_to_butcher(alpha,beta):
     return A,b
 
 def loadRKM(which='All'):
-    """
+    u"""
 
 
         Load a set of standard Runge-Kutta methods for testing.
@@ -2873,7 +2875,7 @@ def loadRKM(which='All'):
         [-1, 2, 0, 0, 0]])
     b=np.array([one/6, one/3, one/3, one/6, 0])
     bhat=np.array([one/6, 2*one/3, 0, 0, one/6])
-    RK['Söderlind43']=ExplicitRungeKuttaPair(A,b,bhat,name='Söderlind RK4(3)',shortname='Söderlind43')
+    RK[u"Söderlind43"]=ExplicitRungeKuttaPair(A,b,bhat,name=u"Söderlind RK4(3)",shortname=u"Söderlind43")
     #================================================
     # 4(3) method of Zonneveld (1963)
     # obtained from Table 4.2 of Hairer, Nørsett, Wanner (2008)
