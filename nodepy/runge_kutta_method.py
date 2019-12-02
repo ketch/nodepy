@@ -2592,7 +2592,7 @@ def loadRKM(which='All'):
           * 'PD8':        Prince-Dormand 8th-order and 7th-order pair :cite:`prince1981`
           * 'CMR6':       Calvo et al.'s 6(5) pair :cite:`calvo1990`
           * 'Zonneveld43': 4(3) pair of Zonneveld :cite:`hairer1993` Table 4.2
-          * 'Söderlind43': 4(3) pair of Söderlind
+          * 'Soderlind43': 4(3) pair of Söderlind (also available as 'Söderlind43')
           * 'Fehlberg43': 4(3) pair of Fehlberg :cite:`fehlberg1969`
           * 'Fehlberg45': 5(4) pair of Fehlberg :cite:`fehlberg1969`
           * 'Lambert65':
@@ -2878,6 +2878,7 @@ def loadRKM(which='All'):
     b=np.array([one/6, one/3, one/3, one/6, 0])
     bhat=np.array([one/6, 2*one/3, 0, 0, one/6])
     RK[u"Söderlind43"]=ExplicitRungeKuttaPair(A,b,bhat,name=u"Söderlind RK4(3)",shortname=u"Söderlind43")
+    RK[u"Soderlind43"]=ExplicitRungeKuttaPair(A,b,bhat,name=u"Söderlind RK4(3)",shortname=u"Söderlind43")
     #================================================
     # 4(3) method of Zonneveld (1963)
     # obtained from Table 4.2 of Hairer, Nørsett, Wanner (2008)
