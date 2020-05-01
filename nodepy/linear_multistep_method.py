@@ -29,11 +29,20 @@ from __future__ import print_function
 
 from __future__ import absolute_import
 import numpy as np
+import copy
 import sympy
 import nodepy.snp as snp
+import matplotlib.pyplot as plt
+from sympy import symbols, latex
+from nodepy.snp import printable
 from nodepy.general_linear_method import GeneralLinearMethod
 from six.moves import map
 from six.moves import range
+from sympy import Rational
+try:
+    import sympy.combinatorial as combinatorial
+except ImportError:
+    import sympy.functions.combinatorial as combinatorial
 
 
 class LinearMultistepMethod(GeneralLinearMethod):
@@ -73,7 +82,6 @@ class LinearMultistepMethod(GeneralLinearMethod):
         This is useful whenever we need to operate numerically without
         worrying about the representation of the method.
         """
-        import copy
         numself = copy.deepcopy(self)
         if self.alpha.dtype==object:
             numself.alpha=np.array(self.alpha,dtype=np.float64)
@@ -150,9 +158,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
             \begin{align} y_{n + 2} - y_{n + 1} = \frac{3}{2}h f(y_{n + 1}) - \frac{1}{2}h f(y_{n})\end{align}
 
         """
-        from sympy import symbols, latex
         n = symbols('n')
-        from nodepy.snp import printable
         k = len(self)
         alpha_terms = []
         beta_terms = []
@@ -226,7 +232,6 @@ class LinearMultistepMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
-        import matplotlib.pyplot as plt
         rho, sigma = self.__num__().characteristic_polynomials()
         mag = lambda z: _root_condition(rho-z*sigma)
         vmag = np.vectorize(mag)
@@ -283,8 +288,6 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
             Reference: :cite:`leveque2007` section 7.6.1
         """
-        import matplotlib.pyplot as plt
-
         z = self._boundary_locus(N)
 
         if figsize is None:
@@ -390,7 +393,6 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
         This is useful whenever we need to operate numerically without
         worrying about the representation of the method.
         """
-        import copy
         numself = copy.deepcopy(self)
         if self.alpha.dtype == object:
             numself.alpha = np.array(self.alpha, dtype=np.float64)
@@ -424,7 +426,6 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
         """
-        import matplotlib.pyplot as plt
         rho, sigma1 = self.method1.__num__().characteristic_polynomials()
         rho, sigma2 = self.method2.__num__().characteristic_polynomials()
         if both_real:
@@ -526,13 +527,6 @@ def Adams_Bashforth(k):
 
         Reference: :cite:`hairer1993`
     """
-    try:
-        import sympy.combinatorial as combinatorial
-    except ImportError:
-        import sympy.functions.combinatorial as combinatorial
-
-    from sympy import Rational
-
     one = Rational(1,1)
 
     alpha=snp.zeros(k+1)
@@ -576,12 +570,6 @@ def Nystrom(k):
 
         Reference: :cite:`hairer1993`
     """
-    try:
-        import sympy.combinatorial as combinatorial
-    except ImportError:
-        import sympy.functions.combinatorial as combinatorial
-    from sympy import Rational
-
     one = Rational(1,1)
 
     alpha = snp.zeros(k+1)
@@ -625,10 +613,6 @@ def Adams_Moulton(k):
 
         Reference: :cite:`hairer1993`
     """
-    try:
-        import sympy.combinatorial as combinatorial
-    except ImportError:
-        import sympy.functions.combinatorial as combinatorial
 
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
@@ -667,10 +651,6 @@ def Milne_Simpson(k):
 
         Reference: :cite:`hairer1993`
     """
-    try:
-        import sympy.combinatorial as combinatorial
-    except ImportError:
-        import sympy.functions.combinatorial as combinatorial
 
     alpha = snp.zeros(k+1)
     beta  = snp.zeros(k+1)
@@ -711,10 +691,6 @@ def backward_difference_formula(k):
 
         **Reference**: :cite:`hairer1993` pp. 364-365
     """
-    try:
-        import sympy.combinatorial as combinatorial
-    except ImportError:
-        import sympy.functions.combinatorial as combinatorial
 
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
@@ -741,8 +717,6 @@ def elm_ssp2(k):
         >>> lm10.ssp_coefficient()
         8/9
     """
-    import sympy
-
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
     alpha[-1]=sympy.Rational(1,1)
@@ -767,8 +741,6 @@ def sand_cc(s):
 
     **Reference**: :cite:`sand1986`
     """
-    import sympy
-
     one  = sympy.Rational(1)
     zero = sympy.Rational(0)
 
