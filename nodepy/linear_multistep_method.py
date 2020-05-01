@@ -526,7 +526,11 @@ def Adams_Bashforth(k):
 
         Reference: :cite:`hairer1993`
     """
-    import sympy
+    try:
+        import sympy.combinatorial as combinatorial
+    except ImportError:
+        import sympy.functions.combinatorial as combinatorial
+
     from sympy import Rational
 
     one = Rational(1,1)
@@ -542,7 +546,7 @@ def Adams_Bashforth(k):
     for j in range(1,k):
         gamma[j]=one-sum(gamma[:j]/snp.arange(j+1,1,-1))
         for i in range(0,j+1):
-            betaj[k-i-1]=(-one)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
+            betaj[k-i-1]=(-one)**i*combinatorial.factorials.binomial(j,i)*gamma[j]
         beta=beta+betaj
     name=str(k)+'-step Adams-Bashforth'
     return LinearMultistepMethod(alpha,beta,name=name,shortname='AB'+str(k))
@@ -572,7 +576,10 @@ def Nystrom(k):
 
         Reference: :cite:`hairer1993`
     """
-    import sympy
+    try:
+        import sympy.combinatorial as combinatorial
+    except ImportError:
+        import sympy.functions.combinatorial as combinatorial
     from sympy import Rational
 
     one = Rational(1,1)
@@ -592,7 +599,7 @@ def Nystrom(k):
         gamma[j] = one-sum(gamma[:j]/snp.arange(j+1,1,-1))
         kappa[j] = 2 * gamma[j] - gamma[j-1]
         for i in range(0,j+1):
-            betaj[k-i-1] = (-one)**i*sympy.combinatorial.factorials.binomial(j,i)*kappa[j]
+            betaj[k-i-1] = (-one)**i*combinatorial.factorials.binomial(j,i)*kappa[j]
         beta = beta+betaj
     name = str(k)+'-step Nystrom'
     return LinearMultistepMethod(alpha,beta,name=name,shortname='Nys'+str(k))
@@ -618,7 +625,10 @@ def Adams_Moulton(k):
 
         Reference: :cite:`hairer1993`
     """
-    import sympy
+    try:
+        import sympy.combinatorial as combinatorial
+    except ImportError:
+        import sympy.functions.combinatorial as combinatorial
 
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
@@ -631,7 +641,7 @@ def Adams_Moulton(k):
     for j in range(1,k+1):
         gamma[j]= -sum(gamma[:j]/snp.arange(j+1,1,-1))
         for i in range(0,j+1):
-            betaj[k-i]=(-1)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
+            betaj[k-i]=(-1)**i*combinatorial.factorials.binomial(j,i)*gamma[j]
         beta=beta+betaj
     name=str(k)+'-step Adams-Moulton'
     return LinearMultistepMethod(alpha,beta,name=name,shortname='AM'+str(k))
@@ -657,7 +667,10 @@ def Milne_Simpson(k):
 
         Reference: :cite:`hairer1993`
     """
-    import sympy
+    try:
+        import sympy.combinatorial as combinatorial
+    except ImportError:
+        import sympy.functions.combinatorial as combinatorial
 
     alpha = snp.zeros(k+1)
     beta  = snp.zeros(k+1)
@@ -673,7 +686,7 @@ def Milne_Simpson(k):
         gamma[j] = -sum(gamma[:j]/snp.arange(j+1,1,-1))
         kappa[j] = 2 * gamma[j] - gamma[j-1]
         for i in range(0,j+1):
-            betaj[k-i] = (-1)**i*sympy.combinatorial.factorials.binomial(j,i)*kappa[j]
+            betaj[k-i] = (-1)**i*combinatorial.factorials.binomial(j,i)*kappa[j]
         beta = beta+betaj
     name = str(k)+'-step Milne-Simpson'
     return LinearMultistepMethod(alpha,beta,name=name,shortname='MS'+str(k))
@@ -698,7 +711,10 @@ def backward_difference_formula(k):
 
         **Reference**: :cite:`hairer1993` pp. 364-365
     """
-    import sympy
+    try:
+        import sympy.combinatorial as combinatorial
+    except ImportError:
+        import sympy.functions.combinatorial as combinatorial
 
     alpha=snp.zeros(k+1)
     beta=snp.zeros(k+1)
@@ -709,7 +725,7 @@ def backward_difference_formula(k):
     for j in range(1,k+1):
         gamma[j]= sympy.Rational(1,j)
         for i in range(0,j+1):
-            alphaj[k-i]=(-1)**i*sympy.combinatorial.factorials.binomial(j,i)*gamma[j]
+            alphaj[k-i]=(-1)**i*combinatorial.factorials.binomial(j,i)*gamma[j]
         alpha=alpha+alphaj
     name=str(k)+'-step BDF'
     return LinearMultistepMethod(alpha,beta,name=name,shortname='BDF'+str(k))
