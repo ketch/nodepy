@@ -1,6 +1,14 @@
 
 .. _changes:
 
+What's new in version 0.9
+=========================
+- Implicit extrapolation Runge-Kutta methods
+- Updates for compatibility with Sympy
+- Test for algebraic stability of RK methods
+- Conversion from Shu-Osher to Butcher form now also works for implicit methods
+- Add coefficients of two additional RK4(3) embedded pairs
+
 What's new in version 0.8
 =========================
 

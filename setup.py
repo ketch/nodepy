@@ -2,7 +2,7 @@ import setuptools
 from distutils.core import setup
 
 setup(name='nodepy',
-      version='0.8',
+      version='0.9',
       packages=['nodepy'],
       author=['David Ketcheson'],
       author_email='dketch@gmail.com',
