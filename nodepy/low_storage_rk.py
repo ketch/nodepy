@@ -690,7 +690,7 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
     return meth
 
 
-def load_2R(which):
+def load_2R(which='All'):
     """
         Loads 2R low-storage methods from the literature.
     """
