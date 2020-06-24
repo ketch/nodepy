@@ -154,6 +154,63 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
         self.alpha=alpha
         self.beta=beta
 
+#=====================================================
+# End of class TwoRRungeKuttaMethod
+#=====================================================
+
+
+#=====================================================
+class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
+#=====================================================
+    """ Class for 2R/3R/4R low-storage Runge-Kutta pairs.
+
+        These were developed by van der Houwen, Wray, and Kennedy et al.
+        Only 2R and 3R methods have been implemented so far.
+
+        References:
+            * :cite:`kennedy2000`
+            * :cite:`ketcheson2010`
+    """
+    def __init__(self,a,b,bhat=None,regs=2,
+            name='2R Runge-Kutta Method',description='',shortname='LSRK2R',order=(None,None)):
+        r"""
+            Initializes the 2R method by storing the
+            low-storage coefficients and computing the Butcher
+            array.
+
+            The coefficients should be specified as follows:
+
+                * For all methods, the weights `b` are used to
+                  fill in the appropriate entries in `A`.
+                * For 2R methods, *a* is a vector of length `s-1`
+                  containing the first subdiagonal of `A`
+                * For 3R methods, *a* is a `2\times s-1` array
+                  whose first row contains the first subdiagonal of `A`
+                  and whose second row contains the second subdiagonal
+                  of `A`.
+        """
+        m = len(b)
+        A = np.zeros([m,m])
+        for i in range(1,m):
+            if regs==2:
+                A[i,i-1]=a[i-1]
+                for j in range(i-1):
+                    A[i,j]=b[j]
+            elif regs==3:
+                A[i  ,i-1]=a[0,i-1]
+                for j in range(i-2):
+                    A[i,j]=b[j]
+                if i<m-1:
+                    A[i+1,i-1]=a[1,i-1]
+            elif regs==4:
+                #NEED TO FILL IN
+                pass
+        super(TwoRRungeKuttaPair,self).__init__(
+            A=A, b=b, bhat=bhat, name=name, shortname=shortname, description=description, order=order)
+
+        self.a = a
+        self.lstype = str(regs)+'R+_pair'
+
     def __step__(self,f,t,u,dt,errest=False,x=None,**kwargs):
         """
             Take a time step on the ODE u'=f(t,u).
@@ -169,8 +226,6 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
 
             OUTPUT:
                 unew -- approximate solution at time t[-1]+dt
-
-            TODO: Write a version of this for non-embedded methods
         """
         m=len(self); b=self.b; a=self.a
         S2=u[:]
@@ -207,7 +262,7 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
             raise Exception('Error: only 2R and 3R methods implemented so far!')
 
 #=====================================================
-# End of class TwoRRungeKuttaMethod
+# End of class TwoRRungeKuttaPair
 #=====================================================
 
 
@@ -697,7 +752,7 @@ def load_2R(which):
                      514528521746./ 5659431552419,
                      27030193851939./ 9429696342944,
                      -69544964788955./30262026368149])
-    RK[shortname] = TwoRRungeKuttaMethod(a, b, bhat, regs, fullname, description=description, shortname=shortname)
+    RK[shortname] = TwoRRungeKuttaPair(a, b, bhat, regs, fullname, description=description, shortname=shortname)
     #================================================
     fullname  = 'RK4(3)5[2R+]C'
     shortname = 'RK45[2R]C'
@@ -717,7 +772,7 @@ def load_2R(which):
                      -1563879915014./6823010717585,
                      606302364029./971179775848,
                      1097981568119./3980877426909])
-    RK[shortname] = TwoRRungeKuttaMethod(a, b, bhat, regs, fullname, description=description, shortname=shortname)
+    RK[shortname] = TwoRRungeKuttaPair(a, b, bhat, regs, fullname, description=description, shortname=shortname)
     #================================================
     fullname  = 'RK5(4)8[3R+]C'
     shortname = 'RK58[3R]C'
@@ -752,7 +807,7 @@ def load_2R(which):
                      768474111281./10081205039574,
                      3439095334143./10786306938509,
                      -3808726110015./23644487528593])
-    RK[shortname] = TwoRRungeKuttaMethod(a, b, bhat, regs, fullname, description=description, shortname=shortname)
+    RK[shortname] = TwoRRungeKuttaPair(a, b, bhat, regs, fullname, description=description, shortname=shortname)
     #================================================
     fullname  = 'RK5(4)9[2R+]C'
     shortname = 'RK59[2R]C'
@@ -784,7 +839,7 @@ def load_2R(which):
                      1454774750537./11112645198328,
                      772137014323./4386814405182,
                      277420604269./1857595682219])
-    RK[shortname] = TwoRRungeKuttaMethod(a, b, bhat, regs, fullname, description=description, shortname=shortname)
+    RK[shortname] = TwoRRungeKuttaPair(a, b, bhat, regs, fullname, description=description, shortname=shortname)
 
     if which=='All':
         return RK
