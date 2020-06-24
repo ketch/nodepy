@@ -36,8 +36,9 @@ At the moment, the following classes are implemented:
             step solution
     * 2S embedded pairs
     * 3S* embedded pairs
-    * 2R embedded pairs
-    * 3R embedded pairs
+    * 2N methods pairs
+    * 2R methods and embedded pairs
+    * 3R methods and embedded pairs
 
 **Examples**::
 
@@ -78,6 +79,59 @@ At the moment, the following classes are implemented:
 from __future__ import absolute_import
 from nodepy.runge_kutta_method import *
 from six.moves import range
+
+#=====================================================
+class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
+#=====================================================
+    """ Class for 2N low-storage Runge-Kutta methods.
+
+        These were developed by Williamson, and Carpenter & Kennedy.
+
+        References:
+            * :cite:`ketcheson2010`
+
+        Examples::
+
+        >>> from nodepy import lsrk
+        >>> erk = lsrk.load_2R("RK45[2N]")
+        >>> print(erk)
+        RK45[2N]
+        2N Method of Carpenter \& Kennedy (1994)
+         0     |
+         0.150 | 0.150
+         0.370 |-0.009  0.379
+         0.622 | 0.401 -0.602  0.823
+         0.958 |-0.190  0.814 -0.365  0.699
+        _______|___________________________________
+               | 0.006  0.345  0.029  0.468  0.153
+    """
+    def __init__(self, coef_a, coef_b,
+            name='2N Runge-Kutta Method',description='',shortname='LSRK2N',order=None):
+        r"""
+            Initializes the 2N method by storing the
+            low-storage coefficients and computing the Butcher
+            array.
+
+            The coefficients should be specified as follows:
+
+                * The low-storage coefficients are `coef_a` and `coef_b`.
+                * The Butcher and Shu-Osher coefficients are computed from the low-storage coefficients.
+        """
+        # compute alpha, beta
+        m = len(coef_a)
+        alpha = np.zeros([m+1, m])
+        beta  = np.zeros([m+1, m])
+        for i in range(2, m+1):
+            alpha[i, i-2] = - coef_b[i-1] * coef_a[i-1] / coef_b[i-2]
+            alpha[i, i-1] = 1 - alpha[i, i-2]
+        for i in range(1, m+1):
+            beta[i, i-1] = coef_b[i-1]
+        super(TwoNRungeKuttaMethod,self).__init__(
+            alpha=alpha, beta=beta, name=name, shortname=shortname, description=description, order=order)
+
+#=====================================================
+# End of class TwoNRungeKuttaMethod
+#=====================================================
 
 #=====================================================
 class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
@@ -694,7 +748,25 @@ def load_2R(which='All'):
     """
         Loads 2R low-storage methods from the literature.
     """
+    from sympy import Rational
+
     RK = {}
+
+    #================================================
+    fullname  = 'RK45[2N]'
+    shortname = 'RK45[2N]'
+    description = '2N Method of Carpenter \& Kennedy (1994)'
+    coef_a = np.array([Rational(              0 ,              1 ),
+                       Rational(  -567301805773 ,  1357537059087 ),
+                       Rational( -2404267990393 ,  2016746695238 ),
+                       Rational( -3550918686646 ,  2091501179385 ),
+                       Rational( -1275806237668 ,   842570457699 )])
+    coef_b = np.array([Rational(  1432997174477 ,  9575080441755 ),
+                       Rational(  5161836677717 , 13612068292357 ),
+                       Rational(  1720146321549 ,  2090206949498 ),
+                       Rational(  3134564353537 ,  4481467310338 ),
+                       Rational(  2277821191437 , 14882151754819 )])
+    RK[shortname] = TwoNRungeKuttaMethod(coef_a, coef_b, fullname, description=description, shortname=shortname)
 
     #================================================
     fullname  = 'DDAS4()7[2R]'
