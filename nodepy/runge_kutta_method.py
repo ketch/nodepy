@@ -23,7 +23,7 @@ u"""
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys()) # doctest:+ELLIPSIS
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun22', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -3429,7 +3429,7 @@ def RKC1(m,epsilon=0):
     one = sympy.Rational(1)
 
     x=sympy.Symbol('x')
-    Tm=sympy.special.polynomials.chebyshevt_poly(m,x)
+    Tm=sympy.polys.orthopolys.chebyshevt_poly(m,x)
 
     w0=one+sympy.Rational(epsilon,m**2)
     w1=sympy.Rational(Tm.subs(x,w0),Tm.diff().subs(x,w0))
@@ -3451,7 +3451,7 @@ def RKC1(m,epsilon=0):
     beta[1,0]=mut[1]
 
     for j in range(2,m+1):
-        Tj=sympy.special.polynomials.chebyshevt_poly(j,x)
+        Tj=sympy.polys.orthopolys.chebyshevt_poly(j,x)
         b[j] = one/Tj.subs(x,w0)
         a[j] = one-b[j]*Tj.subs(x,w0)
         mu[j]= 2*b[j]*w0/b[j-1]
@@ -3500,7 +3500,7 @@ def RKC2(m,epsilon=0):
     one = sympy.Rational(1)
 
     x=sympy.Symbol('x')
-    Tm=sympy.special.polynomials.chebyshevt_poly(m,x)
+    Tm=sympy.polys.orthopolys.chebyshevt_poly(m,x)
 
     w0=one+sympy.Rational(epsilon,m**2)
     w1=sympy.Rational(Tm.diff().subs(x,w0),Tm.diff(x,2).subs(x,w0))
@@ -3515,7 +3515,7 @@ def RKC2(m,epsilon=0):
     mut=snp.zeros(m+1)
     gamt=snp.zeros(m+1)
 
-    T2 = sympy.special.polynomials.chebyshevt_poly(2,x)
+    T2 = sympy.polys.orthopolys.chebyshevt_poly(2,x)
     b[0]=sympy.Rational(T2.diff(x,2).subs(x,w0),(T2.diff().subs(x,w0))**2)
 
     b[1]=one/w0
@@ -3524,7 +3524,7 @@ def RKC2(m,epsilon=0):
     beta[1,0]=mut[1]
 
     for j in range(2,m+1):
-        Tj=sympy.special.polynomials.chebyshevt_poly(j,x)
+        Tj=sympy.polys.orthopolys.chebyshevt_poly(j,x)
         b[j] = sympy.Rational(Tj.diff(x,2).subs(x,w0),(Tj.diff().subs(x,w0))**2)
 
         a[j] = one-b[j]*Tj.subs(x,w0)
