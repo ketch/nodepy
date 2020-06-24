@@ -23,7 +23,7 @@ u"""
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys()) # doctest:+ELLIPSIS
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2749,10 +2749,11 @@ def loadRKM(which='All'):
     #================================================
     A=np.array([[0,0],[one,0]])
     b=np.array([half,half])
-    RK['SSP22']=ExplicitRungeKuttaMethod(A,b,name='SSPRK 22',
-                description=
-                "The optimal 2-stage, 2nd order SSP Runge-Kutta method",shortname='SSPRK22')
-
+    ssp22 = ExplicitRungeKuttaMethod(A,b,name='SSPRK 22',
+            description=
+            "The optimal 2-stage, 2nd order SSP Runge-Kutta method, also known as Heun's 2nd order method",shortname='SSPRK22')
+    RK['SSP22']  = ssp22
+    RK['Heun22'] = ssp22
     #================================================
     A=np.array([[0,0,0],[one,0,0],[one/4,one/4,0]])
     b=np.array([one/6,one/6,2*one/3])
@@ -3819,7 +3820,7 @@ def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
             ratio = Rational(N[j],N[j-1])
             alpha[nrs+j-1,J[j]-1] = 1 + 1/(ratio**an_exp - 1)
             alpha[nrs+j-1,J[j-1]-1] = - 1/(ratio**an_exp - 1)
-    
+
     #Now form all the rest, up to T_ss:
     nsd = nrs-1+k # Number of stages done
     for m in range(2,k-order_reducer):
