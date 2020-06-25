@@ -43,7 +43,7 @@ At the moment, the following classes are implemented:
 **Examples**::
 
     >>> from nodepy import lsrk, ivp
-    >>> myrk = lsrk.load_2R('DDAS47')
+    >>> myrk = lsrk.load_low_storage('DDAS47')
     >>> print(myrk)
     DDAS4()7[2R]
     2R Method of Tselios \& Simos (2007)
@@ -57,7 +57,7 @@ At the moment, the following classes are implemented:
     _______|_________________________________________________
            | 0.094  0.150  0.285 -0.122  0.061  0.346  0.187
 
-    >>> rk58 = lsrk.load_2R('RK58[3R]C')
+    >>> rk58 = lsrk.load_low_storage('RK58[3R]C')
     >>> rk58.name
     'RK5(4)8[3R+]C'
     >>> rk58.order()
@@ -93,7 +93,7 @@ class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
         Examples::
 
         >>> from nodepy import lsrk
-        >>> erk = lsrk.load_2R("RK45[2N]")
+        >>> erk = lsrk.load_low_storage("RK45[2N]")
         >>> print(erk)
         RK45[2N]
         2N Method of Carpenter \& Kennedy (1994)
@@ -744,9 +744,9 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
     return meth
 
 
-def load_2R(which='All'):
+def load_low_storage(which='All'):
     """
-        Loads 2R low-storage methods from the literature.
+        Loads low-storage methods from the literature.
     """
     from sympy import Rational
 
