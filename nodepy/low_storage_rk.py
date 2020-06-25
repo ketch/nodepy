@@ -846,6 +846,30 @@ def load_2R(which='All'):
                      1097981568119./3980877426909])
     RK[shortname] = TwoRRungeKuttaPair(a, b, bhat, regs, fullname, description=description, shortname=shortname)
     #================================================
+    fullname  = 'RK4(3)5[3R+]C'
+    shortname = 'RK45[3R]C'
+    description = 'A 3R Method of Kennedy, Carpenter, Lewis (2000)'
+    regs = 3
+    a = np.array([[Rational(  2365592473904 ,  8146167614645 ),
+                   Rational(  4278267785271 ,  6823155464066 ),
+                   Rational(  2789585899612 ,  8986505720531 ),
+                   Rational( 15310836689591 , 24358012670437 )],
+                  [Rational(  -722262345248 , 10870640012513 ),
+                   Rational(  1365858020701 ,  8494387045469 ),
+                   Rational(     3819021186 ,  2763618202291 ),
+                   Rational(              0 ,              1 )]])
+    b = np.array([Rational(   846876320697 ,  6523801458457 ),
+                  Rational(  3032295699695 , 12397907741132 ),
+                  Rational(   612618101729 ,  6534652265123 ),
+                  Rational(  1155491934595 ,  2954287928812 ),
+                  Rational(   707644755468 ,  5028292464395 )])
+    bhat = np.array([Rational(  1296459667021 ,  9516889378644 ),
+                     Rational(  2599004989233 , 11990680747819 ),
+                     Rational(  1882083615375 ,  8481715831096 ),
+                     Rational(  1577862909606 ,  5567358792761 ),
+                     Rational(   328334985361 ,  2316973589007 )])
+    RK[shortname] = TwoRRungeKuttaPair(a, b, bhat, regs, fullname, description=description, shortname=shortname)
+    #================================================
     fullname  = 'RK5(4)8[3R+]C'
     shortname = 'RK58[3R]C'
     description = 'A 3R Method of Kennedy, Carpenter, Lewis (2000)'
