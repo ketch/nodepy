@@ -178,9 +178,9 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
                     self.A[i,j]=b[j]
                 if i<m-1:
                     self.A[i+1,i-1]=a[1,i-1]
-            elif regs==4:
+            else:
                 #NEED TO FILL IN
-                pass
+                raise ValueError("Schemes with %d registers are not implemented yet."%regs)
         self.c=np.sum(self.A,1)
         if bhat is not None:
             self.bhat=bhat
