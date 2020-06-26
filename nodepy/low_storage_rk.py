@@ -905,8 +905,8 @@ def load_low_storage(which='All'):
                      -3808726110015./23644487528593])
     RK[shortname] = TwoRRungeKuttaPair(a, b, bhat, regs, fullname, description=description, shortname=shortname)
     #================================================
-    fullname  = 'RK5(4)9[2R+]C'
-    shortname = 'RK59[2R]C'
+    fullname  = 'RK5(4)9[2R+]S'
+    shortname = 'RK59[2R]S'
     description = 'A 2R Method of Kennedy, Carpenter, Lewis (2000)'
     regs = 2
     a = np.array([1107026461565./5417078080134,
