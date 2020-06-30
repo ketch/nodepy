@@ -2603,7 +2603,7 @@ def loadRKM(which='All'):
           * 'CK5':        Cash-Karp 5(4)6 :cite:`cash1990`
           * 'BS3':        Bogacki-Shampine 3(2)4 pair :cite:`bogacki1989`
           * 'BS5':        Bogacki-Shampine 5(4)8 pair :cite:`bogacki1996`
-          * 'SS3':        Sharp-Smart 3(2)4 pair
+          * 'SS3':        Sharp-Smart 3(2)4 pair :cite:`sharp1993explicit`
           * 'SSP75':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP85':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP95':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
