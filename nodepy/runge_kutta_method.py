@@ -23,7 +23,7 @@ u"""
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys()) # doctest:+ELLIPSIS
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun22', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun22', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SS3', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2603,6 +2603,7 @@ def loadRKM(which='All'):
           * 'CK5':        Cash-Karp 5(4)6 :cite:`cash1990`
           * 'BS3':        Bogacki-Shampine 3(2)4 pair :cite:`bogacki1989`
           * 'BS5':        Bogacki-Shampine 5(4)8 pair :cite:`bogacki1996`
+          * 'SS3':        Sharp-Smart 3(2)4 pair
           * 'SSP75':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP85':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP95':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
@@ -2998,6 +2999,14 @@ def loadRKM(which='All'):
     b=A[-1,:]
     bhat=np.array([2479*one/34992,0*one,123*one/416,612941*one/3411720,43*one/1440,2272*one/6561,79937*one/1113912,3293*one/556956])
     RK['BS5']=ExplicitRungeKuttaPair(A,b,bhat,name='Bogacki-Shampine RK5(4)8',shortname='BS5')
+    #================================================
+    A=np.array([[0, 0, 0, 0],
+                [1*one/4, 0, 0, 0],
+                [-387*one/625, 762*one/625, 0, 0],
+                [one/5, one/5, 3*one/5, 0]])
+    b=np.array([one/10, 2*one/5, one/4, one/4])
+    bhat=np.array([-one/90, 8*one/15, 5*one/18, one/5])
+    RK['SS3']=ExplicitRungeKuttaPair(A,b,bhat,name='Sharp-Smart RK3(2)4',shortname='SS3')
      #================================================
     A=np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0],
                 [1*one/18,0,0,0,0,0,0,0,0,0,0,0,0],
