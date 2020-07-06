@@ -2789,7 +2789,9 @@ def loadRKM(which='All'):
     alpha[m,4]=9*one/25
     alpha=alpha[:,:m]
     beta=alpha/r
-    RK['SSP104']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
+    # embedded method b_3 of Conde, Fekete, Shadid (https://arxiv.org/pdf/1806.08693.pdf)
+    bhat = np.array([0, 2*one/9, 0, 0, 5*one/18, one/3, 0, 0, 0, one/6])
+    RK['SSP104']=ExplicitRungeKuttaPair(alpha=alpha,beta=beta,bhat=bhat,
                     name='SSPRK(10,4)',description=
                     "The optimal ten-stage, fourth order SSP Runge-Kutta method",shortname='SSPRK(10,4)')
     #================================================
