@@ -23,7 +23,7 @@ u"""
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys()) # doctest:+ELLIPSIS
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun22', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SS3', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun22', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SS3', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP43', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2582,11 +2582,12 @@ def loadRKM(which='All'):
           * 'MTE22':      Minimal truncation error 2-stage 2nd-order
           * 'Mid22':      Explicit midpoint 2-stage 2nd-order
           * 'SSP33':      Optimal 3rd-order SSP method of Shu & Osher :cite:`shu1988`
+          * 'SSP43':      Optimal 3rd-order SSP method of Kraaijevanger :cite:`kraaijevanger1991` with embedded method of :cite:`conde2018embedded`
           * 'Heun33':     Third-order method of Heun :cite:`heun1900`
           * 'SSP22star':  Optimal 2nd-order downwind SSP
           * 'NSSP32':     :cite:`wang2007`
           * 'NSSP33':     :cite:`wang2007`
-          * 'SSP104':     Optimal 10-stage, 4th-order SSP method :cite:`ketcheson2008`
+          * 'SSP104':     Optimal 10-stage, 4th-order SSP method :cite:`ketcheson2008` with embedded method of :cite:`conde2018embedded`
           * 'Merson43'    Merson 4(3) pair :cite:`hairer1993` pg. 167
           * 'DP5':        Dormand-Prince 5th-order :cite:`dormand1980`
           * 'PD8':        Prince-Dormand 8th-order and 7th-order pair :cite:`prince1981`
@@ -2780,6 +2781,19 @@ def loadRKM(which='All'):
     RK['NSSP33']=ExplicitRungeKuttaMethod(A,b,name='non-SSPRK 33',
                 description= "Wang and Spiteri NSSP33",shortname='NSSPRK33')
 
+    #================================================
+    # The SSP(4,3) method of Kraaijevanger with maximal SSP coefficient and
+    # embedded method of Conde, Fekete, Shadid (https://arxiv.org/pdf/1806.08693.pdf)
+    A = np.array([[0, 0, 0, 0],
+                  [one/2, 0, 0, 0],
+                  [one/2, one/2, 0, 0],
+                  [one/6, one/6, one/6, 0]])
+    b = np.array([one/6, one/6, one/6, one/2])
+    bhat = np.array([one/4, one/4, one/4, one/4])
+    RK['SSP43'] = ExplicitRungeKuttaPair(A=A, b=b, bhat=bhat,
+                    name='SSPRK(4,3)',
+                    description="The optimal four-stage, third order SSP Runge-Kutta method",
+                    shortname='SSPRK(4,3)')
     #================================================
     m=10
     r=6*one
