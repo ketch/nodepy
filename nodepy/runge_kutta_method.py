@@ -2581,7 +2581,7 @@ def loadRKM(which='All'):
           * 'SSP22':      Trapezoidal rule 2nd-order :cite:`shu1988`
           * 'MTE22':      Minimal truncation error 2-stage 2nd-order
           * 'Mid22':      Explicit midpoint 2-stage 2nd-order
-          * 'SSP33':      Optimal 3rd-order SSP method of Shu & Osher :cite:`shu1988`
+          * 'SSP33':      Optimal 3rd-order SSP method of Shu & Osher :cite:`shu1988` with embedded method of :cite:`conde2018embedded`
           * 'SSP43':      Optimal 3rd-order SSP method of Kraaijevanger :cite:`kraaijevanger1991` with embedded method of :cite:`conde2018embedded`
           * 'Heun33':     Third-order method of Heun :cite:`heun1900`
           * 'SSP22star':  Optimal 2nd-order downwind SSP
@@ -2759,7 +2759,8 @@ def loadRKM(which='All'):
     #================================================
     A=np.array([[0,0,0],[one,0,0],[one/4,one/4,0]])
     b=np.array([one/6,one/6,2*one/3])
-    RK['SSP33']=ExplicitRungeKuttaMethod(A,b,name='SSPRK 33',
+    bhat = np.array([0.291485418878409, 0.291485418878409, 0.417029162243181])
+    RK['SSP33']=ExplicitRungeKuttaPair(A,b,bhat=bhat,name='SSPRK 33',
                 description=
                 "The optimal 3-stage, 3rd order SSP Runge-Kutta method",shortname='SSPRK33')
 
