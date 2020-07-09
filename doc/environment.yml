@@ -1,0 +1,11 @@
+name: nodepy
+
+channels:
+    - anaconda
+
+dependencies:
+    - python==3.7
+    - pip:
+        - numpy
+        - matplotlib
+        - sphinxcontrib-bibtex
