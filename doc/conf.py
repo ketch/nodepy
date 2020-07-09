@@ -59,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'NodePy'
-copyright = u'2009-2019, David Ketcheson'
+copyright = u'2009-2020, David Ketcheson'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -92,18 +92,18 @@ class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
 
         Examples::
 
-        >>> from nodepy import lsrk
-        >>> erk = lsrk.load_low_storage("RK45[2N]")
-        >>> print(erk)
-        RK45[2N]
-        2N Method of Carpenter \& Kennedy (1994)
-         0     |
-         0.150 | 0.150
-         0.370 |-0.009  0.379
-         0.622 | 0.401 -0.602  0.823
-         0.958 |-0.190  0.814 -0.365  0.699
-        _______|___________________________________
-               | 0.006  0.345  0.029  0.468  0.153
+            >>> from nodepy import lsrk
+            >>> erk = lsrk.load_low_storage("RK45[2N]")
+            >>> print(erk)
+            RK45[2N]
+            2N Method of Carpenter \& Kennedy (1994)
+             0     |
+             0.150 | 0.150
+             0.370 |-0.009  0.379
+             0.622 | 0.401 -0.602  0.823
+             0.958 |-0.190  0.814 -0.365  0.699
+            _______|___________________________________
+                   | 0.006  0.345  0.029  0.468  0.153
     """
     def __init__(self, coef_a, coef_b,
             name='2N Runge-Kutta Method',description='',shortname='LSRK2N',order=None):
