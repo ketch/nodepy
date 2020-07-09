@@ -1,5 +1,5 @@
 ---
-title: 'NodePy: A package for the analysis of numerical ODE solvers'
+title: '`NodePy`: A package for the analysis of numerical ODE solvers'
 tags:
   - Python
   - numerical analysis
@@ -20,7 +20,7 @@ authors:
     orcid: 0000-0003-3517-8557
     affiliation: 2
 affiliations:
- - name: King Abdullah University of Science & Technology
+ - name: King Abdullah University of Science and Technology
    index: 1
  - name: Eötvös Loránd Tudományegyetem
    index: 2
@@ -30,13 +30,13 @@ bibliography: paper.bib
 
 # Summary
 
-Ordinary differential equations are used to model a vast range of physical
+Ordinary differential equations (ODEs) are used to model a vast range of physical
 and other phenomena.  They also arise in the discretization of partial differential
 equations.  In most cases, solutions of differential equations must be approximated
 by numerical methods.  The study of the properties of numerical methods for
 ODEs comprises an important and large body of knowledge.  `NodePy` is a software
 package for designing and studying the properties of numerical ODE solvers.
-For the most important classes of methods, `Nodepy` can automatically assess
+For the most important classes of methods, `NodePy` can automatically assess
 their stability, accuracy, and many other properties.
 
 # Statement of need 
@@ -49,7 +49,7 @@ algorithms whose purpose is to compute properties of other algorithms.
 It also serves as a reference, providing precise definitions of many of the
 algorithms themselves.
 
-`Nodepy` is written entirely in Python and provides software implementations
+`NodePy` is written entirely in Python and provides software implementations
 of many of the theoretical ideas contained for instance in reference texts
 on numerical analysis of ODEs [@hairer1993;@Hairer:ODEs2;@Hairer:ODEs2].  It also contains implementations of
 many theoretical ideas from the numerical analysis of literature.
@@ -62,9 +62,11 @@ methods they may develop.
 `NodePy` development has been motivated largely by research needs and
 it has been used in a number of papers (including some written by non-developers;
 e.g. [@jin2019higher;@horvathembedded]) and also as a teaching tool for
-graduate-level numerical analysis courses.  It relies on both Sympy and Numpy
+graduate-level numerical analysis courses.  It relies on both SymPy [@meurer2017sympy] 
+and NumPy [@oliphant2006guide;@walt2011numpy]
 in order to provide either exact or floating-point results based on the
-nature of the inputs provided.
+nature of the inputs provided.  It makes use of Matplotlib [@hunter2007matplotlib] for all
+graphical output.
 
 # Features
 
@@ -112,14 +114,14 @@ methods.
 
 # Related research and software
 
-NodePy development has proceeded in close connection to the RK-Opt package.
-Whereas NodePy is focused in the analysis of numerical methods, RK-Opt is focused 
+`NodePy` development has proceeded in close connection to the RK-Opt package.
+Whereas `NodePy` is focused in the analysis of numerical methods, RK-Opt is focused 
 more on their design through the use of numerical optimization to search
 for optimal coefficients tailored to specific desired properties.
 A common workflow involves generating new methods with RK-Opt and then studying
-their properties in more detail using NodePy.
+their properties in more detail using `NodePy`.
 
-Some of the research projects that have made use of NodePy (most of which have led
+Some of the research projects that have made use of `NodePy` (most of which have led
 to its further development) include development of:
 
  - Strong stability preserving (SSP) Runge-Kutta methods 
@@ -133,14 +135,14 @@ to its further development) include development of:
  - Internal stability theory for Runge-Kutta methods [@2014_internal_stability]
  - Embedded pairs for Runge-Kutta methods [@horvathembedded]
  
-Additional recent applications include [@norton2015structure;@jin2019higher].
+Additional recent applications include [@norton2015structure;@jin2019higher;@ranocha2019some].
 As can be seen from this list, applications have mostly stemmed from the
 work of the main developer's research group, but have recently begun to expand
 beyond that.
 
 # Acknowledgements
 
-Much of the initial NodePy development was performed by D. Ketcheson while
+Much of the initial `NodePy` development was performed by D. Ketcheson while
 he was supported by a DOE Computational Science Graduate Fellowship.  Development
 has also been supported by funding from King Abdullah University of Science and Technology.
 
