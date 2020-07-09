@@ -10,18 +10,18 @@ authors:
     orcid: 0000-0002-1212-126X
     affiliation: 1
   - name: Hendrik Ranocha
-    orcid: 
+    orcid: 0000-0002-3456-2277
     affiliation: 1
   - name: Matteo Parsani
-    orcid: 
+    orcid: 0000-0001-7300-1280
     affiliation: 1
   - name: Yiannis Hadjimichael
-    orcid: 
+    orcid: 0000-0003-3517-8557
     affiliation: 2
 affiliations:
  - name: King Abdullah University of Science & Technology
    index: 1
- - name: ELTE
+ - name: Eötvös Loránd Tudományegyetem
    index: 2
 date: 9 July 2020
 bibliography: paper.bib
