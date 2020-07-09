@@ -31,6 +31,9 @@ Documentation can be found online at
 
 http://nodepy.readthedocs.org/en/latest/
 
+To get started, you can also have a look at the `examples` folder,
+beginning with an [introduction as Jupyter notebook](examples/Introduction%20to%20NodePy.ipynb).
+
 The development version can be obtained from
 
 http://github.com/ketch/nodepy
@@ -46,15 +49,15 @@ Please insert the version number that you used (currently 0.9).
 
 # License
 
-NodePy is distributed under the terms of the modified Berkeley Software
-Distribution (BSD) license.
+NodePy is distributed under the terms of the [modified Berkeley Software
+Distribution (BSD) license](LICENSE.txt).
 
 
 # Funding
 
 NodePy development has been supported by:
 
-    * A U.S. Dept. of Energy Computational Science Graduate Fellowship
-    * Grants from King Abdullah University of Science & Technology
+* A U.S. Dept. of Energy Computational Science Graduate Fellowship
+* Grants from King Abdullah University of Science & Technology
 
 
