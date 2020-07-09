@@ -34,7 +34,9 @@ Ordinary differential equations (ODEs) are used to model a vast range of physica
 and other phenomena.  They also arise in the discretization of partial differential
 equations.  In most cases, solutions of differential equations must be approximated
 by numerical methods.  The study of the properties of numerical methods for
-ODEs comprises an important and large body of knowledge.  `NodePy` is a software
+ODEs comprises an important and large body of knowledge.  `NodePy` 
+(available from https://github.com/ketch/nodepy, with documentation at https://nodepy.readthedocs.io/en/latest/)
+is a software
 package for designing and studying the properties of numerical ODE solvers.
 For the most important classes of methods, `NodePy` can automatically assess
 their stability, accuracy, and many other properties.
@@ -112,9 +114,17 @@ PDE semi-discretizations.  Also included is a library for dealing with rooted
 trees, which are a class of graphs that play a key role in the theory of Runge-Kutta
 methods.
 
+`NodePy` is documented primarily through the Python docstrings for each method,
+most of which also contain examples that also serve as tests ("doctests").
+These tests are executed automatically for all new commits and pull requests
+using the Travis continuous integration service.  Some higher-level
+documentation is also available at https://nodepy.readthedocs.io/en/latest/,
+but it is not intended to be comprehensive.
+
 # Related research and software
 
-`NodePy` development has proceeded in close connection to the RK-Opt package.
+`NodePy` development has proceeded in close connection to the RK-Opt package
+(https://github.com/ketch/RK-Opt).
 Whereas `NodePy` is focused in the analysis of numerical methods, RK-Opt is focused 
 more on their design through the use of numerical optimization to search
 for optimal coefficients tailored to specific desired properties.
