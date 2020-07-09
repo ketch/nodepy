@@ -34,14 +34,14 @@ Ordinary differential equations (ODEs) are used to model a vast range of physica
 and other phenomena.  They also arise in the discretization of partial differential
 equations.  In most cases, solutions of differential equations must be approximated
 by numerical methods.  The study of the properties of numerical methods for
-ODEs comprises an important and large body of knowledge.  `NodePy` 
+ODEs comprises an important and large body of knowledge.  `NodePy`
 (available from https://github.com/ketch/nodepy, with documentation at https://nodepy.readthedocs.io/en/latest/)
 is a software
 package for designing and studying the properties of numerical ODE solvers.
 For the most important classes of methods, `NodePy` can automatically assess
 their stability, accuracy, and many other properties.
 
-# Statement of need 
+# Statement of need
 
 There are many software packages that *implement* ODE solvers with the purpose
 of efficiently providing numerical solutions; in contrast, the purpose of
@@ -64,7 +64,7 @@ methods they may develop.
 `NodePy` development has been motivated largely by research needs and
 it has been used in a number of papers (including some written by non-developers;
 e.g. [@jin2019higher;@horvathembedded]) and also as a teaching tool for
-graduate-level numerical analysis courses.  It relies on both SymPy [@meurer2017sympy] 
+graduate-level numerical analysis courses.  It relies on both SymPy [@meurer2017sympy]
 and NumPy [@oliphant2006guide;@walt2011numpy]
 in order to provide either exact or floating-point results based on the
 nature of the inputs provided.  It makes use of Matplotlib [@hunter2007matplotlib] for all
@@ -76,7 +76,7 @@ graphical output.
 of numerical methods:
 
  - Runge-Kutta methods
-   - Explicit and Implicit
+   - Explicit and implicit
    - Embedded pairs
    - Classes of low-storage methods
    - Dense output formulas
@@ -98,7 +98,7 @@ representations of many specific methods, including:
 
 For all of these methods, `NodePy` provides methods and functions to compute many
 of their properties -- too many to list here.  The theory on which most of these
-properties are based is outlined in standard references 
+properties are based is outlined in standard references
 [@hairer1993;@Hairer:ODEs2;@Hairer:ODEs2].  Many other properties are based on
 recent research; usually the method docstring includes a reference to the relevant
 paper.  Implementations of the methods themselves are also included as a convenience,
@@ -125,7 +125,7 @@ but it is not intended to be comprehensive.
 
 `NodePy` development has proceeded in close connection to the RK-Opt package
 (https://github.com/ketch/RK-Opt).
-Whereas `NodePy` is focused in the analysis of numerical methods, RK-Opt is focused 
+Whereas `NodePy` is focused in the analysis of numerical methods, RK-Opt is focused
 more on their design through the use of numerical optimization to search
 for optimal coefficients tailored to specific desired properties.
 A common workflow involves generating new methods with RK-Opt and then studying
@@ -134,7 +134,7 @@ their properties in more detail using `NodePy`.
 Some of the research projects that have made use of `NodePy` (most of which have led
 to its further development) include development of:
 
- - Strong stability preserving (SSP) Runge-Kutta methods 
+ - Strong stability preserving (SSP) Runge-Kutta methods
    [@2008_explicit_ssp;@2009_implicit_ssp;@2013_effective_order_ssp]
  - SSP general linear methods [@2011_tsrk;@2017_msrk]
  - Low-storage Runge-Kutta methods [@2010_LSRK]
@@ -144,8 +144,8 @@ to its further development) include development of:
  - Dense output formulas for Runge-Kutta methods [@2017_dense]
  - Internal stability theory for Runge-Kutta methods [@2014_internal_stability]
  - Embedded pairs for Runge-Kutta methods [@horvathembedded,@conde2018embedded]
- 
-Additional recent applications include [@norton2015structure;@jin2019higher;@ranocha2019some;@2019_energyRRK].
+
+Additional recent applications include [@norton2015structure;@jin2019higher;@ranocha2019some;@2019_energyRRK;nusslein2020positivity].
 As an example of a completely different kind of use,
 in the fluid dynamics code SpectralDNS, `NodePy` is used simply for convenience as a way to enable
 usage of a range of ODE solvers; here `NodePy` is used only for
