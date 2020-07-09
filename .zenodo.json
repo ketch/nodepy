@@ -1,0 +1,29 @@
+{
+    "description": "NodePy: Analysis of initial value ODE solvers",
+    "license": "bsd-license",
+    "title": "ketch/nodepy",
+    "upload_type": "software",
+    "creators": [
+        {
+	    "affiliation": "King Abdullah University of Science and Technology",
+            "name": "David I. Ketcheson",
+            "orcid": "0000-0002-1212-126X"
+        },
+        {
+            "affiliation": "King Abdullah University of Science and Technology",
+            "name": "Hendrik Ranocha",
+            "orcid": "0000-0002-3456-2277"
+        },
+        {
+            "affiliation": "King Abdullah University of Science and Technology",
+            "name": "Matteo Parsani",
+            "orcid": "0000-0001-7300-1280"
+        },
+        {
+            "affiliation": "Eötvös Loránd Tudományegyetem",
+            "name": "Yiannis Hadjimichael",
+            "orcid": "0000-0003-3517-8557"
+        }
+    ],
+    "access_right": "open"
+}
