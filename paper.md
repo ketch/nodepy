@@ -1,3 +1,4 @@
+---
 title: 'NodePy: A package for the analysis of numerical ODE solvers'
 tags:
   - Python
@@ -25,7 +26,6 @@ affiliations:
    index: 2
 date: 9 July 2020
 bibliography: paper.bib
-
 ---
 
 # Summary
@@ -51,7 +51,7 @@ algorithms themselves.
 
 `Nodepy` is written entirely in Python and provides software implementations
 of many of the theoretical ideas contained for instance in reference texts
-on numerical analysis of ODEs [@].  It also contains implementations of
+on numerical analysis of ODEs [@hairer1993;@Hairer:ODEs2;@Hairer:ODEs2].  It also contains implementations of
 many theoretical ideas from the numerical analysis of literature.
 The implementation focuses on the two most important classes of methods;
 namely, Runge-Kutta and linear multistep methods, but includes some
@@ -59,18 +59,9 @@ more exotic classes.  `NodePy` provides a means for numerical analysts to
 quickly and easily determine the properties of existing methods or of new
 methods they may develop.
 
-
-#Nevertheless, the
-#object-oriented framework is designed with other classes in mind
-#and already includes (for instance) two-step Runge-Kutta methods.
-#For instance, it can generate and check order conditions for Runge-Kutta
-#methods of up to order 14; generate extrapolation methods based on a range
-#of building-block schemes, up to any order of accuracy; and analyze the internal
-#stability of Runge-Kutta methods.
-
 `NodePy` development has been motivated largely by research needs and
 it has been used in a number of papers (including some written by non-developers;
-e.g. [@jin2019higher,@horvathembedded]) and also as a teaching tool for
+e.g. [@jin2019higher;@horvathembedded]) and also as a teaching tool for
 graduate-level numerical analysis courses.  It relies on both Sympy and Numpy
 in order to provide either exact or floating-point results based on the
 nature of the inputs provided.
@@ -104,7 +95,7 @@ representations of many specific methods, including:
 For all of these methods, `NodePy` provides methods and functions to compute many
 of their properties -- too many to list here.  The theory on which most of these
 properties are based is outlined in standard references 
-[@hairer1993,@Hairer:ODEs2,@Hairer:ODEs2].  Many other properties are based on
+[@hairer1993;@Hairer:ODEs2;@Hairer:ODEs2].  Many other properties are based on
 recent research; usually the method docstring includes a reference to the relevant
 paper.  Implementations of the methods themselves are also included as a convenience,
 though they are not the primary purpose and are not expected to be efficient since
@@ -132,17 +123,17 @@ Some of the research projects that have made use of NodePy (most of which have l
 to its further development) include development of:
 
  - Strong stability preserving (SSP) Runge-Kutta methods 
-   [@2008_explicit_ssp, @2009_implicit_ssp, @2013_effective_order_ssp]
- - SSP general linear methods [@2011_tsrk, @2017_msrk]
+   [@2008_explicit_ssp;@2009_implicit_ssp;@2013_effective_order_ssp]
+ - SSP general linear methods [@2011_tsrk;@2017_msrk]
  - Low-storage Runge-Kutta methods [@2010_LSRK]
- - Additive and downwind SSP Runge-Kutta methods [@2011_dwssp, @2018_perturbations]
+ - Additive and downwind SSP Runge-Kutta methods [@2011_dwssp;@2018_perturbations]
  - High-order parallel extrapolation and deferred correction methods [@2014_internal_stability]
- - SSP linear multistep methods [@2016_ssp_lmm_vss, @2018_sspalmm]
+ - SSP linear multistep methods [@2016_ssp_lmm_vss;@2018_sspalmm]
  - Dense output formulas for Runge-Kutta methods [@2017_dense]
  - Internal stability theory for Runge-Kutta methods [@2014_internal_stability]
  - Embedded pairs for Runge-Kutta methods [@horvathembedded]
  
-Additional recent applications include [@norton2015structure, @jin2019higher].
+Additional recent applications include [@norton2015structure;@jin2019higher].
 As can be seen from this list, applications have mostly stemmed from the
 work of the main developer's research group, but have recently begun to expand
 beyond that.
