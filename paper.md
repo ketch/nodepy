@@ -53,7 +53,7 @@ algorithms themselves.
 
 `NodePy` is written entirely in Python and provides software implementations
 of many of the theoretical ideas contained for instance in reference texts
-on numerical analysis of ODEs [@hairer1993;@Hairer:ODEs2;@Hairer:ODEs2].  It also contains implementations of
+on numerical analysis of ODEs [@hairer1993;@Hairer:ODEs2].  It also contains implementations of
 many theoretical ideas from the numerical analysis of literature.
 The implementation focuses on the two most important classes of methods;
 namely, Runge-Kutta and linear multistep methods, but includes some
@@ -99,7 +99,7 @@ representations of many specific methods, including:
 For all of these methods, `NodePy` provides methods and functions to compute many
 of their properties -- too many to list here.  The theory on which most of these
 properties are based is outlined in standard references
-[@hairer1993;@Hairer:ODEs2;@Hairer:ODEs2].  Many other properties are based on
+[@hairer1993;@Hairer:ODEs2].  Many other properties are based on
 recent research; usually the method docstring includes a reference to the relevant
 paper.  Implementations of the methods themselves are also included as a convenience,
 though they are not the primary purpose and are not expected to be efficient since
