@@ -133,9 +133,14 @@ to its further development) include development of:
  - SSP linear multistep methods [@2016_ssp_lmm_vss;@2018_sspalmm]
  - Dense output formulas for Runge-Kutta methods [@2017_dense]
  - Internal stability theory for Runge-Kutta methods [@2014_internal_stability]
- - Embedded pairs for Runge-Kutta methods [@horvathembedded]
+ - Embedded pairs for Runge-Kutta methods [@horvathembedded,@conde2018embedded]
  
-Additional recent applications include [@norton2015structure;@jin2019higher;@ranocha2019some].
+Additional recent applications include [@norton2015structure;@jin2019higher;@ranocha2019some;@2019_energyRRK].
+As an example of a completely different kind of use,
+in the fluid dynamics code SpectralDNS, `NodePy` is used simply for convenience as a way to enable
+usage of a range of ODE solvers; here `NodePy` is used only for
+retrieving the coefficients and not for the time-stepping implementation.
+This facilitated the work in [@ketcheson2020more], for instance.
 As can be seen from this list, applications have mostly stemmed from the
 work of the main developer's research group, but have recently begun to expand
 beyond that.
