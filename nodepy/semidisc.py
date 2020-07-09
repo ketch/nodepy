@@ -46,10 +46,10 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
 
     # The spatial discretization sets also the initial condition
     # because the number of DOF depends on the scheme
-    if sdName=='upwind advection':
+    if sdName == 'upwind advection':
         sd.L  = upwind_advection_matrix(N,dx)
         sd.u0 = np.sin(2*np.pi*sd.xCenter)
-    if sdName=='weno5':
+    elif sdName == 'weno5':
         sd.L  = weno5_linearized_matrix(N,dx)
         sd.u0 = np.sin(2*np.pi*sd.xCenter)
     elif sdName == 'spectral difference advection':
