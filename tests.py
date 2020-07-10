@@ -21,7 +21,8 @@ for module_name in ['runge_kutta_method',
                     'strmanip',
                     'utils',
                     'graph',
-                    'convergence']:
+                    'convergence',
+                    'loadmethod']:
     module = nodepy.__getattribute__(module_name)
     doctest.testmod(module)
 

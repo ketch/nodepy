@@ -14,3 +14,4 @@ import nodepy.ivp
 import nodepy.convergence as conv
 import nodepy.low_storage_rk as lsrk
 import nodepy.graph
+import nodepy.loadmethod
