@@ -618,6 +618,11 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 4
                 >>> rk4.order(mode='exact')
                 4
+                >>> from nodepy.loadmethod import load_rk_from_file
+                >>> feagin14 = load_rk_from_file("rk1412.txt")
+                >>> feagin14.order(tol=1.0e-12, extremely_high_order=True)
+                This method has order at least 14.  Higher order conditions are not implemented in this routine.
+                14
 
             mode == 'float': (default)
                 Check that conditions hold approximately, to within tolerance `tol`.
