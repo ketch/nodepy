@@ -139,13 +139,13 @@ to its further development) include development of:
  - SSP general linear methods [@2011_tsrk;@2017_msrk]
  - Low-storage Runge-Kutta methods [@2010_LSRK]
  - Additive and downwind SSP Runge-Kutta methods [@2011_dwssp;@2018_perturbations]
- - High-order parallel extrapolation and deferred correction methods [@2014_internal_stability]
+ - High-order parallel extrapolation and deferred correction methods [@2014_hork]
  - SSP linear multistep methods [@2016_ssp_lmm_vss;@2018_sspalmm]
  - Dense output formulas for Runge-Kutta methods [@2017_dense]
  - Internal stability theory for Runge-Kutta methods [@2014_internal_stability]
- - Embedded pairs for Runge-Kutta methods [@horvathembedded,@conde2018embedded]
+ - Embedded pairs for Runge-Kutta methods [@horvathembedded;@conde2018embedded]
 
-Additional recent applications include [@norton2015structure;@jin2019higher;@ranocha2019some;@2019_energyRRK;nusslein2020positivity].
+Additional recent applications include [@norton2015structure;@jin2019higher;@ranocha2019some;@2019_energyRRK;@nusslein2020positivity].
 As an example of a completely different kind of use,
 in the fluid dynamics code SpectralDNS, `NodePy` is used simply for convenience as a way to enable
 usage of a range of ODE solvers; here `NodePy` is used only for
