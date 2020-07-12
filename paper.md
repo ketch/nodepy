@@ -63,7 +63,7 @@ methods they may develop.
 
 `NodePy` development has been motivated largely by research needs and
 it has been used in a number of papers (including some written by non-developers;
-e.g. [@jin2019higher;@horvathembedded]) and also as a teaching tool for
+e.g. @jin2019higher and @horvathembedded) and also as a teaching tool for
 graduate-level numerical analysis courses.  It relies on both SymPy [@meurer2017sympy]
 and NumPy [@oliphant2006guide;@walt2011numpy]
 in order to provide either exact or floating-point results based on the
