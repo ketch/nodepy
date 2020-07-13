@@ -16,6 +16,9 @@ authors:
   - name: Matteo Parsani
     orcid: 0000-0001-7300-1280
     affiliation: 1
+  - name: Umair bin Waheed
+    orcid: 0000-0002-5189-0694
+    affiliation: 3
   - name: Yiannis Hadjimichael
     orcid: 0000-0003-3517-8557
     affiliation: 2
@@ -24,6 +27,8 @@ affiliations:
    index: 1
  - name: Eötvös Loránd Tudományegyetem
    index: 2
+ - name: King Fahd University of Petroleum & Minerals
+   index: 3
 date: 9 July 2020
 bibliography: paper.bib
 ---
@@ -40,6 +45,8 @@ is a software
 package for designing and studying the properties of numerical ODE solvers.
 For the most important classes of methods, `NodePy` can automatically assess
 their stability, accuracy, and many other properties.
+`NodePy` has also been used as a catalog of coefficients for time integration methods
+in PDE solver codes.
 
 # Statement of need
 
