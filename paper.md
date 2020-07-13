@@ -18,16 +18,16 @@ authors:
     affiliation: 1
   - name: Umair bin Waheed
     orcid: 0000-0002-5189-0694
-    affiliation: 3
+    affiliation: 2
   - name: Yiannis Hadjimichael
     orcid: 0000-0003-3517-8557
-    affiliation: 2
+    affiliation: 3
 affiliations:
  - name: King Abdullah University of Science and Technology
    index: 1
- - name: Eötvös Loránd Tudományegyetem
-   index: 2
  - name: King Fahd University of Petroleum & Minerals
+   index: 2
+ - name: Eötvös Loránd Tudományegyetem
    index: 3
 date: 9 July 2020
 bibliography: paper.bib
@@ -61,7 +61,7 @@ algorithms themselves.
 `NodePy` is written entirely in Python and provides software implementations
 of many of the theoretical ideas contained for instance in reference texts
 on numerical analysis of ODEs [@hairer1993;@Hairer:ODEs2].  It also contains implementations of
-many theoretical ideas from the numerical analysis of literature.
+many theoretical ideas from the numerical analysis literature.
 The implementation focuses on the two most important classes of methods;
 namely, Runge-Kutta and linear multistep methods, but includes some
 more exotic classes.  `NodePy` provides a means for numerical analysts to
@@ -93,17 +93,19 @@ of numerical methods:
  - Additive (IMEX) linear multistep methods
 
 The framework is designed to include general linear methods and even more
-exotic classes.  Additionally, `NodePy` includes functionality for generating
-representations of many specific methods, including:
+exotic classes.  Any method within these classes can be generated simply by entering
+its coefficients.  Coefficients for many methods are catalogued or can be
+automatically generated within `NodePy`, including:
 
  - Dozens of specific Runge-Kutta methods and pairs
  - General extrapolation methods, of any order of accuracy, based on a variety
    of building-block schemes and optionally including an error estimator
  - Deferred correction methods
- - Optimal SSP Runge-Kutta methods
+ - Optimal strong stability preserving (SSP) Runge-Kutta methods
  - Adams-Bashforth, Adams-Moulton, and BDF methods of any order
+ - A number of other specialized families of methods
 
-For all of these methods, `NodePy` provides methods and functions to compute many
+For all of these numerical schemes, `NodePy` provides methods and functions to compute many
 of their properties -- too many to list here.  The theory on which most of these
 properties are based is outlined in standard references
 [@hairer1993;@Hairer:ODEs2].  Many other properties are based on
@@ -122,7 +124,7 @@ trees, which are a class of graphs that play a key role in the theory of Runge-K
 methods.
 
 `NodePy` is documented primarily through the Python docstrings for each method,
-most of which also contain examples that also serve as tests ("doctests").
+most of which contain examples that also serve as tests ("doctests").
 These tests are executed automatically for all new commits and pull requests
 using the Travis continuous integration service.  Some higher-level
 documentation is also available at https://nodepy.readthedocs.io/en/latest/,
@@ -167,5 +169,7 @@ beyond that.
 Much of the initial `NodePy` development was performed by D. Ketcheson while
 he was supported by a DOE Computational Science Graduate Fellowship.  Development
 has also been supported by funding from King Abdullah University of Science and Technology.
+Additional minor contributions to the code have been provided by Mikael Mortensen, Alex Fikl,
+Sidafa Conde, John Sellers, Kevin Siswandi, and Colin Macdonald.
 
 # References
