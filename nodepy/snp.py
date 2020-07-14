@@ -18,7 +18,7 @@ def normalize(*arrays):
         if array.dtype==object:
             onedarray=array.reshape(-1)
             for i,elem in enumerate(onedarray):
-                if not isinstance(elem,sympy.basic.Basic):
+                if not isinstance(elem,sympy.Basic):
                     onedarray[i]=sympy.S(elem)
     if len(arrays)==1: return arrays[0]
     else: return arrays
