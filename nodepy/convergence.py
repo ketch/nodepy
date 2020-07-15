@@ -79,7 +79,8 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
     return work, err
 
 
-def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False):
+def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False,
+          controllertype='P'):
     """
         Runs a performance test, integrating a set of problems with a set
         of methods using a sequence of error tolerances.  Creates a plot
@@ -128,7 +129,7 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
                 speedup = 1.
             workperstep = len(method)-method.is_FSAL()
             for jtol,tol in enumerate(tols):
-                t,u,rej,dt,errhist=method(ivp,errtol=tol,dt=ivp.dt0,diagnostics=True,controllertype='P')
+                t,u,rej,dt,errhist=method(ivp,errtol=tol,dt=ivp.dt0,diagnostics=True,controllertype=controllertype)
                 if verbosity>1: print('{} rejected steps'.format(rej))
                 err[imeth,jtol]*= np.max(np.abs(u[-1]-exsol))
                 #FSAL methods save on accepted steps, but not on rejected:
