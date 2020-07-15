@@ -57,7 +57,7 @@ At the moment, the following classes are implemented:
     _______|_________________________________________________
            | 0.094  0.150  0.285 -0.122  0.061  0.346  0.187
 
-    >>> rk58 = lsrk.load_low_storage('RK58[3R]C')
+    >>> rk58 = lsrk.load_low_storage('RK58[3R]C').__num__()
     >>> rk58.name
     'RK5(4)8[3R+]C'
     >>> rk58.order()
@@ -213,6 +213,19 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
         self.alpha=alpha
         self.beta=beta
 
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        numself = super(TwoRRungeKuttaPair, self).__num__()
+        if self.a.dtype == object:
+            numself.a = np.array(self.a, dtype=np.float64)
+        else:
+            numself.a = self.a.copy()
+        return numself
+
 #=====================================================
 # End of class TwoRRungeKuttaMethod
 #=====================================================
@@ -254,6 +267,19 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
 
         self.a = a
         self.lstype = str(regs)+'R+_pair'
+
+    def __num__(self):
+        """
+        Returns a copy of the method but with floating-point coefficients.
+        This is useful whenever we need to operate numerically without
+        worrying about the representation of the method.
+        """
+        numself = super(TwoRRungeKuttaPair, self).__num__()
+        if self.a.dtype == object:
+            numself.a = np.array(self.a, dtype=np.float64)
+        else:
+            numself.a = self.a.copy()
+        return numself
 
     def __step__(self,f,t,u,dt,errest=False,x=None,**kwargs):
         """
