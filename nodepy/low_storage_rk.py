@@ -135,10 +135,6 @@ class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
 
 def twoR2butcher(a, b, regs):
     m = len(b)
-    # if a.dtype == object or b.dtype == object:
-    #     dtype = object
-    # else:
-    #     dtype = np.promote_types(a.dtype, b.dtype)
     A = np.zeros([m,m], dtype=np.promote_types(a.dtype, b.dtype))
     for i in range(1,m):
         if regs == 2:
