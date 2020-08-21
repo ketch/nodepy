@@ -4263,7 +4263,7 @@ def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
             for i in range(m):
                 apbz_power = apbz_star*apbz_power
                 Imapbz_inv = Imapbz_inv + apbz_power
-            thet = (apbz*Imapbz_inv).applyfunc(sympy.expand)
+            thet = (apbz.T*Imapbz_inv).applyfunc(sympy.expand)
 
         elif formula == 'lts':
             thet = (I-apbz_star).T.upper_triangular_solve(apbz)
