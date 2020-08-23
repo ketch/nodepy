@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import matplotlib
+matplotlib.use('Agg')
 import doctest
 import nodepy
-matplotlib.use('Agg')
 import unittest
 import os
 import subprocess
