@@ -8,11 +8,12 @@
 
 
 # Installation
+NodePy requires Python 3.5 or later, or Python 2.7.  To install with pip, do:
 
     pip install nodepy
 
-This will automatically fetch dependencies also (numpy, matplotlib, sympy, scipy).  It will not fetch
-cvxpy, which is an optional dependency (used only in a few specialized routines).
+This will automatically fetch dependencies also.  It will not fetch
+optional dependencies, which include networks, cvxpy and scipy (that are used only in a few specialized routines).
 
 # Overview
 
@@ -46,7 +47,16 @@ If you use NodePy in a published work, please cite it as follows:
     Ketcheson, D. I.  NodePy software version <version number>,
     http://github.com/ketch/nodepy/.
 
-Please insert the version number that you used (currently 0.9).
+Please insert the version number that you used.
+
+# Support
+
+If you encounter an error or need help, please [raise an issue](https://github.com/ketch/nodepy/issues).
+
+# Contributing
+
+Contributions of new features or other improvements are very welcome!  Please
+[submit a pull request](https://github.com/ketch/nodepy/pulls) or contact the authors.
 
 # License
 
