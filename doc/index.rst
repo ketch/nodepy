@@ -51,19 +51,19 @@ Python will be too slow.  One way around this is to wrap Fortran or
 C functions representing the right-hand-side of the ODE, and we are
 looking into this.
 
-.. note:: The user guide is currently quite incomplete,
-          and in general is not expected to keep pace with
-          all NodePy development.  However, NodePy includes
-          substantial inline documentation within the various
-          modules, and you are encouraged to look there.
+.. note:: The online documentation is not comprehensive.
+          For more complete documentation, it is best to
+          refer to the docstrings of specific functions and classes.
 
 
 Dependencies
 ================================
-  * Python 2.7
-  * Numpy, Matplotlib
+  * Works with Python 2.7 or Python 3.5+
+  * Requires: Numpy, Matplotlib, Sympy
   * SymPy (note: NodePy is now compatible with SymPy 0.7.1)
-  * Optional: networkx (for some Runge-Kutta stage dependency graphing)
+  * Optional: networkx (for some Runge-Kutta stage dependency graphing), 
+    cvxpy (for finding optimal downwind perturbations),
+    scipy
 
 Classes of Numerical ODE Solvers
 ================================
