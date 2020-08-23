@@ -1,6 +1,15 @@
 
 .. _changes:
 
+What's new in version 1.0
+=========================
+- Improvements to low-storage RK methods (thanks to @ranocha)
+- Updates for compatibility with newer versions of Sympy
+- Embedded pairs for SSP methods (thanks to @ranocha)
+- Some additional tests
+- Many improvements to the documentation and examples, suggested by reviewer @fruzsinaagocs
+- NodePy no longer officially supports Python 2.x, although virtually everything still works in Python 2.7.
+
 What's new in version 0.9
 =========================
 - Implicit extrapolation Runge-Kutta methods
