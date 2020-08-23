@@ -8,12 +8,14 @@
 
 
 # Installation
-NodePy requires Python 3.5 or later, or Python 2.7.  To install with pip, do:
+NodePy requires Python 3.5 or later.  To install with pip, do:
 
     pip install nodepy
 
 This will automatically fetch dependencies also.  It will not fetch
-optional dependencies, which include networks, cvxpy and scipy (that are used only in a few specialized routines).
+optional dependencies, which include networkx, cvxpy and scipy (that are used
+only in a few specialized routines and/or examples).  The optional dependencies
+can be installed with `pip`.
 
 # Overview
 

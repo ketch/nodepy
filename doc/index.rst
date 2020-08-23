@@ -58,7 +58,7 @@ looking into this.
 
 Dependencies
 ================================
-  * Works with Python 2.7 or Python 3.5+
+  * Works with Python 3.5+
   * Requires: Numpy, Matplotlib, Sympy
   * SymPy (note: NodePy is now compatible with SymPy 0.7.1)
   * Optional: networkx (for some Runge-Kutta stage dependency graphing), 
