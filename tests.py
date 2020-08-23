@@ -3,7 +3,7 @@
 import matplotlib
 import doctest
 import nodepy
-matplotlib.use('agg')
+matplotlib.use('Agg')
 import unittest
 import os
 import subprocess
@@ -22,7 +22,7 @@ def _notebook_run(path):
     """
     with tempfile.NamedTemporaryFile(suffix=".ipynb") as fout:
         args = ["jupyter", "nbconvert", "--to", "notebook", "--execute",
-                "--ExecutePreprocessor.timeout=60",
+                "--ExecutePreprocessor.timeout=120",
                 "--ExecutePreprocessor.kernel_name="+kernel,
                 "--output", fout.name, path]
         subprocess.check_call(args)
@@ -36,32 +36,38 @@ def _notebook_run(path):
 
     return nb, errors
 
-for filename in os.listdir('./examples'):
-    if (filename.split('.')[-1] == 'ipynb' and
-        filename not in ['Internal_stability_SO.ipynb','Introduction to NodePy.ipynb']):
-        print('running ', filename)
-        _, errors = _notebook_run('./examples/'+filename)
-        if errors != []:
-            raise(Exception)
+def run_tests():
+    for filename in os.listdir('./examples'):
+        if (filename.split('.')[-1] == 'ipynb' and
+            filename not in ['Internal_stability_SO.ipynb',
+                             'Introduction to NodePy.ipynb',
+                             'stability_polynomial_speed.ipynb']):
+            print('running notebook: '+ filename)
+            _, errors = _notebook_run('./examples/'+filename)
+            if errors != []:
+                raise(Exception)
 
-for module_name in ['runge_kutta_method',
-                    'linear_multistep_method',
-                    'twostep_runge_kutta_method',
-                    'downwind_runge_kutta_method',
-                    'ivp',
-                    'low_storage_rk',
-                    'rooted_trees',
-                    'snp',
-                    'stability_function',
-                    'general_linear_method',
-                    'ode_solver',
-                    'semidisc',
-                    'strmanip',
-                    'utils',
-                    'graph',
-                    'convergence',
-                    'loadmethod']:
-    module = nodepy.__getattribute__(module_name)
-    doctest.testmod(module)
+    for module_name in ['runge_kutta_method',
+                        'linear_multistep_method',
+                        'twostep_runge_kutta_method',
+                        'downwind_runge_kutta_method',
+                        'ivp',
+                        'low_storage_rk',
+                        'rooted_trees',
+                        'snp',
+                        'stability_function',
+                        'general_linear_method',
+                        'ode_solver',
+                        'semidisc',
+                        'strmanip',
+                        'utils',
+                        'graph',
+                        'convergence',
+                        'loadmethod']:
+        module = nodepy.__getattribute__(module_name)
+        doctest.testmod(module)
 
-unittest.main(module='nodepy.unit_tests',exit=False)
+    unittest.main(module='nodepy.unit_tests',exit=False)
+
+if __name__ == '__main__':
+    run_tests()
