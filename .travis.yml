@@ -7,8 +7,19 @@ before_install:
   - pip install coverage
   - pip install python-coveralls
   - pip install codecov
+  - pip install nbformat
+  - pip install nbconvert
+  - pip install jupyter
+  - pip install ipywidgets
+  - pip install networkx
+  - pip install scipy
 
-install: "pip install -r requirements.txt"
+install:
+  - pip install -U pip setuptools # Travis breaks without this
+  - pip install -r requirements.txt
+  - python setup.py install
+  - jupyter nbextension enable --py widgetsnbextension
+  
 
 script: coverage run --source=nodepy tests.py
 
