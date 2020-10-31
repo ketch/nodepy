@@ -1,7 +1,7 @@
 {
     "description": "NodePy: Analysis of initial value ODE solvers",
     "license": "bsd-license",
-    "title": "ketch/nodepy",
+    "title": "NodePy: Analysis of initial value ODE solvers",
     "upload_type": "software",
     "creators": [
         {
@@ -20,14 +20,14 @@
             "orcid": "0000-0001-7300-1280"
         },
         {
-            "affiliation": "Eötvös Loránd Tudományegyetem",
-            "name": "Yiannis Hadjimichael",
-            "orcid": "0000-0003-3517-8557"
-        },
-        {
             "affiliation": "King Fahd University of Petroleum & Minerals",
             "name": "Umair bin Waheed",
             "orcid": "0000-0002-5189-0694"
+        },
+        {
+            "affiliation": "Eötvös Loránd Tudományegyetem",
+            "name": "Yiannis Hadjimichael",
+            "orcid": "0000-0003-3517-8557"
         }
     ],
     "access_right": "open"
