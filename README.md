@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ketch/nodepy.png)](https://travis-ci.org/ketch/nodepy)
+[![Build Status](https://travis-ci.com/ketch/nodepy.png)](https://travis-ci.com/ketch/nodepy)
 [![Coverage Status](https://coveralls.io/repos/github/ketch/nodepy/badge.svg?branch=master)](https://coveralls.io/github/ketch/nodepy?branch=master)
 [![codecov.io](https://codecov.io/github/ketch/nodepy/coverage.svg?branch=master)](https://codecov.io/github/ketch/nodepy?branch=master)
 
