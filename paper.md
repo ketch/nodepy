@@ -132,6 +132,7 @@ but it is not intended to be comprehensive.
 
 # Related research and software
 
+We are not aware of other software packages with a similar purpose.
 `NodePy` development has proceeded in close connection to the RK-Opt package
 (https://github.com/ketch/RK-Opt).
 Whereas `NodePy` is focused in the analysis of numerical methods, RK-Opt is focused
