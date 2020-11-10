@@ -66,7 +66,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         self.alpha = alpha/alpha[-1]
         self.name = name
         self.shortname = shortname
-        if description is not '':
+        if description != '':
             self.info = description
         else:
             if self.is_explicit():
@@ -87,6 +87,30 @@ class LinearMultistepMethod(GeneralLinearMethod):
             numself.alpha=np.array(self.alpha,dtype=np.float64)
             numself.beta=np.array(self.beta,dtype=np.float64)
         return numself
+
+
+    def __str__(self):
+        """
+        Pretty-prints the coefficients
+        """
+        from nodepy.utils import array2strings
+        from nodepy.runge_kutta_method import _get_column_widths
+
+        alpha = array2strings(self.alpha, printzeros=True)
+        beta  = array2strings(self.beta,  printzeros=True)
+
+        _, colmax = _get_column_widths([alpha,beta])
+        s = self.name + '\n' + self.info + '\n'
+        s += 'alpha = ['
+        for alpha_i in alpha:
+            s += alpha_i.ljust(colmax + 1)
+        s += ']\n'
+        s += 'beta  = ['
+        for beta_i in beta:
+            s += beta_i.ljust(colmax + 1)
+        s += ']'
+        return s.rstrip()
+
 
     def characteristic_polynomials(self):
         r"""
@@ -522,6 +546,12 @@ def Adams_Bashforth(k):
 
         >>> import nodepy.linear_multistep_method as lm
         >>> ab3=lm.Adams_Bashforth(3)
+        >>> print(ab3)
+        3-step Adams-Bashforth
+        Explicit 3-step method of order 3
+        alpha = [ 0      0      -1     1     ]
+        beta  = [ 5/12   -4/3   23/12  0     ]
+
         >>> ab3.order()
         3
 
@@ -822,6 +852,12 @@ def loadLMM(which='All'):
 
         >>> from nodepy import lm
         >>> ebdf5 = lm.loadLMM('eBDF5')
+        >>> print(ebdf5)
+        eBDF 5
+        Explicit 5-step method of order 5
+        alpha = [ -12/137   75/137    -200/137  300/137   -300/137  1        ]
+        beta  = [ 60/137    -300/137  600/137   -600/137  300/137   0        ]
+
         >>> ebdf5.is_zero_stable()
         True
     """
