@@ -134,7 +134,7 @@ but it is not intended to be comprehensive.
 
 We are not aware of other software packages with a similar purpose.
 `NodePy` development has proceeded in close connection to the RK-Opt package
-(https://github.com/ketch/RK-Opt).
+[@ketcheson2020RK-Opt] (https://github.com/ketch/RK-Opt).
 Whereas `NodePy` is focused in the analysis of numerical methods, RK-Opt is focused
 more on their design through the use of numerical optimization to search
 for optimal coefficients tailored to specific desired properties.
