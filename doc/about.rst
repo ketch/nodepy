@@ -2,15 +2,10 @@
 About NodePy
 =======================
 
-NodePy is an open-source, free project.  If you find NodePy useful,
-please let me know via a short e-mail (david.ketcheson@kaust.edu.sa).
-
-NodePy is primarily developed by David Ketcheson.  The following people
-have also contributed code to NodePy (listed in alphabetical order):
-
-    * Robert Bradshaw: initial implementation of exact representation and analysis of methods
-    * Matteo Parsani: spectral difference matrices
-    * Umair bin Waheed: Implementation of GBS extrapolation methods and their embedded pairs
+NodePy is an open-source, free project.  It is primarily developed by David
+Ketcheson.  Several other people have made important contributions to NodePy,
+including Robert Bradshaw, Matteo Parsani, Umair bin Waheed, Hendrik Ranocha,
+and Yiannis Hadjimichael.
 
 Citing
 =======================
@@ -24,9 +19,11 @@ Contributing
 
 Contributions to the package are most welcome.  If you have 
 used NodePy for research, chances are that others would find your
-code useful.  Feel free to either e-mail a patch or fork and issue
-a pull request on Github.
-
+code useful.  Feel free to either e-mail a patch or fork the
+repository and 
+`issue a pull request on Github <https://github.com/ketch/nodepy/compare>`_.
+If you find a bug or there's an improvement you'd like to see, you can
+also `open an issue <https://github.com/ketch/nodepy/issues>`_.
 
 License
 =======================
@@ -36,7 +33,7 @@ reprinted below.
 
 See http://www.opensource.org/licenses/bsd-license.php for more details.
 
-Copyright (c) 2008-2010 David I. Ketcheson.  All rights reserved.
+Copyright (c) 2008-2020 David I. Ketcheson.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 
 modification, are permitted provided that the following conditions are met:
