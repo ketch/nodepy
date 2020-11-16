@@ -1,7 +1,7 @@
 {
-    "description": "NodePy: Analysis of initial value ODE solvers",
+    "description": "NodePy: A package for the analysis of numierical ODE solvers",
     "license": "bsd-license",
-    "title": "NodePy: Analysis of initial value ODE solvers",
+    "title": "NodePy: A package for the analysis of numierical ODE solvers",
     "upload_type": "software",
     "creators": [
         {
