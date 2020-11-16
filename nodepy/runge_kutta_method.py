@@ -3716,10 +3716,10 @@ def extrap(k,base='euler',seq='harmonic',embedded=False, shuosher=False):
     """ Construct extrapolation methods as Runge-Kutta methods.
 
         **Input**: k -- number of grid points & number of extrapolation iterations
-                   base -- the base method to be used ('euler' or 'midpoint')
+                   base -- the base method to be used ('euler', 'midpoint', or 'implicit euler')
                    seq -- extrapolation sequence
 
-        **Output**: A ExplicitRungeKuttaMethod
+        **Output**: A ExplicitRungeKuttaMethod (or RungeKuttaMethod if base=='implicit euler')
 
         **Examples**::
 
