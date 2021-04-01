@@ -2761,8 +2761,8 @@ def loadRKM(which='All'):
             "The optimal 2-stage, 2nd order SSP Runge-Kutta method, also known as Heun's 2nd order method",shortname='SSPRK22')
     RK['SSP22']  = ssp22
     RK['Heun22'] = ssp22
-    RK['SSP22'].alpha = np.array([[0,0,0],[one,0,0],[one/2,one/2,0]])
-    RK['SSP22'].beta = np.array([[0,0,0],[one,0,0],[0,one/2,0]])
+    RK['SSP22'].alpha = np.array([[0,0],[one,0],[one/2,one/2]])
+    RK['SSP22'].beta = np.array([[0,0],[one,0],[0,one/2]])
 
     #================================================
     A=np.array([[0,0,0],[one,0,0],[one/4,one/4,0]])
@@ -2771,8 +2771,8 @@ def loadRKM(which='All'):
     RK['SSP33']=ExplicitRungeKuttaPair(A,b,bhat=bhat,name='SSPRK 33',
                 description=
                 "The optimal 3-stage, 3rd order SSP Runge-Kutta method",shortname='SSPRK33')
-    RK['SSP33'].alpha = np.array([[0,0,0,0],[one,0,0,0],[3*one/4,one/4,0,0],[one/3,0,2*one/3,0]])
-    RK['SSP33'].beta = np.array([[0,0,0,0],[one,0,0,0],[0,one/4,0,0],[0,0,2*one/3,0]])
+    RK['SSP33'].alpha = np.array([[0,0,0],[one,0,0],[3*one/4,one/4,0],[one/3,0,2*one/3]])
+    RK['SSP33'].beta = np.array([[0,0,0],[one,0,0],[0,one/4,0],[0,0,2*one/3]])
 
     #================================================
     A=np.array([[0,0,0],[one/3,0,0],[0,2*one/3,0]])
