@@ -2434,6 +2434,80 @@ def elementary_weight(tree):
     ew=b*tree.Gprod(RKeta,rt.Dmap)
     return ew
 
+indices = "ijklmnpqrstuvwxyz"
+
+def elementary_weight_str_jump(tree,parent_label_index=None,node_label_index=0):
+    """
+        Constructs elementary weights for a Runge-Kutta method
+        as strings suitable for setting constraints in JuMP.
+
+        Here the indexing is set up for explicit methods.
+
+        **Examples**:
+
+            >>> from nodepy import rk, rt
+            >>> tree = rt.list_trees(5)[3]
+            >>> rk.elementary_weight_str_jump(tree)
+            "sum(b[i]*sum(A[i,j]*c[j]*sum(A[j,k]*c[k] for k in 1:j-1) for j in 1:i-1) for i in 1:s)"
+    """
+    nleaves,subtrees = tree._parse_subtrees()
+
+    nl = indices[node_label_index]   # node label
+
+    if parent_label_index is None:
+        ret_str = "sum(b["+nl+"]"
+    else:
+        pl = indices[parent_label_index] # parent label
+        ret_str = "*sum(A["+pl+","+nl+"]"
+    if nleaves == 1:
+        ret_str += "*c["+nl+"]"
+    elif nleaves > 1:
+        ret_str += "*c["+nl+"]^"+str(nleaves)+""
+    else:
+        ret_str += ""
+
+    for t in subtrees:
+        ret_str += elementary_weight_str_jump(t, node_label_index, node_label_index+1)
+    if parent_label_index is None:
+        ret_str += " for "+nl+" in 1:s)"
+    else:
+        ret_str += " for "+nl+" in 1:"+pl+")"
+
+    return ret_str
+
+
+def elementary_weight_str_matlab(tree,root=True):
+    """
+        Constructs elementary weights for a Runge-Kutta method
+        as strings suitable for MATLAB execution.
+
+        **Examples**:
+
+            >>> from nodepy import rk, rt
+            >>> tree = rt.list_trees(5)[3]
+            >>> rk.elementary_weight_str_matlab(tree)
+            "b'*(A*(A*c.*c))"
+            >>> rk.elementary_weight_str_matlab(rt.RootedTree('{T^10}'))
+            "b'*(c.^10)"
+            >>> rk.elementary_weight_str_matlab(rt.RootedTree('{{T^11}T}'))
+            "b'*(A*(c.^11))"
+    """
+    if root:
+        start = "b'"
+    else:
+        start = "A"
+    if str(tree)=='T': return "c"
+    nleaves,subtrees = tree._parse_subtrees()
+    cstring = ""
+    if nleaves > 0:
+        if len(subtrees) > 0:
+            cstring += ".*"
+        cstring += "c"
+    if nleaves > 1:
+        cstring += ".^"+str(nleaves)
+
+    return ("("+start+"*("+".*".join([elementary_weight_str_matlab(t,0) for t in subtrees])+cstring+"))").replace("(c)","c")
+
 def elementary_weight_str(tree,style='python'):
     """
         Constructs Butcher's elementary weights for a Runge-Kutta method
@@ -2458,7 +2532,7 @@ def elementary_weight_str(tree,style='python'):
     ewstr='dot(b,'+tree.Gprod_str(RKeta_str,Dmap_str)+')'
     ewstr=ewstr.replace('1*','')
     ewstr=mysimp(ewstr)
-    if style=='matlab': ewstr=python_to_matlab(ewstr)
+    if style=='matlab': raise Exception("Use elementary_weight_str_matlab() instead.")
     if style=='fortran': ewstr=python_to_fortran(ewstr)
     return ewstr
 

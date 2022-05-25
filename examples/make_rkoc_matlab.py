@@ -4,7 +4,7 @@
 from nodepy import rooted_trees as rt
 from nodepy import runge_kutta_method as rk
 
-p=10
+p=11
 
 f=open('oc_butcher.m','w')
 
@@ -14,9 +14,9 @@ for ip in range(2,p):
     f.write("\n  % order "+str(ip)+" conditions:\n")
     forest = rt.list_trees(ip)
     for tree in forest:
-        oc=rk.elementary_weight_str(tree,style='matlab')
+        oc=rk.elementary_weight_str_matlab(tree)
         rhs =str(rt.Emap(tree))
-        f.write("  coneq("+str(ioc)+")="+oc+"-"+rhs+";\n")
+        f.write("  coneq("+str(ioc)+") = "+oc[1:-1]+"-"+rhs+";\n")
         ioc+=1
     f.write("end\n\n")
 
