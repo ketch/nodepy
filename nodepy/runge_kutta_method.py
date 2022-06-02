@@ -16,8 +16,8 @@ u"""
 
 * Find its radius of absolute monotonicity::
 
-    >>> ssp104.absolute_monotonicity_radius()
-    5.999999999949068
+    >>> ssp104.absolute_monotonicity_radius() # doctest:+ELLIPSIS
+    5.9999999...
 
 * Load a dictionary with many methods::
 
@@ -2436,7 +2436,7 @@ def elementary_weight(tree):
 
 indices = "ijklmnpqrstuvwxyz"
 
-def elementary_weight_str_jump(tree,parent_label_index=None,node_label_index=0):
+def elementary_weight_str_jump(tree,parent_label_index=None,node_label_index=0,method_type='ERK'):
     """
         Constructs elementary weights for a Runge-Kutta method
         as strings suitable for setting constraints in JuMP.
@@ -2468,10 +2468,13 @@ def elementary_weight_str_jump(tree,parent_label_index=None,node_label_index=0):
 
     for t in subtrees:
         ret_str += elementary_weight_str_jump(t, node_label_index, node_label_index+1)
-    if parent_label_index is None:
+    if (parent_label_index is None) or (method_type == 'IRK'):
         ret_str += " for "+nl+" in 1:s)"
     else:
-        ret_str += " for "+nl+" in 1:"+pl+")"
+        if method_type == 'ERK':
+            ret_str += " for "+nl+" in 1:"+pl+"-1)"
+        elif method_type == 'DIRK':
+            ret_str += " for "+nl+" in 1:"+pl+")"
 
     return ret_str
 
@@ -2486,11 +2489,11 @@ def elementary_weight_str_matlab(tree,root=True):
             >>> from nodepy import rk, rt
             >>> tree = rt.list_trees(5)[3]
             >>> rk.elementary_weight_str_matlab(tree)
-            "b'*(A*(A*c.*c))"
+            "(b'*((A*((A*c).*c))))"
             >>> rk.elementary_weight_str_matlab(rt.RootedTree('{T^10}'))
-            "b'*(c.^10)"
+            "(b'*(c.^10))"
             >>> rk.elementary_weight_str_matlab(rt.RootedTree('{{T^11}T}'))
-            "b'*(A*(c.^11))"
+            "(b'*((A*(c.^11))))"
     """
     if root:
         start = "b'"
@@ -2513,6 +2516,9 @@ def elementary_weight_str(tree,style='python'):
         Constructs Butcher's elementary weights for a Runge-Kutta method
         as strings suitable for numpy execution.
 
+        For MATLAB code or JuMP code, use the corresponding dedicated function
+        instead of this one.
+
         **Examples**:
 
             >>> from nodepy import rk, rt
@@ -2520,8 +2526,6 @@ def elementary_weight_str(tree,style='python'):
             >>> rk.elementary_weight_str(tree)
             'dot(b,dot(A,c**3))'
 
-            >>> rk.elementary_weight_str(tree,style='matlab')
-            "b'*((A*c.^3))"
             >>> rk.elementary_weight_str(rt.RootedTree('{T^10}'))
             'dot(b,c**10)'
             >>> rk.elementary_weight_str(rt.RootedTree('{{T^11}T}'))
