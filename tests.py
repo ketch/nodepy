@@ -37,6 +37,7 @@ def _notebook_run(path):
     return nb, errors
 
 def run_tests():
+    retcode = 0
     for filename in os.listdir('./examples'):
         if (filename.split('.')[-1] == 'ipynb' and
             filename not in ['Internal_stability_SO.ipynb',
@@ -45,7 +46,8 @@ def run_tests():
             print('running notebook: '+ filename)
             _, errors = _notebook_run('./examples/'+filename)
             if errors != []:
-                raise(Exception)
+                retcode = 1
+                #raise(Exception)
 
     for module_name in ['runge_kutta_method',
                         'linear_multistep_method',
@@ -65,9 +67,13 @@ def run_tests():
                         'convergence',
                         'loadmethod']:
         module = nodepy.__getattribute__(module_name)
-        doctest.testmod(module)
+        result = doctest.testmod(module)
+        if result[0] != 0:
+            retcode = result[0]
 
-    unittest.main(module='nodepy.unit_tests',exit=False)
+    test_results = unittest.main(module='nodepy.unit_tests', exit=False)
+    return retcode
 
 if __name__ == '__main__':
-    run_tests()
+    retcode = run_tests()
+    sys.exit(retcode)
