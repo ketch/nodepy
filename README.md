@@ -1,6 +1,7 @@
 # NodePy: A package for the analysis of numerical ODE solvers
 
 [![Build Status](https://app.travis-ci.com/ketch/nodepy.svg?branch=master)](https://app.travis-ci.com/ketch/nodepy)
+[![ketch](https://circleci.com/gh/ketch/nodepy.svg?style=svg)](https://github.com/ketch/nodepy)
 [![Coverage Status](https://coveralls.io/repos/github/ketch/nodepy/badge.svg?branch=master)](https://coveralls.io/github/ketch/nodepy?branch=master)
 [![codecov.io](https://codecov.io/github/ketch/nodepy/coverage.svg?branch=master)](https://codecov.io/github/ketch/nodepy?branch=master)
 [![](https://readthedocs.org/projects/nodepy/badge)](https://readthedocs.org/projects/nodepy/)
