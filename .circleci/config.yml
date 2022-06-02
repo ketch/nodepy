@@ -41,6 +41,7 @@ jobs:
               pip install networkx
               pip install scipy
               jupyter nbextension enable --py widgetsnbextension
+              python setup.py install
               coverage run --source=nodepy tests.py
 
 # Invoke jobs via workflows
