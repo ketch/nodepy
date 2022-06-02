@@ -17,7 +17,7 @@ u"""
 * Find its radius of absolute monotonicity::
 
     >>> ssp104.absolute_monotonicity_radius() # doctest:+ELLIPSIS
-    5.9999999...
+    5.999999...
 
 * Load a dictionary with many methods::
 
@@ -2448,7 +2448,7 @@ def elementary_weight_str_jump(tree,parent_label_index=None,node_label_index=0,m
             >>> from nodepy import rk, rt
             >>> tree = rt.list_trees(5)[3]
             >>> rk.elementary_weight_str_jump(tree)
-            "sum(b[i]*sum(A[i,j]*c[j]*sum(A[j,k]*c[k] for k in 1:j-1) for j in 1:i-1) for i in 1:s)"
+            'sum(b[i]*sum(A[i,j]*c[j]*sum(A[j,k]*c[k] for k in 1:j-1) for j in 1:i-1) for i in 1:s)'
     """
     nleaves,subtrees = tree._parse_subtrees()
 
