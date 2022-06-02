@@ -72,7 +72,7 @@ class RKAmradTest(RungeKuttaTestCase):
 
     def runTest(self):
         for method, SSPCoefficient in self.knownValues:
-            self.assertAlmostEqual(self.RKs[method].absolute_monotonicity_radius(),SSPCoefficient,6)
+            self.assertAlmostEqual(self.RKs[method].absolute_monotonicity_radius(),SSPCoefficient,5)
 
 class linAmradTest(RungeKuttaTestCase):
     knownValues = ( ('FE',1),
