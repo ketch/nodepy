@@ -4,9 +4,11 @@
 [![Coverage Status](https://coveralls.io/repos/github/ketch/nodepy/badge.svg?branch=master)](https://coveralls.io/github/ketch/nodepy?branch=master)
 [![codecov.io](https://codecov.io/github/ketch/nodepy/coverage.svg?branch=master)](https://codecov.io/github/ketch/nodepy?branch=master)
 [![](https://readthedocs.org/projects/nodepy/badge)](https://readthedocs.org/projects/nodepy/)
+
 <a href="https://pypi.org/project/nodepy/"><img alt="PyPI" src="https://img.shields.io/pypi/v/nodepy"></a>
 <a href="https://pepy.tech/project/nodepy"><img alt="Downloads" src="https://pepy.tech/badge/nodepy"></a>
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-success.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275157.svg)](https://doi.org/10.5281/zenodo.4275157)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02515/status.svg)](https://doi.org/10.21105/joss.02515)
 
