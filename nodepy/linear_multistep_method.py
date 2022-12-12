@@ -555,7 +555,7 @@ def Adams_Bashforth(k):
         >>> ab3.order()
         3
 
-        Reference: :cite:`hairer1993`
+    Reference: :cite:`hairer1993`
     """
     one = Rational(1,1)
 
@@ -598,7 +598,7 @@ def Nystrom(k):
         >>> nys3.order()
         6
 
-        Reference: :cite:`hairer1993`
+    Reference: :cite:`hairer1993`
     """
     one = Rational(1,1)
 
