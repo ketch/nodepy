@@ -316,7 +316,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
             **Example**:
 
-            Load a method and try do DJ-reduce it::
+            Load a method and try to DJ-reduce it::
 
                 >>> from nodepy import rk
                 >>> merson = rk.loadRKM('Merson43')
@@ -355,7 +355,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 but with everything divided by two.
                 The b_2 matrix block consists of m_1 (row) copies of b_2.
         """
-        return compose(self,RK2,1,1)
+        if self.A.dtype is object:
+            from sympy import Rational
+            one = Rational(1,1)
+            return compose(self,RK2,one,one)
+        else:
+            return compose(self,RK2,1,1)
 
     def _check_consistency(self,tol=1.e-13):
         assert np.max(np.abs(self.A.sum(1)-self.c))<tol,'Abscissae are inconsistent with A.'
@@ -686,7 +691,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
         """
         q=0
         while True:
-            if q==4: return q
+            if q==4: 
+                print("Effective order is at least 4.  Higher effective order conditions not yet implemented.")
+                return q
             z=self.effective_order_condition_residuals(q+1)
             if np.any(abs(z)>tol): return q
             q=q+1
