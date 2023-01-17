@@ -234,9 +234,9 @@ class LinearMultistepMethod(GeneralLinearMethod):
             The region of absolute stability of a linear multistep method is
             the set
 
-            `\{ z \in C : \rho(\zeta) - z \sigma(zeta) \text{ satisfies the root condition} \}`
+            `\{ z \in C : \rho(\zeta) - z \sigma(\zeta) \text{ satisfies the root condition} \}`
 
-            where `\rho(zeta)` and `\sigma(zeta)` are the characteristic
+            where `\rho(\zeta)` and `\sigma(\zeta)` are the characteristic
             functions of the method.
 
             Also plots the boundary locus, which is
@@ -555,7 +555,7 @@ def Adams_Bashforth(k):
         >>> ab3.order()
         3
 
-        Reference: :cite:`hairer1993`
+    Reference: :cite:`hairer1993`
     """
     one = Rational(1,1)
 
@@ -598,7 +598,7 @@ def Nystrom(k):
         >>> nys3.order()
         6
 
-        Reference: :cite:`hairer1993`
+    Reference: :cite:`hairer1993`
     """
     one = Rational(1,1)
 
