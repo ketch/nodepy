@@ -686,6 +686,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             >>> from nodepy import rk
             >>> RK4 = rk.loadRKM('RK44')
             >>> RK4.effective_order()
+            Effective order is at least 4.  Higher effective order conditions not yet implemented.
             4
 
         """
