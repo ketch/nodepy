@@ -87,10 +87,10 @@ class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
 
         These were developed by Williamson, and Carpenter & Kennedy.
 
-        References:
+        **References**:
             * :cite:`ketcheson2010`
 
-        Examples::
+        **Examples**
 
             >>> from nodepy import lsrk
             >>> erk = lsrk.load_low_storage("RK45[2N]")
@@ -161,7 +161,7 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
         These were developed by van der Houwen, Wray, and Kennedy et al.
         Only 2R and 3R methods have been implemented so far.
 
-        References:
+        **References**:
             * :cite:`kennedy2000`
             * :cite:`ketcheson2010`
     """
@@ -239,7 +239,7 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
         These were developed by van der Houwen, Wray, and Kennedy et al.
         Only 2R and 3R methods have been implemented so far.
 
-        References:
+        **References**:
             * :cite:`kennedy2000`
             * :cite:`ketcheson2010`
     """
@@ -287,15 +287,15 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
             The implementation here is special for 2R/3R low-storage methods
             But it's not really ultra-low-storage yet.
 
-            INPUT:
-                f  -- function being integrated
-                t  -- array of previous solution times
-                u  -- array of previous solution steps
-                        (u[i,:] is the solution at time t[i])
-                dt -- length of time step to take
+            **Input**:
+                - f  -- function being integrated
+                - t  -- array of previous solution times
+                - u  -- array of previous solution steps
+                  (u[i,:] is the solution at time t[i])
+                - dt -- length of time step to take
 
-            OUTPUT:
-                unew -- approximate solution at time t[-1]+dt
+            **Output**:
+                - unew -- approximate solution at time t[-1]+dt
         """
         m=len(self); b=self.b; a=self.a
         S2=u[:]
@@ -411,15 +411,15 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
             The implementation here is special for 2S/2S*/3S* low-storage methods,
             but it's not really ultra-low-storage yet.
 
-            INPUT:
-                f  -- function being integrated
-                t  -- array of previous solution times
-                u  -- array of previous solution steps
-                        (u[i,:] is the solution at time t[i])
-                dt -- length of time step to take
+            **Input**:
+                - f  -- function being integrated
+                - t  -- array of previous solution times
+                - u  -- array of previous solution steps
+                  (u[i,:] is the solution at time t[i])
+                - dt -- length of time step to take
 
-            OUTPUT:
-                unew -- approximate solution at time t[-1]+dt
+            **Output**:
+                - unew -- approximate solution at time t[-1]+dt
         """
         m=len(self)
         S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
@@ -443,7 +443,7 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
 #=====================================================
 class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
 #=====================================================
-    """
+    r"""
         Class for low-storage embedded Runge-Kutta pairs
         that use Ketcheson's assumption (2S, 2S*, and 3S* methods).
 
@@ -561,16 +561,16 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
         """
             Take a time step on the ODE u'=f(t,u).
 
-            INPUT:
-                f  -- function being integrated
-                t  -- array of previous solution times
-                u  -- array of previous solution steps
-                        (u[i,:] is the solution at time t[i])
-                dt -- length of time step to take
+            **Input**:
+                - f  -- function being integrated
+                - t  -- array of previous solution times
+                - u  -- array of previous solution steps
+                  (u[i,:] is the solution at time t[i])
+                - dt -- length of time step to take
 
-            OUTPUT:
-                S1 -- approximate solution at time t[-1]+dt
-                S2 -- error estimate at time t[-1]+dt
+            **Output**:
+                - S1 -- approximate solution at time t[-1]+dt
+                - S2 -- error estimate at time t[-1]+dt
 
             The implementation here is special for 2S low-storage
             embedded pairs.
