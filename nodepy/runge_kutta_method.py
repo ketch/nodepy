@@ -700,7 +700,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             q=q+1
 
     def effective_order_condition_residuals(self,q):
-        """
+        r"""
             Generates and evaluates code to test whether a method
             satisfies the effective order `q` conditions (only).
 
@@ -2223,7 +2223,9 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         plt.plot(angle, np.ones(np.size(rho)), '--k', linewidth=2)
         ax_controller = fig_controller.get_axes()[0]
         ax_controller.set_xticks([np.pi/2, np.pi*5/8, np.pi*3/4, np.pi*7/8, np.pi])
-        ax_controller.set_xticklabels(['$\pi/2$', '$5\pi/8$', '$3\pi/4$', '$7\pi/8$', '$\pi$'])
+        ax_controller.set_xticklabels([
+            r'$\pi/2$', r'$5\pi/8$', r'$3\pi/4$', r'$7\pi/8$', r'$\pi$'
+            ])
 
         asp = np.diff(ax_controller.get_xlim())[0] / np.diff(ax_controller.get_ylim())[0]
         ax_controller.set_aspect(asp)
@@ -3298,7 +3300,7 @@ def RK44_family(w):
 #============================================================
 
 def SSPRK2(m):
-    """ Construct the optimal m-stage, second order SSP
+    r""" Construct the optimal m-stage, second order SSP
         Explicit Runge-Kutta method (`m \ge 2`).
 
         **Input**: m -- number of stages
@@ -3344,7 +3346,7 @@ def SSPRK2(m):
 
 
 def SSPRK3(m):
-    """
+    r"""
         Construct the optimal m-stage third order SSP
         Runge-Kutta method (`m = n^2`, `n \ge 2`)
 
@@ -3388,7 +3390,7 @@ def SSPRK3(m):
 
 
 def SSPRKm(m):
-    """ Construct the optimal m-stage, linearly mth order SSP
+    r""" Construct the optimal m-stage, linearly mth order SSP
         Explicit Runge-Kutta method (`m \ge 2`).
 
         **Input**: m -- number of stages
@@ -3465,7 +3467,7 @@ def SSPIRK1(m):
 
 
 def SSPIRK2(m):
-    """ Construct the optimal m-stage, second order SSP
+    r""" Construct the optimal m-stage, second order SSP
         Implicit Runge-Kutta method (`m \ge 2`).
 
         **Input**: m -- number of stages
@@ -3501,7 +3503,7 @@ def SSPIRK2(m):
 
 
 def SSPIRK3(m):
-    """ Construct the optimal m-stage, third order SSP
+    r""" Construct the optimal m-stage, third order SSP
         Implicit Runge-Kutta method (`m \ge 2`).
 
         **Input**: m -- number of stages
@@ -3542,7 +3544,7 @@ def SSPIRK3(m):
 # Families of Runge-Kutta-Chebyshev methods
 #============================================================
 def RKC1(m,epsilon=0):
-    """ Construct the m-stage, first order
+    r""" Construct the m-stage, first order
         explicit Runge-Kutta-Chebyshev methods of Verwer (`m \ge 1`).
 
         'epsilon' is a damping parameter used to avoid tangency of the
@@ -3615,7 +3617,7 @@ def RKC1(m,epsilon=0):
 
 
 def RKC2(m,epsilon=0):
-    """ Construct the m-stage, second order
+    r""" Construct the m-stage, second order
         Explicit Runge-Kutta-Chebyshev methods of Verwer (`m \ge 2`).
 
         **Inputs**:
