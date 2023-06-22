@@ -1,6 +1,6 @@
-============
 Rooted Trees
 ============
+
 .. plot::
 
    from nodepy.rooted_trees import *
@@ -36,7 +36,8 @@ trees of a given order.
 
 
 Functions on rooted trees
-===========================
+=========================
+
 .. automethod:: nodepy.rooted_trees.RootedTree.order
    :noindex:
 
@@ -48,6 +49,7 @@ Functions on rooted trees
 
 Computing products on trees
 ===========================
+
 .. automethod:: nodepy.rooted_trees.RootedTree.Gprod
    :noindex:
 

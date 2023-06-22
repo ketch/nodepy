@@ -1,9 +1,9 @@
-=================================================
 Testing Methods: Solving Initial Value Problems
-=================================================
+===============================================
+
 In addition to directly analyzing solver properties, NodePy also facilitates
 the testing of solvers through application to problems of interest.
-Furthermore, NodePy includes routines for automatically running sets of 
+Furthermore, NodePy includes routines for automatically running sets of
 tests to compare the practical convergence or efficiency of various solvers
 for given problem(s).
 
@@ -14,19 +14,18 @@ for given problem(s).
 .. _ivp:
 
 Initial Value Problems
-==============================
+======================
 
 The principal objects in NodePy are ODE solvers.  The object
 upon which a solver acts is an initial value problem.  Mathematically,
-an initial value problem (IVP) consists of one or more ordinary 
+an initial value problem (IVP) consists of one or more ordinary
 differential equations and an initial condition:
 
     \\begin{align*}
     u'(t) & = F(u) & u(0) & = u_0.
     \\end{align*}
 
-
-In NodePy, 
+In NodePy,
 an initial value problem is an object with the following properties:
 
     * rhs(): The right-hand-side function; i.e. F where $u(t)'=F(u)$.
@@ -44,16 +43,16 @@ can be loaded as follows::
 
     >> from NodePy import ivp
     >> myivp = ivp.load_ivp('vdp')
-    
+
 
 Instantiation
------------------
+-------------
 
 .. automethod:: nodepy.ivp.detest
 
 
 Solving Initial Value Problems
-====================================
+==============================
 
 Any ODE solver object in NodePy can be used to solve an initial value
 problem simply by calling the solver with an initial value problem object
@@ -66,12 +65,12 @@ as argument::
 
 
 Convergence Testing
---------------------------------
+-------------------
 
 .. automethod:: nodepy.convergence.ctest
 
 Performance testing with automatic step-size control
-----------------------------------------------------------------
+----------------------------------------------------
 
 .. automethod:: nodepy.convergence.ptest
 

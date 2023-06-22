@@ -3,7 +3,7 @@
 .. _create_rkm:
 
 Runge-Kutta methods
-============================
+===================
 
 A Runge-Kutta method is a one-step method that computes the next time
 step solution as follows:
@@ -13,7 +13,7 @@ step solution as follows:
     u^{n+1} = & u^{n} + \\Delta t \\sum_{j=1}^{s} b_j f(y_j).
     \\end{align*}
 
-The simplest way to load a Runge-Kutta method is using the 
+The simplest way to load a Runge-Kutta method is using the
 loadRKM function::
 
     >> from nodepy import runge_kutta_method as rk
@@ -33,16 +33,16 @@ Additionally, several classes of methods are available through the
 following functions:
 
   * Optimal strong stability preserving methods: SSPRK2(s), SSPRK3(s), SSPIRK2(), etc.
-  * Integral deferred correction methods: 
+  * Integral deferred correction methods:
     :mod:`DC(s) <nodepy.runge_kutta_method.DC>`
 
-  * Extrapolation methods: 
+  * Extrapolation methods:
     :mod:`extrap(s) <nodepy.runge_kutta_method.extrap>`
   * Runge-Kutta Chebyshev methods: RKC1(s), RKC2(s)
 
 See the documentation of these functions for more details.
 
-More generally, any Runge-Kutta method may be instantiated by providing 
+More generally, any Runge-Kutta method may be instantiated by providing
 its Butcher coefficients, $A$ and $b$::
 
     >> A=np.array([[0,0],[0.5,0]])
@@ -62,14 +62,15 @@ A separate subclass is provided for explicit Runge-Kutta methods: *ExplicitRunge
 If a method is explicit, it is important to instantiate it as an
 ExplicitRungeKuttaMethod and not simply a RungeKuttaMethod, since the
 latter class has significantly less functionality in NodePy.
-Most significantly, time stepping is currently implemented for explicit methods, 
+Most significantly, time stepping is currently implemented for explicit methods,
 but not for implicit methods.
 
 .. automodule:: nodepy.runge_kutta_method
    :noindex:
 
 Accuracy
---------------------------------------------
+--------
+
 The principal measure of accuracy of a Runge-Kutta method is its
 *order of accuracy*.  By comparing the Runge-Kutta solution with
 the Taylor series for the exact solution, it can be shown that the
@@ -87,7 +88,7 @@ accuracy than a lower order method even for practical step sizes.
 In order to compare two methods with the same order of accuracy
 more detailed information about the accuracy of a method may be
 obtained by considering the relative size of the constant $C$.
-This can be measured in various ways and is referred to as the 
+This can be measured in various ways and is referred to as the
 principal error norm.
 
 For example::
@@ -101,7 +102,7 @@ For example::
     >> ssp104=rk.loadRKM('SSP104')
     >> ssp104.principal_error_norm()
     0.002211223747053554
-    
+
 Since the SSP(10,4) method has smaller principal error norm, we
 expect that it will provide better accuracy than the classical 4-stage
 Runge-Kutta method for a given step size.  Of course, the SSP method
@@ -125,7 +126,8 @@ method will require about 72\% more work.
    :noindex:
 
 Classical (linear) stability
---------------------------------------------
+----------------------------
+
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.stability_function
    :noindex:
 
@@ -133,7 +135,8 @@ Classical (linear) stability
    :noindex:
 
 Nonlinear stability
---------------------------------------------
+-------------------
+
 .. automethod:: nodepy.runge_kutta_method.RungeKuttaMethod.absolute_monotonicity_radius
    :noindex:
 
@@ -141,7 +144,8 @@ Nonlinear stability
    :noindex:
 
 Reducibility of Runge-Kutta methods
---------------------------------------------
+-----------------------------------
+
 Two kinds of reducibility (*DJ-reducibility* and *HS-reducibility*) have
 been identified in the literature.  NodePy contains functions for detecting
 both and transforming a reducible method to an equivalent irreducible method.
@@ -158,41 +162,44 @@ since the method coefficients are floating point numbers.
    :noindex:
 
 Composing Runge-Kutta methods
---------------------------------------------
+-----------------------------
 
-Butcher has developed an elegant theory of the group structure of 
+Butcher has developed an elegant theory of the group structure of
 Runge-Kutta methods.  The Runge-Kutta methods form a group under the
-operation of composition.  The multiplication operator has been 
+operation of composition.  The multiplication operator has been
 overloaded so that multiplying two Runge-Kutta methods gives the
 method corresponding to their composition, with equal timesteps.
 
 It is also possible to compose methods with non-equal timesteps using the
 compose() function.
 
-
 Embedded Runge-Kutta Pairs
-============================
+==========================
+
 .. autoclass:: nodepy.runge_kutta_method.ExplicitRungeKuttaPair
    :noindex:
 
-
 Low-Storage Runge-Kutta methods
-=================================
+===============================
+
 .. automodule:: nodepy.low_storage_rk
    :noindex:
 
 2S/3S methods
---------------------
+-------------
+
 .. autoclass:: nodepy.low_storage_rk.TwoSRungeKuttaMethod
    :noindex:
 
 2S/3S embedded pairs
 --------------------
+
 .. autoclass:: nodepy.low_storage_rk.TwoSRungeKuttaPair
    :noindex:
 
 2R/3R methods
---------------------
+-------------
+
 .. autoclass:: nodepy.low_storage_rk.TwoRRungeKuttaMethod
    :noindex:
 
