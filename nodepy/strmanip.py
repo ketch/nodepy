@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from six.moves import range
+
 def collect_powers(s,v):
     """
         Collect repeated multiplications of string v in s and replace them by exponentiation.
@@ -17,7 +18,7 @@ def collect_powers(s,v):
     import re
     m=s.count(v)
     for i in range(m,0,-1):
-        pattern=re.compile(v+'(\*'+v+'){'+str(i)+'}')
+        pattern=re.compile(v+r'(\*'+v+'){'+str(i)+'}')
         s=pattern.sub(v+'**'+str(i+1),s)
     return s
 
@@ -35,7 +36,7 @@ def collect_sums(s,v):
     import re
     m=s.count(v)
     for i in range(m,1,-1):
-        pattern=re.compile('(\+'+v+'){'+str(i)+'}')
+        pattern=re.compile(r'(\+'+v+'){'+str(i)+'}')
         s=pattern.sub(str(i)+'*'+v,s)
     return s
 
@@ -75,7 +76,7 @@ def get_substring(st,startpos):
 #=====================================================
 def open_to_close(st,startpos):
 #=====================================================
-    """ 
+    """
         Finds end of a substring enclosed by braces starting at startpos.
         Used by get_substring.
     """

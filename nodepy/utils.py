@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 from six.moves import range
+
 def bisect(rlo, rhi, acc, tol, fun, **kwargs):
-    """ 
+    """
         Performs a bisection search.
 
         **Input**:
@@ -32,7 +33,7 @@ def shortstring(x,printzeros=False):
         return ''
     elif x.__class__ is np.float64 or x.__class__ is sympy.Float:
         return '%6.3f' % x
-    else: 
+    else:
         return ' '+str(x)
 
 def array2strings(x,printzeros=False):
@@ -41,7 +42,7 @@ def array2strings(x,printzeros=False):
 
 def find_plot_bounds(f,guess,N=101,zmax=1000):
     r"""Find reasonable area to plot for stability regions.
-    
+
     Tries to find an area that contains the entire region where f returns True,
     but isn't too big.  Makes lots of assumptions and is really intended for
     finding stability regions.  Obviously can't work for unbounded stability
@@ -101,4 +102,4 @@ def find_plot_bounds(f,guess,N=101,zmax=1000):
 
     return bounds
 
- 
+

@@ -12,9 +12,10 @@ of methods this reveals the potential for parallelism.
     >>> plot_dependency_graph(ex4)
 """
 from __future__ import absolute_import
+
 def plot_dependency_graph(rkm,remove_edges=False):
     """Plot the stage dependency graph of a Runge-Kutta method.
-    
+
     **Inputs**:
 
         - rkm : A RungeKuttaMethod

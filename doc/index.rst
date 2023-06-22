@@ -5,9 +5,9 @@
 
 .. contents::
 
-================
 Overview
-================
+========
+
 NodePy (Numerical ODEs in Python) is a Python package for designing,
 analyzing, and testing numerical methods for initial value ODEs.
 Its development was motivated by my own research in time integration
@@ -15,7 +15,7 @@ methods for PDEs.  I found that I was frequently repeating tasks that
 could be automated and integrated.  Initially I developed a collection
 of MATLAB scripts, but this became unwieldy due to the large number
 of files that were necessary and the more limited capability for
-code reuse.  
+code reuse.
 
 NodePy represents an object-oriented approach, in which the basic
 object is a numerical ODE solver.  The idea is to design a laboratory for
@@ -23,8 +23,8 @@ such methods in the same sense that MATLAB is a laboratory for matrices.
 Some distinctive design goals are:
 
   * **Plug-and-play**: any method can be applied to any problem using the
-    same syntax.  Also, properties of different kinds of methods are 
-    available through the same syntax.  This makes it easy to compare 
+    same syntax.  Also, properties of different kinds of methods are
+    available through the same syntax.  This makes it easy to compare
     different methods.
   * **Abstract representations**: Generally, the most abstract
     (hence powerful) representaton of an object is used whenever
@@ -57,11 +57,12 @@ looking into this.
 
 
 Dependencies
-================================
+============
+
   * Works with Python 3.5+
   * Requires: Numpy, Matplotlib, Sympy
   * SymPy (note: NodePy is now compatible with SymPy 0.7.1)
-  * Optional: networkx (for some Runge-Kutta stage dependency graphing), 
+  * Optional: networkx (for some Runge-Kutta stage dependency graphing),
     cvxpy (for finding optimal downwind perturbations),
     scipy
 
@@ -100,10 +101,10 @@ NodePy includes functions for analyzing many properties, including:
 
 
 Testing Methods
-======================
+===============
 
 NodePy includes implementation of the actual time-stepping algorithms
-for the various classes of methods.  A wide range of 
+for the various classes of methods.  A wide range of
 :ref:`initial value ODEs <ivp>` can be loaded, including the DETEST suite of problems.
 Arbitrary initial value problems
 can be instantiated and solved simply by calling a method with the
@@ -116,7 +117,7 @@ of initial boundary value PDEs.
 
 
 NodePy Manual
-==================================
+=============
 
 .. toctree::
    :maxdepth: 2
@@ -132,7 +133,7 @@ NodePy Manual
 
 
 Modules Reference
-===================
+=================
 
 .. toctree::
 
@@ -148,7 +149,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-
 .. bibliography:: zrefs.bib
    :all:
-

@@ -56,7 +56,7 @@ What's new in Version 0.6.1
 - Many bug fixes.
 
 What's new in Version 0.6
-==========================
+=========================
 Version 0.6 is a relatively small update, which includes the following:
 
 - Computation of optimal perturbations (splittings) of Runge-Kutta methods
@@ -73,10 +73,8 @@ Version 0.6 is a relatively small update, which includes the following:
 - Fixed bug involving non-existence of alphahat attribute
 - minor bug fixes
 
-
-
 What's new in Version 0.5
-==========================
+=========================
 *Released: Nov. 4, 2013*
 
 Version 0.5 is a relatively small update, which includes the following:
@@ -98,7 +96,7 @@ Version 0.5 is a relatively small update, which includes the following:
 * Automated testing with Travis
 
 What's new in Version 0.4
-==========================
+=========================
 *Released: Aug. 28, 2012*
 
 Version 0.4 of NodePy inclues numerous bug fixes and new features.
@@ -135,5 +133,3 @@ Other new features and fixes include:
     * Fix bugs in stability region plotting
     * New examples in nodepy/examples/
     * Spectral difference matrices for linear advection -- thanks to Matteo Parsani
-
-

@@ -132,10 +132,9 @@ class ODESolver(object):
                 errestold = errtol
                 errest=1.
 
-
                 for istep in range(max_steps):
                     # Hit next output time exactly:
-                    if t_current+dt >= next_output_time: 
+                    if t_current+dt >= next_output_time:
                         dt = next_output_time - t_current
                         out_now = True
 
@@ -155,14 +154,14 @@ class ODESolver(object):
                         errestold = errest #Should this happen if step is rejected?
                         dthist.append(dt)
                         errest_hist.append(errest)
-                    else: 
+                    else:
                         rejected_steps+=1
 
                     out_now = False
 
                     if controllertype=='P':
                       #Compute new dt using P-controller
-                      facopt = (errtol/(errest+1.e-6*errtol))**alpha 
+                      facopt = (errtol/(errest+1.e-6*errtol))**alpha
 
                     elif controllertype=='PI':
                       #Compute new dt using PI-controller

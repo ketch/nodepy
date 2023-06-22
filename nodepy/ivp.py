@@ -145,7 +145,7 @@ def detest(testkey):
             * D1-D5 -- Orbit equations with varying eccentricities
             * E1-E5 -- Second order equations
             * F1-F5 -- Problems with discontinuities
-	    * SB1-SB3 -- Periodic Orbit problem from Shampine Baca paper pg.11,13
+            * SB1-SB3 -- Periodic Orbit problem from Shampine Baca paper pg.11,13
 
         .. note::
             Although this set of problems was not intended to become a

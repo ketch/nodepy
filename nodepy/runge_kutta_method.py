@@ -1835,7 +1835,7 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
             use_butcher = True
 
         m=len(self)
-        u_old = u.copy()		# Initial value
+        u_old = u.copy()    # Initial value
         y = [np.zeros_like(np.atleast_1d(u)) for i in range(m+1)]
         fy = [np.zeros_like(np.atleast_1d(u)) for i in range(m)]
 
@@ -3491,7 +3491,7 @@ def SSPIRK2(m):
             >>> ISSP42.absolute_monotonicity_radius() # doctest: +ELLIPSIS
             7.99...
 
-		See :cite:`ketcheson2009`.
+        See :cite:`ketcheson2009`.
     """
     from sympy import Rational
     r=2*m
@@ -3528,7 +3528,7 @@ def SSPIRK3(m):
             >>> print("{:.5f}".format(x))
             6.87298
 
-		See :cite:`ketcheson2009`.
+        See :cite:`ketcheson2009`.
     """
     from sympy import sqrt, Rational
     r=m-1+sqrt(m**2-1)
@@ -3568,7 +3568,7 @@ def RKC1(m,epsilon=0):
             ______|________________________
                   | 1/4   3/8   1/4   1/8
 
-		See :cite:`verwer2004`.
+        See :cite:`verwer2004`.
     """
 
     import sympy
@@ -3640,7 +3640,7 @@ def RKC2(m,epsilon=0):
             ________|________________________________
                     | -51/64  3/8     1       27/64
 
-		See :cite:`verwer2004`.
+        See :cite:`verwer2004`.
     """
     import sympy
     one = sympy.Rational(1)

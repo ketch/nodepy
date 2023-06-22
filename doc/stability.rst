@@ -1,4 +1,3 @@
-==============================
 Analyzing Stability Properties
 ==============================
 
@@ -30,10 +29,8 @@ Region of absolute stability for the 3-step Adams-Moulton method:
 .. automethod:: nodepy.linear_multistep_method.LinearMultistepMethod.plot_stability_region
    :noindex:
 
-
-
 Plotting the order star
-=========================================
+=======================
 
 Order star for the optimal SSP 10-stage, 4th order
 Runge-Kutta method:
