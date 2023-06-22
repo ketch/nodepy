@@ -43,7 +43,13 @@ def rk_dependency_graph(rkm):
     s = len(rkm)
     K = np.zeros((s+1,s+1))
     K[:,:-1] = np.vstack((rkm.A,rkm.b))
-    G = nx.from_numpy_matrix(np.abs(K.T)>0,nx.DiGraph())
+
+    try:
+        G = nx.from_numpy_matrix(np.abs(K.T)>0,nx.DiGraph())
+    except AttributeError:
+        # NOTE: networkx v3.0 removed from_numpy_matrix
+        G = nx.from_numpy_array(np.abs(K.T)>0, create_using=nx.DiGraph)
+
     return G
 
 def _longest_paths(G):
