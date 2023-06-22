@@ -1,5 +1,5 @@
-:mod:`rooted_trees`
-===========================
+``rooted_trees``
+================
 
 .. automodule:: nodepy.rooted_trees
    :members:

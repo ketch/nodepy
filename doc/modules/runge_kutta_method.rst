@@ -1,5 +1,5 @@
-:mod:`runge_kutta_method`
-===========================
+``runge_kutta_method``
+======================
 
 .. automodule:: nodepy.runge_kutta_method
    :members:
