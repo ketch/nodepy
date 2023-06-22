@@ -66,15 +66,17 @@ from six.moves import range
 #=====================================================
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 #=====================================================
-    r""" General class for Two-step Runge-Kutta Methods
+    r"""General class for Two-step Runge-Kutta Methods
         The representation uses the form and partly the notation of :cite:`jackiewicz1995`,
         equation (1.3).
 
-        `\begin{align*}
-        y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \Delta t \sum_{k=1}^{s}
-        (\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1\le j \le s) \\
-        u^{n+1} = & \theta u^{n-1} + (1-\theta)u^n + \Delta t \sum_{j=1}^{s}(\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
-        \end{align*}`
+        .. math::
+
+            \begin{align*}
+            y^n_j = & d_j u^{n-1} + (1-d_j)u^n + \Delta t \sum_{k=1}^{s}
+            (\hat{a}_{jk} f(y_k^{n-1}) + a_{jk} f(y_k^n)) & (1 \le j \le s) \\
+            u^{n+1} = & \theta u^{n-1} + (1 - \theta)u^n + \Delta t \sum_{j=1}^{s}(\hat{b}_j f(y_j^{n-1}) + b_j f(y_j^n))
+            \end{align*}
     """
     def __init__(self,d,theta,A,b,Ahat=None,bhat=None,type='General',name='Two-step Runge-Kutta Method'):
         r"""

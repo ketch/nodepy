@@ -22,19 +22,22 @@ an initial value problem (IVP) consists of one or more ordinary
 differential equations and an initial condition:
 
     \\begin{align*}
-    u'(t) & = F(u) & u(0) & = u_0.
+    u'(t) & = F(u) & \\
+    u(0) & = u_0.
     \\end{align*}
 
 In NodePy,
 an initial value problem is an object with the following properties:
 
-    * rhs(): The right-hand-side function; i.e. F where $u(t)'=F(u)$.
-    * u0:  The initial condition.
-    * T:   The (default) final time of solution.
+    * *rhs()*: The right-hand-side function; i.e. F where `u(t)'=F(u)`.
+    * *u0*:  The initial condition.
+    * *T*:   The (default) final time of solution.
 
 Optionally an IVP may possess the following:
-    * exact(): a function that takes one argument (t) and returns the exact solution (Should we make this a function of u0 as well?)
-    * dt0: The default initial timestep when a variable step size integrator is used.
+    * *exact()*: a function that takes one argument `t` and returns the exact
+      solution (Should we make this a function of `u_0` as well?)
+    * *dt0*: The default initial timestep when a variable step size integrator
+      is used.
     * Any other problem-specific parameters.
 
 The module ivp contains functions for loading a variety of initial
