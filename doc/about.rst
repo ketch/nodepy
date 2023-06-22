@@ -31,7 +31,7 @@ NodePy is distributed under the terms of the modified Berkeley Software Distribu
 (BSD) license.  The license is in the file nodepy/LICENSE.txt and
 reprinted below.
 
-See http://www.opensource.org/licenses/bsd-license.php for more details.
+See https://opensource.org/license/bsd-2-clause for more details.
 
 Copyright (c) 2008-2020 David I. Ketcheson.  All rights reserved.
 
