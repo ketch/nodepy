@@ -49,10 +49,12 @@ class LinearMultistepMethod(GeneralLinearMethod):
     r"""
         Implementation of linear multistep methods in the form:
 
-        `\alpha_k y_{n+k} + \alpha_{k-1} y_{n+k-1} + ... + \alpha_0 y_n
-        = h ( \beta_k f_{n+k} + ... + \beta_0 f_n )`
+        $$
+        \\alpha_k y_{n+k} + \\alpha_{k-1} y_{n+k-1} + \\cdots + \\alpha_0 y_n
+        = h ( \\beta_k f_{n+k} + \\cdots + \\beta_0 f_n )
+        $$
 
-        Methods are automatically normalized so that \alpha_k=1.
+        Methods are automatically normalized so that `\alpha_k=1`.
 
         Notes: Representation follows Hairer & Wanner p. 368, NOT Butcher.
 
@@ -117,9 +119,9 @@ class LinearMultistepMethod(GeneralLinearMethod):
         Returns the characteristic polynomials (also known as generating
         polynomials) of a linear multistep method.  They are:
 
-        `\rho(z) = \sum_{j=0}^k \alpha_k z^k`
+        $$ \\rho(z) = \\sum_{j=0}^k \\alpha_k z^k $$
 
-        `\sigma(z) = \sum_{j=0}^k \beta_k z^k`
+        $$ \\sigma(z) = \\sum_{j=0}^k \\beta_k z^k $$
 
         **Examples**::
 
@@ -142,7 +144,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return rho, sigma
 
     def order(self,tol=1.e-10):
-        r""" Return the order of the local truncation error of a linear multistep method.
+        r"""Return the order of the local truncation error of a linear multistep method.
 
         **Examples**::
 
@@ -159,8 +161,8 @@ class LinearMultistepMethod(GeneralLinearMethod):
                 return p
 
     def _satisfies_order_conditions(self,p,tol):
-        """ Return True if the linear multistep method satisfies
-            the conditions of order p (only) """
+        """ Return *True* if the linear multistep method satisfies
+            the conditions of order `p` (only)."""
         ii=snp.arange(len(self.alpha))
         return abs(sum(ii**p*self.alpha-p*self.beta*ii**(p-1)))<tol
 
@@ -180,7 +182,6 @@ class LinearMultistepMethod(GeneralLinearMethod):
             >>> from nodepy import lm
             >>> print(lm.Adams_Bashforth(2).latex())
             \begin{align} y_{n + 2} - y_{n + 1} = \frac{3}{2}h f(y_{n + 1}) - \frac{1}{2}h f(y_{n})\end{align}
-
         """
         n = symbols('n')
         k = len(self)
@@ -201,15 +202,14 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return s
 
     def ssp_coefficient(self):
-        r""" Return the SSP coefficient of the method.
+        r"""Return the SSP coefficient of the method.
 
          The SSP coefficient is given by
 
-        `\min_{0 \le j < k} -\alpha_k/beta_k`
+        $$ \\min_{0 \\le j < k} - \\alpha_k/ \\beta_k $$
 
         if `\alpha_j<0` and `\beta_j>0` for all `j`, and is equal to
         zero otherwise.
-
 
         **Examples**::
 
@@ -234,7 +234,10 @@ class LinearMultistepMethod(GeneralLinearMethod):
             The region of absolute stability of a linear multistep method is
             the set
 
-            `\{ z \in C : \rho(\zeta) - z \sigma(\zeta) \text{ satisfies the root condition} \}`
+            $$
+            \\{ z \\in C \\mid \\rho(\\zeta) - z \\sigma(\\zeta)
+            \\text{ satisfies the root condition} \\}
+            $$
 
             where `\rho(\zeta)` and `\sigma(\zeta)` are the characteristic
             functions of the method.
@@ -242,13 +245,16 @@ class LinearMultistepMethod(GeneralLinearMethod):
             Also plots the boundary locus, which is
             given by the set of points z:
 
-            `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
+            $$
+            \\{z \\mid z =
+            \\rho(\\exp(\\imath \\theta)) /
+            \\sigma(\\exp(\\imath\\theta)), 0 \\le \\theta \\le 2\\pi \\}
+            $$
 
             Here `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
-            Reference: :cite:`leveque2007` section 7.6.1
-
+            **Reference**: :cite:`leveque2007` section 7.6.1
 
             **Input**: (all optional)
                 - N       -- Number of gridpoints to use in each direction
@@ -305,12 +311,16 @@ class LinearMultistepMethod(GeneralLinearMethod):
         r"""Plot the boundary locus, which is
             given by the set of points
 
-            `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
+            $$
+            \\{z \\mid z =
+            \\rho(\\exp(\\imath\\theta)) /
+            \\sigma(\\exp(\\imath\\theta)), 0\\le \\theta \\le 2\\pi \\}
+            $$
 
             where `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
-            Reference: :cite:`leveque2007` section 7.6.1
+            **Reference**: :cite:`leveque2007` section 7.6.1
         """
         z = self._boundary_locus(N)
 
@@ -330,12 +340,16 @@ class LinearMultistepMethod(GeneralLinearMethod):
         r"""Compute the boundary locus, which is
             given by the set of points
 
-            `\{z | z=\rho(\exp(i\theta))/\sigma(\exp(i\theta)), 0\le \theta \le 2*\pi \}`
+            $$
+            \\{z \\mid z =
+            \\rho(\\exp(\\imath\\theta)) /
+            \\sigma(\\exp(\\imath\\theta)), 0 \\le \\theta \\le 2\\pi \\}
+            $$
 
             where `\rho` and `\sigma` are the characteristic polynomials
             of the method.
 
-            Reference: :cite:`leveque2007` section 7.6.1
+            **Reference**: :cite:`leveque2007` section 7.6.1
         """
         theta=np.linspace(0.,2*np.pi,N)
         zeta = np.exp(theta*1j)
@@ -369,7 +383,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return self.beta[-1]==0
 
     def is_zero_stable(self,tol=1.e-13):
-        r""" True if the method is zero-stable.
+        r"""*True* if the method is zero-stable.
 
         **Examples**::
 
@@ -390,15 +404,17 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
     r"""
         Method for solving equations of the form
 
-        `y'(t) = f(y) + g(y)`
+        $$ y'(t) = f(y) + g(y) $$
 
         The method takes the form
 
-        `\alpha_k y_{n+k} + \alpha_{k-1} y_{n+k-1} + ... + \alpha_0 y_n
-        = h ( \beta_k f_{n+k} + ... + \beta_0 f_n
-        + \gamma_k f_{n+k} + ... + \gamma_0 f_n )`
+        $$
+        \\alpha_k y_{n+k} + \\alpha_{k-1} y_{n+k-1} + \\cdots + \\alpha_0 y_n
+        = h ( \\beta_k f_{n+k} + \\cdots + \\beta_0 f_n
+        + \\gamma_k f_{n+k} + \\cdots + \\gamma_0 f_n )
+        $$
 
-        Methods are automatically normalized so that \alpha_k=1.
+        Methods are automatically normalized so that `\alpha_k=1`.
 
         The usual reference for these is Ascher, Ruuth, and Whetton.
         But we follow a different notation (as just described).
@@ -479,9 +495,9 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
 
     def stiff_damping_factor(self,epsilon=1.e-7):
         r"""
-        Return the magnitude of the largest root at z=-inf.
+        Return the magnitude of the largest root at `z = -\infty`.
         This routine just computes a numerical approximation
-        to the true value (with absolute accuracy epsilon).
+        to the true value (with absolute accuracy *epsilon*).
         """
         rho, sigma1 = self.method1.__num__().characteristic_polynomials()
         rho, sigma2 = self.method2.__num__().characteristic_polynomials()
@@ -505,7 +521,7 @@ def _max_root(p):
     return max(np.abs(p.r))
 
 def _root_condition(p,tol=1.e-13):
-    r""" True if the polynomial `p` has all roots inside
+    r"""*True* if the polynomial `p` has all roots inside
     the unit circle and roots on the boundary of the unit circle
     are simple.
 
@@ -537,7 +553,7 @@ def Adams_Bashforth(k):
     The methods are explicit and have order k.
     They have the form:
 
-    `y_{n+1} = y_n + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
+    $$ y_{n+1} = y_n + h \\sum_{j=0}^{k-1} \\beta_j f(y_{n-k+j+1}) $$
 
     They are generated using equations (1.5) and (1.7) from
     :cite:`hairer1993` III.1, along with the binomial expansion.
@@ -555,7 +571,7 @@ def Adams_Bashforth(k):
         >>> ab3.order()
         3
 
-    Reference: :cite:`hairer1993`
+    **Reference**: :cite:`hairer1993`
     """
     one = Rational(1,1)
 
@@ -577,11 +593,12 @@ def Adams_Bashforth(k):
 
 def Nystrom(k):
     r"""
-    Construct the k-step explicit Nystrom linear multistep method.
-    The methods are explicit and have order k.
+    Construct the `k`-step explicit Nystrom linear multistep method.
+    The methods are explicit and have order `k`.
+
     They have the form:
 
-    `y_{n+1} = y_{n-1} + h \sum_{j=0}^{k-1} \beta_j f(y_n-k+j+1)`
+    $$y_{n+1} = y_{n-1} + h \\sum_{j=0}^{k-1} \\beta_j f(y_{n-k+j+1})$$
 
     They are generated using equations (1.13) and (1.7) from
     :cite:`hairer1993` III.1, along with the binomial expansion
@@ -598,7 +615,7 @@ def Nystrom(k):
         >>> nys3.order()
         6
 
-    Reference: :cite:`hairer1993`
+    **Reference**: :cite:`hairer1993`
     """
     one = Rational(1,1)
 
@@ -624,11 +641,11 @@ def Nystrom(k):
 
 def Adams_Moulton(k):
     r"""
-        Construct the k-step, Adams-Moulton method.
-        The methods are implicit and have order k+1.
+        Construct the `k`-step, Adams-Moulton method.
+        The methods are implicit and have order `k+1`.
         They have the form:
 
-        `y_{n+1} = y_n + h \sum_{j=0}^{k} \beta_j f(y_n-k+j+1)`
+        $$ y_{n+1} = y_n + h \\sum_{j=0}^{k} \\beta_j f(y_{n-k+j+1}) $$
 
         They are generated using equation (1.9) and the equation in
         Exercise 3 from Hairer & Wanner III.1, along with the binomial
@@ -641,7 +658,7 @@ def Adams_Moulton(k):
             >>> am3.order()
             4
 
-        Reference: :cite:`hairer1993`
+        **Reference**: :cite:`hairer1993`
     """
 
     alpha=snp.zeros(k+1)
@@ -662,11 +679,11 @@ def Adams_Moulton(k):
 
 def Milne_Simpson(k):
     r"""
-        Construct the k-step, Milne-Simpson method.
-        The methods are implicit and (for k>=3) have order k+1.
+        Construct the `k`-step, Milne-Simpson method.
+        The methods are implicit and (for `k \ge 3`) have order `k+1`.
         They have the form:
 
-        `y_{n+1} = y_{n-1} + h \sum_{j=0}^{k} \beta_j f(y_n-k+j+1)`
+        $$ y_{n+1} = y_{n-1} + h \\sum_{j=0}^{k} \\beta_j f(y_{n-k+j+1}) $$
 
         They are generated using equation (1.15), the equation in
         Exercise 3, and the relation in exercise 4, all from Hairer & Wanner
@@ -679,7 +696,7 @@ def Milne_Simpson(k):
             >>> ms3.order()
             4
 
-        Reference: :cite:`hairer1993`
+        **Reference**: :cite:`hairer1993`
     """
 
     alpha = snp.zeros(k+1)
@@ -703,14 +720,15 @@ def Milne_Simpson(k):
 
 def backward_difference_formula(k):
     r"""
-        Construct the k-step backward differentiation method.
-        The methods are implicit and have order k.
+        Construct the `k`-step backward differentiation method.
+        The methods are implicit and have order `k`.
+
         They have the form:
 
-        `\sum_{j=0}^{k} \alpha_j y_{n+k-j+1} = h \beta_j f(y_{n+1})`
+        $$ \\sum_{j=0}^{k} \\alpha_j y_{n+k-j+1} = h \\beta_j f(y_{n+1}) $$
 
         They are generated using equation (1.22') from Hairer & Wanner III.1,
-            along with the binomial expansion.
+        along with the binomial expansion.
 
         **Examples**::
 
@@ -738,7 +756,7 @@ def backward_difference_formula(k):
 
 def elm_ssp2(k):
     r"""
-    Returns the optimal SSP k-step linear multistep method of order 2.
+    Returns the optimal SSP `k`-step linear multistep method of order 2.
 
     **Examples**::
 
@@ -757,8 +775,8 @@ def elm_ssp2(k):
     return LinearMultistepMethod(alpha,beta,name=name)
 
 def sand_cc(s):
-    r""" Construct Sand's circle-contractive method of order `p=2(s+1)`
-         that uses `2^s + 1` steps.
+    r"""Construct Sand's circle-contractive method of order `p=2(s+1)`
+    that uses `2^s + 1` steps.
 
     **Examples**::
 
@@ -797,7 +815,7 @@ def sand_cc(s):
 def arw2(gam,c):
     r"""Returns the second order IMEX additive multistep method based on the
     parametrization in Section 3.2 of Ascher, Ruuth, & Whetton.  The parameters
-    are gam and c.  Known methods are obtained with the following values:
+    are *gam* and *c*. Known methods are obtained with the following values:
 
         (1/2,0):   CNAB
         (1/2,1/8): MCNAB
@@ -827,7 +845,8 @@ def arw2(gam,c):
 def arw3(gam,theta,c):
     r"""Returns the third order IMEX additive multistep method based on the
     parametrization in Section 3.3 of Ascher, Ruuth, & Whetton.  The parameters
-    are gamma, theta, and c.  Known methods are obtained with the following values:
+    are *gam*, *theta*, and *c*.  Known methods are obtained with the following
+    values:
 
         (1,0,0):     SBDF3
 
