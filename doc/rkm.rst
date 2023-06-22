@@ -9,12 +9,12 @@ A Runge-Kutta method is a one-step method that computes the next time
 step solution as follows:
 
     \\begin{align*}
-    y_i = & u^{n} + \\Delta t \\sum_{j=1}^{s} + a_{ij} f(y_j)) & (1\\le j \\le s) \\\\
+    y_i = & u^{n} + \\Delta t \\sum_{j=1}^{s} a_{ij} f(y_j)) & (1\\le j \\le s) \\\\
     u^{n+1} = & u^{n} + \\Delta t \\sum_{j=1}^{s} b_j f(y_j).
     \\end{align*}
 
 The simplest way to load a Runge-Kutta method is using the
-loadRKM function::
+:func:`~nodepy.runge_kutta_method.loadRKM` function::
 
     >> from nodepy import runge_kutta_method as rk
     >> import numpy as np
@@ -28,8 +28,8 @@ loadRKM function::
     _______|________________________________
            |  0.167  0.333  0.333  0.167
 
-Many well-known methods are available through the loadRKM() function.
-Additionally, several classes of methods are available through the
+Many well-known methods are available through the :func:`~nodepy.runge_kutta_method.loadRKM`
+function. Additionally, several classes of methods are available through the
 following functions:
 
   * Optimal strong stability preserving methods: SSPRK2(s), SSPRK3(s), SSPIRK2(), etc.
@@ -43,24 +43,26 @@ following functions:
 See the documentation of these functions for more details.
 
 More generally, any Runge-Kutta method may be instantiated by providing
-its Butcher coefficients, $A$ and $b$::
+its Butcher coefficients, `A` and `b`::
 
     >> A=np.array([[0,0],[0.5,0]])
     >> b=np.array([0,1.])
     >> rk22=rk.RungeKuttaMethod(A,b)
 
 Note that, because NumPy arrays are indexed from zero, the Butcher coefficient
-$a_{21}$, for instance, corresponds to my_rk.a[1,0].
-The abscissas $c$ are automatically set to the row sums of $A$ (this
+`a_{21}`, for instance, corresponds to my_rk.a[1,0].
+The abscissas `c` are automatically set to the row sums of `A` (this
 implies that every stage has has stage order at least equal to 1).
 Alternatively, a method may be specified in Shu-Osher form, by coefficient
-arrays $\alpha,\beta$::
+arrays `\alpha, \beta`::
 
     >> rk22=rk.RungeKuttaMethod(alpha=alpha,beta=beta)
 
-A separate subclass is provided for explicit Runge-Kutta methods: *ExplicitRungeKuttaMethod*.
+A separate subclass is provided for explicit Runge-Kutta methods:
+:class:`~nodepy.runge_kutta_method.ExplicitRungeKuttaMethod`.
 If a method is explicit, it is important to instantiate it as an
-ExplicitRungeKuttaMethod and not simply a RungeKuttaMethod, since the
+:class:`~nodepy.runge_kutta_method.ExplicitRungeKuttaMethod` and not simply a
+:class:`~nodepy.runge_kutta_method.RungeKuttaMethod`, since the
 latter class has significantly less functionality in NodePy.
 Most significantly, time stepping is currently implemented for explicit methods,
 but not for implicit methods.
@@ -74,20 +76,20 @@ Accuracy
 The principal measure of accuracy of a Runge-Kutta method is its
 *order of accuracy*.  By comparing the Runge-Kutta solution with
 the Taylor series for the exact solution, it can be shown that the
-local truncation error for small enough step size $h$ is approximately
+local truncation error for small enough step size `h` is approximately
 
-Error `\approx Ch^p`,
+    Error `\approx Ch^p`,
 
-where $C$ is a constant independent of $h$.
+where `C` is a constant independent of `h`.
 Thus the expected asymptotic rate of convergence for small
-step sizes is $p$.  This error corresponds to the lowest-order terms
+step sizes is `p`.  This error corresponds to the lowest-order terms
 that do not match those of the exact solution Taylor series.
 Typically, a higher order accurate method will provide greater
 accuracy than a lower order method even for practical step sizes.
 
 In order to compare two methods with the same order of accuracy
 more detailed information about the accuracy of a method may be
-obtained by considering the relative size of the constant $C$.
+obtained by considering the relative size of the constant `C`.
 This can be measured in various ways and is referred to as the
 principal error norm.
 

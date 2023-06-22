@@ -19,23 +19,23 @@ class ODESolver(object):
                  x=None,diagnostics=False,use_butcher=False,max_steps=7500):
         """
             Calling an ODESolver numerically integrates the ODE
-            u'(t) = f(t,u(t)) with initial value u(0)=u0 from time
-            t0 up to time T using the solver.
+            `u'(t) = f(t,u(t))` with initial value `u(0)=u_0` from time
+            `t_0` up to time `T` using the solver.
 
             The timestep can be controlled in any of three ways:
 
-                1. By specifying N, the total number of steps to take.
-                   Then dt = (T-t0)/N.
+                1. By specifying `N`, the total number of steps to take.
+                   Then `dt = (T-t_0)/N`.
                 2. By specifying dt directly.
                 3. For methods with an error estimate (e.g., RK pairs),
                    by specifying an error tolerance.  Then the step
                    size is adjusted using a PI-controller to achieve
-                   the requested tolerance.  In this case, dt should
+                   the requested tolerance.  In this case, `dt` should
                    also be specified and determines the value of the
                    initial timestep.
 
-            The argument x is used to pass any additional arguments required
-            for the RHS function f.
+            The argument `x` is used to pass any additional arguments required
+            for the RHS function `f`.
 
             **Input**:
                 - ivp -- An IVP instance (the initial value problem to be solved)
@@ -56,10 +56,10 @@ class ODESolver(object):
                 - t -- A list of solution times
                 - u -- A list of solution values
 
-            If ivp.T is a scalar, the solution is integrated to that time
-            and all output step values are returned.  If ivp.T is a list/array,
-            the solution is integrated to T[-1] and the solution is returned
-            for the times specified in T.
+            If *ivp.T* is a scalar, the solution is integrated to that time
+            and all output step values are returned.  If *ivp.T* is a list/array,
+            the solution is integrated to *T[-1]* and the solution is returned
+            for the times specified in *T*.
 
             TODO:
 
