@@ -19,14 +19,14 @@ class RootedTree(str):
 
         The trees are represented as strings, using one of the notations
         introduced by Butcher (the third column of Table 300(I) of
-        Butcher's text).  The character 'T' is used in place of $\\tau$
+        Butcher's text).  The character 'T' is used in place of `\tau`
         to represent a vertex, and braces '{ }' are used instead of brackets
         '[ ]' to indicate that everything inside the braces
         is joined to a single parent node.  Thus the first four trees are:
 
-        'T', '{T}', '{T^2}', {{T}}'
+            'T', '{T}', '{T^2}', {{T}}'
 
-        These can be generated using the function list_trees(), which
+        These can be generated using the function :func:`list_trees`, which
         returns a list of all trees of a given order::
 
             >>> from nodepy import *
@@ -38,25 +38,25 @@ class RootedTree(str):
 
         Note that the tree of order 0 is indicated by an empty string.
 
-        If the tree contains an edge from vertex A to vertex B, vertex
-        B is said to be a child of vertex A.
+        If the tree contains an edge from vertex `A` to vertex `B`, vertex
+        `B` is said to be a child of vertex `A`.
         A vertex with no children is referred to as a leaf.
 
         .. warning::
 
             One important convention is assumed in the code; namely, that at each
             level, leaves are listed first (before any other subtrees),
-            and if there are $n$ leaves, we write 'T^n'.
+            and if there are `n` leaves, we write 'T^n'.
 
         .. note::
 
             Currently, powers cannot be used for subtrees; thus
 
-            '{{T}{T}}'
+                '{{T}{T}}'
 
             is valid, while
 
-            '{{T}^2}'
+                '{{T}^2}'
 
             is not.  This restriction may be lifted in the future.
 
@@ -102,7 +102,7 @@ class RootedTree(str):
 
     def order(self):
         """
-        The order of a rooted tree, denoted $r(t)$, is the number of
+        The order of a rooted tree, denoted `r(t)`, is the number of
         vertices in the tree.
 
         **Examples**::
@@ -126,7 +126,7 @@ class RootedTree(str):
 
     def density(self):
         r"""
-        The density of a rooted tree, denoted by $\\gamma(t)$,
+        The density of a rooted tree, denoted by `\gamma(t)`,
         is the product of the orders of the subtrees.
 
         **Examples**::
@@ -146,7 +146,7 @@ class RootedTree(str):
 
     def symmetry(self):
         r"""
-        The symmetry $\\sigma(t)$ of a rooted tree is...
+        The symmetry `\sigma(t)` of a rooted tree is...
 
         **Examples**::
 
@@ -174,8 +174,8 @@ class RootedTree(str):
 
     def Dmap(self):
         """
-        Butcher's function $D(t)$.  Represents differentiation.
-        Defined by $D(t)$=0 except for D('T')=1.
+        Butcher's function `D(t)` which represents differentiation.
+        Defined by `D(t) = 0` except for D('T')=1.
 
         **Reference**: :cite:`butcher1997`
         """
@@ -187,20 +187,19 @@ class RootedTree(str):
             for the function alpha.  This is used to compute the
             product of two functions on trees.
 
-            *INPUT*:
-
+            **Input**:
                 * alpha -- a function on rooted trees
                 * extraargs -- a list containing any additional arguments
                   that must be passed to alpha
 
-            *OUTPUT*:
+            **Output**:
                 * tprod -- a list of trees [t1, t2, ...]
                 * fprod -- a list of numbers [a1, a2, ...]
 
             The meaning of the output is that
-            $\\lambda(\\alpha,t)(\\beta)=a1*\\beta(t1)+a2*\\beta(t2)+...$
+            `\lambda(\alpha, t)(\beta) = a_1 \beta(t_1) + a_2 \beta(t_2) + \cdots`.
 
-            **Examples**::
+            **Examples**:
 
                 >>> from nodepy import rt
                 >>> tree = rt.RootedTree('{T{T}}')
@@ -233,9 +232,9 @@ class RootedTree(str):
 
     def lamda_str(self,alpha,extraargs=[]):
         """
-            Alternate version of lamda above, but returns a string.
-            Hopefully we can get rid of this (and the other str functions)
-            when SAGE can handle noncommutative symbolic algebra.
+            Alternate version of :meth:`lamda`, but returns a string.
+            Hopefully we can get rid of this (and the other string functions)
+            when *SAGE* can handle noncommutative symbolic algebra.
         """
         if not isinstance(extraargs,list): extraargs=[extraargs]
         if self=='': return [RootedTree('')],[0]
@@ -262,12 +261,13 @@ class RootedTree(str):
 
     def _factor(self):
         """
-            Returns two rooted trees, t and u, such that self=t*u.
+            Returns two rooted trees, `t` and `u`, such that `self = t * u`.
 
             **Input**:
                 - self -- any rooted tree
+
             **Output**:
-                - t,u -- a pair of rooted trees whose product t*u is equal to self.
+                - t, u -- a pair of rooted trees whose product `t*u` is equal to self.
 
             **Examples**::
 
@@ -305,30 +305,31 @@ class RootedTree(str):
         r"""
             Returns the product of two functions on a given tree.
 
-            INPUT:
-                alpha, beta -- two functions on rooted trees
-                               that return symbolic or numeric values
-                alphaargs   -- a string containing any additional arguments
-                                that must be passed to function alpha
-                betaargs    -- a string containing any additional arguments
-                                that must be passed to function beta
+            **Input**:
+                - alpha, beta -- two functions on rooted trees
+                  that return symbolic or numeric values
+                - alphaargs -- a string containing any additional arguments
+                  that must be passed to function alpha
+                - betaargs -- a string containing any additional arguments
+                  that must be passed to function beta
 
-            OUTPUT:
-                (alpha*beta)(self)
-                i.e., the function that is the product (in G) of the
-                functions alpha and beta.  Note that this product is
-                not commutative.
+            **Output**:
+
+                - (alpha*beta)(self) -- i.e., the function that is the product
+                  (in `G`) of the functions *alpha* and *beta*. Note that this
+                  product is not commutative.
 
             The product is given by
 
-            $(\\alpha*\\beta)('')=\\beta('')$
+            $$ (\\alpha*\\beta)('')=\\beta('') $$
 
-            $(\\alpha*\\beta)(t) = \\lambda(\\alpha,t)(\\beta) + \\alpha(t)\\beta('')$
+            $$ (\\alpha*\\beta)(t) = \\lambda(\\alpha,t)(\\beta) + \\alpha(t)\\beta('') $$
 
             .. note::
-                Gprod can be used to compute products of more than two
-                functions by passing Gprod itself in as beta, and providing
-                the remaining functions to be multiplied as betaargs.
+
+                :meth:`Gprod` can be used to compute products of more than two
+                functions by passing :meth:`Gprod` itself in as *beta*, and providing
+                the remaining functions to be multiplied as *betaargs*.
 
             **Examples**::
 
@@ -348,7 +349,7 @@ class RootedTree(str):
 
     def Gprod_str(self,alpha,beta,alphaargs=[],betaargs=[]):
         """
-            Alternate version of Gprod, but operates on strings.
+            Alternate version of :meth:`Gprod`, but operates on strings.
             Hopefully can be eliminated later in favor of symbolic
             manipulation.
         """
@@ -368,13 +369,14 @@ class RootedTree(str):
 
     def _plot_subtree(self,xroot,yroot,xwidth):
         """
-            Recursively plots subtrees.  Should only be called from plot().
+            Recursively plots subtrees. Should only be called from :meth:`plot`.
 
-            INPUT:
-                xroot, yroot -- coordinates at which root of this subtree
-                                is plotted
-                xwidth -- width in which this subtree must fit, in order
-                            to avoid possibly overlapping with others
+            **Input**:
+
+                - xroot, yroot -- coordinates at which root of this subtree
+                  is plotted
+                - xwidth -- width in which this subtree must fit, in order
+                  to avoid possibly overlapping with others
         """
         import matplotlib.pyplot as plt
         ychild=yroot+1
@@ -393,7 +395,7 @@ class RootedTree(str):
         """
             Plots the rooted tree.
 
-            *INPUT*: (optional)
+            **Input**: (optional)
                 * nrows, ncols -- number of rows and columns of subplots
                   in the figure
                 * iplot        -- index of the subplot in which to plot
@@ -402,11 +404,11 @@ class RootedTree(str):
             These are only necessary if plotting more than one tree
             in a single figure using subplot.
 
-            *OUTPUT*: None.
+            **Output**: None.
 
-            The plot is created recursively by
-            plotting the root, parsing the subtrees, plotting the
-            subtrees' roots, and calling _plot_subtree on each child
+            The plot is created recursively by plotting the root, parsing the
+            subtrees, plotting the subtrees' roots, and calling ``_plot_subtree``
+            on each child
         """
         import matplotlib.pyplot as plt
         if iplot==1: plt.clf()
@@ -427,9 +429,9 @@ class RootedTree(str):
             Returns the number of leaves and a list of the subtrees,
             for a given rooted tree.
 
-            OUTPUT:
-                nleaves  -- number of leaves attached directly to the root
-                subtrees -- list of non-leaf subtrees attached to the root
+            **Output**:
+                - nleaves  -- number of leaves attached directly to the root
+                - subtrees -- list of non-leaf subtrees attached to the root
 
             The method can be thought of as returning what remains if the
             root of the tree is removed.  For efficiency, instead of
@@ -460,11 +462,12 @@ class RootedTree(str):
             Returns a list of all strings (subject to our assumptions)
             equivalent to a given tree
 
-            INPUT:
-                self     -- any rooted tree
-            OUTPUT:
-                treelist -- a list of all the 'legal' tree strings
-                            that produce the same tree.
+            **Input**:
+                - self -- any rooted tree
+
+            **Output**:
+                - treelist -- a list of all the 'legal' tree strings
+                  that produce the same tree.
 
             The list of equivalent trees is obtained by taking all
             permutations of the (non-leaf) subtrees.
@@ -489,8 +492,8 @@ class RootedTree(str):
 
     def __mul__(self,tree2):
         """
-            Returns Butcher's product: t*u is the tree obtained by
-            attaching the root of u as a child to the root of t.
+            Returns Butcher's product: `t*u` is the tree obtained by
+            attaching the root of `u` as a child to the root of `t`.
         """
         from nodepy.strmanip import getint
         if self=='T': return RootedTree('{'+tree2+'}')
@@ -509,7 +512,7 @@ class RootedTree(str):
 #=====================================================
 def plot_all_trees(p,title='str'):
 #=====================================================
-    """ Plots all rooted trees of order p.
+    """ Plots all rooted trees of order `p`.
 
         **Example**:
 
@@ -537,15 +540,15 @@ def plot_all_trees(p,title='str'):
 def list_trees(p,ind='all'):
 #=====================================================
     """
-    Returns rooted trees of order p.
+    Returns rooted trees of order `p`.
 
-    INPUT:
+    **Input**:
 
-        - p   -- order of trees desired
+        - p -- order of trees desired
         - ind -- if given, returns a single tree corresponding to this index.
-                Not very useful since the ordering isn't obvious.
+          Not very useful since the ordering isn't obvious.
 
-    OUTPUT: list of all trees of order p (or just one, if ind is provided).
+    OUTPUT: list of all trees of order `p` (or just one, if *ind* is provided).
 
     Generates the rooted trees using Albrecht's 'Recursion 3'.
 
@@ -570,10 +573,10 @@ def list_trees(p,ind='all'):
     .. warning::
 
         This code is complete only up to order 10.  We need to extend it
-        by adding more subloops for p>10.
+        by adding more subloops for `p>10`.
 
     TODO: Implement Butcher's formula (Theorem 302B) for the number
-            of trees and determine to what order this is valid.
+    of trees and determine to what order this is valid.
 
     **Reference**: :cite:`albrecht1996`
     """
@@ -648,7 +651,7 @@ def list_trees(p,ind='all'):
 
 
 def _powerString(s,npow,powchar="**",trailchar=''):
-    r"""Raise string s to power npow with additional formatting."""
+    r"""Raise string `s` to power *npow* with additional formatting."""
     if npow==0:
         return ""
     else:
@@ -664,8 +667,8 @@ def _powerString(s,npow,powchar="**",trailchar=''):
 
 def Dprod(tree,alpha):
     """
-    Evaluate (alpha*D)(t).  Note that this is not equal to (D*alpha)(t).
-    This function is necessary (rather than just using Gprod)
+    Evaluate *(alpha*D)(t)*.  Note that this is not equal to *(D*alpha)(t)*.
+    This function is necessary (rather than just using :meth:RootedTree.Gprod`)
     in order to avoid infinite recursions.
 
     **Examples**::
@@ -695,8 +698,8 @@ def Dprod_str(tree,alpha):
 
 def Dmap(tree):
     """
-    Butcher's function D(t).  Represents differentiation.
-    Defined by D(t)=0 except for D('T')=1.
+    Butcher's function `D(t)`.  Represents differentiation.
+    Defined by `D(t)=0` except for `D('T')=1`.
     """
     return 1*(tree=='T')
 
@@ -705,7 +708,8 @@ def Dmap_str(tree):
 
 def Gprod(tree,alpha,beta,alphaargs='',betaargs=[]):
     """ Returns the product of two functions on a given tree.
-         See Butcher p. 276, Thm. 386A """
+
+    See Butcher p. 276, Thm. 386A."""
     return tree.Gprod(alpha,beta,alphaargs,betaargs)
 
 def Gprod_str(tree,alpha,beta,alphaargs='',betaargs=[]):
@@ -713,8 +717,8 @@ def Gprod_str(tree,alpha,beta,alphaargs='',betaargs=[]):
 
 def Emap(tree,a=1):
     """
-    Butcher's function E^a(t).
-    Gives the B-series for the exact solution advanced 'a' steps
+    Butcher's function `E^a(t)`.
+    Gives the `B`-series for the exact solution advanced 'a' steps
     in time.
 
     **Examples**::
@@ -754,7 +758,7 @@ def recursiveVectors(p,ind='all'):
     .. warning::
 
         This code is complete only up to order 14.  We need to extend it
-        by adding more subloops for p>14.
+        by adding more subloops for `p>14`.
 
     **Example**
 
@@ -903,7 +907,7 @@ def recursiveVectors(p,ind='all'):
 #=====================================================
 
 def py2tex(codestr):
-    """Convert a python code string to LaTex"""
+    """Convert a Python code string to LaTeX."""
 
     strout=codestr.replace("'","^T")
     strout=strout.replace("*","")
