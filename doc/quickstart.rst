@@ -15,8 +15,7 @@ The current development version of NodePy can be obtained via Git::
 NodePy Documentation
 ====================
 
-NodePy documentation can be found at
-http://numerics.kaust.edu.sa/nodepy
+NodePy documentation can be found at https://nodepy.readthedocs.io
 
 The documentation is also included in the nodepy/doc directory, and can
 be built from your local install, if you have Sphinx.
