@@ -29,11 +29,11 @@ sys.path.append(os.path.abspath('./ext'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
               'math_dollar',
-              'sphinx.ext.autodoc', 
-              'sphinx.ext.doctest', 
-              'sphinx.ext.todo', 
-              'sphinx.ext.coverage', 
-              'sphinx.ext.ifconfig', 
+              'sphinx.ext.autodoc',
+              'sphinx.ext.doctest',
+              'sphinx.ext.todo',
+              'sphinx.ext.coverage',
+              'sphinx.ext.ifconfig',
               'matplotlib.sphinxext.plot_directive',
               'sphinx.ext.viewcode',
               'sphinx.ext.mathjax',
@@ -249,4 +249,4 @@ man_pages = [
 default_role = 'math'
 keep_warnings = True
 
-bibtex_bibfiles = "zrefs.bib"
+bibtex_bibfiles = ["zrefs.bib"]
