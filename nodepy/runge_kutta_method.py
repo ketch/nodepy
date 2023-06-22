@@ -204,14 +204,14 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> print(merson.latex())
                 \begin{align}
                 \begin{array}{c|ccccc}
-                    &  &  &  &  & \\
+                 &  &  &  &  & \\
                 \frac{1}{3} & \frac{1}{3} &  &  &  & \\
                 \frac{1}{3} & \frac{1}{6} & \frac{1}{6} &  &  & \\
                 \frac{1}{2} & \frac{1}{8} &  & \frac{3}{8} &  & \\
                 1 & \frac{1}{2} &  & - \frac{3}{2} & 2 & \\
                 \hline
-                    & \frac{1}{6} &  &  & \frac{2}{3} & \frac{1}{6}\\
-                    & \frac{1}{10} &  & \frac{3}{10} & \frac{2}{5} & \frac{1}{5}
+                 & \frac{1}{6} &  &  & \frac{2}{3} & \frac{1}{6}\\
+                 & \frac{1}{10} &  & \frac{3}{10} & \frac{2}{5} & \frac{1}{5}
                 \end{array}
                 \end{align}
         """

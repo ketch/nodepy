@@ -46,7 +46,7 @@ At the moment, the following classes are implemented:
     >>> myrk = lsrk.load_low_storage('DDAS47')
     >>> print(myrk)
     DDAS4()7[2R]
-    2R Method of Tselios \& Simos (2007)
+    2R Method of Tselios & Simos (2007)
      0.000 |
      0.336 | 0.336
      0.286 | 0.094  0.192
