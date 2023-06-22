@@ -1,0 +1,8 @@
+div.header {
+    position: relative;
+    left: 0px;
+    top: 0px;
+    height: 165px;
+    /* background: #eeeeee; */
+    padding: 0 40px;
+}
