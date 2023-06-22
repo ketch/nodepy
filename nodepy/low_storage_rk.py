@@ -83,7 +83,7 @@ from six.moves import range
 #=====================================================
 class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
 #=====================================================
-    """ Class for 2N low-storage Runge-Kutta methods.
+    r""" Class for 2N low-storage Runge-Kutta methods.
 
         These were developed by Williamson, and Carpenter & Kennedy.
 
@@ -96,7 +96,7 @@ class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
             >>> erk = lsrk.load_low_storage("RK45[2N]")
             >>> print(erk)
             RK45[2N]
-            2N Method of Carpenter \& Kennedy (1994)
+            2N Method of Carpenter & Kennedy (1994)
              0     |
              0.150 | 0.150
              0.370 |-0.009  0.379
@@ -339,7 +339,7 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
 #=====================================================
 class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
 #=====================================================
-    """
+    r"""
         Class for low-storage Runge-Kutta methods
         that use Ketcheson's assumption (2S, 2S*, and 3S* methods).
 
@@ -772,7 +772,7 @@ def load_low_storage(which='All'):
     #================================================
     fullname  = 'RK45[2N]'
     shortname = 'RK45[2N]'
-    description = '2N Method of Carpenter \& Kennedy (1994)'
+    description = '2N Method of Carpenter & Kennedy (1994)'
     coef_a = np.array([Rational(              0 ,              1 ),
                        Rational(  -567301805773 ,  1357537059087 ),
                        Rational( -2404267990393 ,  2016746695238 ),
@@ -787,7 +787,7 @@ def load_low_storage(which='All'):
     #================================================
     fullname  = 'DDAS4()7[2R]'
     shortname = 'DDAS47'
-    description = '2R Method of Tselios \& Simos (2007)'
+    description = '2R Method of Tselios & Simos (2007)'
     regs = 2
     b = np.array([0.0941840925477795334,
                   0.149683694803496998,
