@@ -1,5 +1,5 @@
-:mod:`low_storage_rk`
-===========================
+``low_storage_rk``
+==================
 
 .. automodule:: nodepy.low_storage_rk
    :members:
