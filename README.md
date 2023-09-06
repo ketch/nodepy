@@ -7,7 +7,7 @@
 [![](https://readthedocs.org/projects/nodepy/badge)](https://readthedocs.org/projects/nodepy/)
 
 <a href="https://pypi.org/project/nodepy/"><img alt="PyPI" src="https://img.shields.io/pypi/v/nodepy"></a>
-<a href="https://pepy.tech/project/nodepy"><img alt="Downloads" src="https://pepy.tech/badge/nodepy"></a>
+[![Downloads](https://static.pepy.tech/badge/nodepy)](https://pepy.tech/project/nodepy)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-success.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275157.svg)](https://doi.org/10.5281/zenodo.4275157)
