@@ -525,18 +525,12 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 >>> rk4.error_coefficient(tree5)
                 -1/720
         """
-        from numpy import dot
         from sympy import Rational, simplify
-        code=elementary_weight_str(tree)
-        namespace = {'A': self.A, 'b': self.b, 'c': self.c, 'dot': dot,
-                     'Rational': Rational, 'simplify': simplify}
-
-        if self.A.dtype == object:
-            expr = 'simplify({} - Rational(1, {}))'.format(code, tree.density())
+        phi = _elementary_weight_value(tree, self.A, self.b, self.c)
+        if _is_exact(self.A, self.b, self.c):
+            return simplify(phi - Rational(1, tree.density())) / tree.symmetry()
         else:
-            expr = '({} - 1.0 / {})'.format(code, tree.density())
-        coeff = eval(expr, {}, namespace)
-        return coeff / tree.symmetry()
+            return (phi - 1.0/int(tree.density())) / int(tree.symmetry())
 
     def error_coeffs(self,p):
         r"""
@@ -550,7 +544,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             err_coeffs.append(self.error_coefficient(tree))
         return snp.array(err_coeffs)
 
-    def error_metrics(self, q=None, tol=1.e-14):
+    def error_metrics(self, q=None, tol=1.e-13):
         r"""
         Returns several measures of the accuracy of the Runge-Kutta method.
         In order, they are:
@@ -594,9 +588,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
     def principal_error_norm(self,tol=1.e-13,mode='float'):
         r"""The 2-norm of the vector of leading order error coefficients."""
         import nodepy.rooted_trees as rt
-        forest=rt.list_trees(self.p+1)
-        errs=[]
-
         if mode == 'float':
             method = self.__num__()
             from math import sqrt
@@ -606,14 +597,18 @@ class RungeKuttaMethod(GeneralLinearMethod):
         else:
             raise Exception('Unrecognized mode value')
 
-        for tree in forest:
-            errs.append(method.error_coefficient(tree))
+        p = self.p
+        residuals = _order_condition_residuals_by_order(method.A, method.b, method.c)
+        for _ in range(p):
+            next(residuals)
+        errs = next(residuals) / np.array([rt.tree_symmetry(i) for i in rt.tree_ids(p+1)])
         if mode == 'float':
-            return sqrt(float(np.sum(np.array(errs)**2)))
+            return sqrt(float(np.sum(errs**2)))
         else:
-            return sqrt(np.sum(np.array(errs)**2))
+            errs = np.array([sympy.simplify(e) for e in errs], dtype=object)
+            return sqrt(np.sum(errs**2))
 
-    def order(self,tol=1.e-14,mode='float',extremely_high_order=False):
+    def order(self,tol=1.e-13,mode='float',extremely_high_order=False):
         """ The order of a Runge-Kutta method.
 
             **Examples**::
@@ -626,56 +621,74 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 4
                 >>> from nodepy.loadmethod import load_rk_from_file
                 >>> feagin14 = load_rk_from_file("rk1412.txt")
-                >>> feagin14.order(tol=1.0e-12, extremely_high_order=True)
-                This method has order at least 14.  Higher order conditions are not implemented in this routine.
+                >>> feagin14.order(tol=1.0e-12)
                 14
 
             *mode == 'float'*: **(default)**
                 Check that conditions hold approximately, to within tolerance *tol*.
                 Appropriate when coefficients are floating-point, or for faster
-                checking of high-order methods.
+                checking of high-order methods.  Coefficients given to about 16
+                significant digits typically satisfy their order conditions only
+                to about `10^{-14}`, so much smaller values of *tol* can give an
+                order that is too low.
 
             *mode == 'exact'*:
                 Check that conditions hold exactly.  Appropriate when coefficients
                 are specified as rational or algebraic numbers, but may be very
                 slow for high order methods.
+
+            The order conditions of all orders are checked, so there is no
+            upper limit on the order that can be determined; the number of
+            conditions, and hence the cost, grows rapidly with the order.
+            The argument *extremely_high_order* is ignored; it is kept so
+            that existing code that passes it keeps working.
         """
         if mode=='float':
-            if not extremely_high_order:
-                import nodepy.oc_butcher as oc_butcher
-                p = oc_butcher.order(self.__num__(),tol)
-            else:
-                import nodepy.oc_butcher_high_order as oc_butcher_high_order
-                p = oc_butcher_high_order.order(self.__num__(),tol)
-            if p==0:
-                print('Apparent order is 0; this may be due to round-off.  Try order(mode="exact") or increase tol.')
+            method = self.__num__()
+            check = lambda z: np.any(np.abs(z) > tol)
         elif mode=='exact':
-            from sympy import simplify
-            p=0
-            while True:
-                z=self.order_condition_residuals(p+1)
-                z = snp.array([simplify(zz) for zz in z])
-                if np.any(abs(z)>tol): break
-                p=p+1
+            method = self
+            check = lambda z: np.any([abs(sympy.simplify(zz)) > tol for zz in z])
+        else:
+            raise ValueError("Unrecognized mode '{}'; use 'float' or 'exact'.".format(mode))
+
+        # No s-stage Runge-Kutta method has order greater than 2s.
+        max_order = 2*len(self)
+        p = 0
+        for z in _order_condition_residuals_by_order(method.A, method.b, method.c):
+            if check(z):
+                break
+            p += 1
+            if p > max_order:
+                raise ValueError('The order conditions appear to hold up to order {}, but no '
+                                 '{}-stage method has order greater than {}; tol={} is too '
+                                 'large.'.format(p, len(self), max_order, tol))
+        if mode=='float' and p==0:
+            print('Apparent order is 0; this may be due to round-off.  Try order(mode="exact") or increase tol.')
         return p
 
     def order_condition_residuals(self,p):
+        r"""
+            Residuals `\Phi(t) - 1/\gamma(t)` of the order conditions of
+            order `p` (only), one for each rooted tree `t` with `p` nodes,
+            in the order given by :func:`nodepy.rooted_trees.tree_ids`.
+            Here `\Phi(t)` is the elementary weight and `\gamma(t)` the
+            density of `t`.
+
+            **Examples**::
+
+                >>> from nodepy import rk
+                >>> rk.loadRKM('RK44').order_condition_residuals(4)
+                array([0, 0, 0, 0], dtype=object)
+                >>> rk.loadRKM('RK44').order_condition_residuals(5)
+                array([-1/120, -1/240, -1/120, 1/240, -1/240, 1/120, 1/80, 1/240, 1/120],
+                      dtype=object)
         """
-            Generates and evaluates code to test whether a method
-            satisfies the order conditions of order `p` (only).
-        """
-        from sympy import factorial,Rational
-        A,b,c=self.A,self.b,self.c
-        C=snp.diag(c)
-        code=runge_kutta_order_conditions(p)
-        z=snp.zeros(len(code)+1)
-        tau=snp.zeros([p,len(self)])
-        for j in range(1,p):
-            tau[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
-        for i in range(len(code)):
-            exec('z[i]='+code[i])
-        z[-1]=np.dot(b,c**(p-1))-Rational(1,p)
-        return z
+        if p < 1:
+            raise ValueError('The order p must be a positive integer.')
+        for q, z in enumerate(_order_condition_residuals_by_order(self.A, self.b, self.c), 1):
+            if q == p:
+                return z
 
     def effective_order(self,tol=1.e-14):
         """
@@ -702,33 +715,28 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
     def effective_order_condition_residuals(self,q):
         r"""
-            Generates and evaluates code to test whether a method
-            satisfies the effective order `q` conditions (only).
+            Residuals of the effective order `q` conditions (only).
 
             Similar to :meth:`order_condition_residuals`, but at the moment
             works only for `q \le 4`. (enough to find Explicit SSPRK)
         """
-        from sympy import factorial,Rational
-        A,b,c=self.A,self.b,self.c
-        C=snp.diag(c)
-        code=runge_kutta_order_conditions(q)
-        tau=snp.zeros([q,len(self)])
-        for j in range(1,q):
-            tau[j,:]=(c**j/j-np.dot(A,c**(j-1)))/factorial(j-1)
-        if q<=2:
-            z=snp.zeros(len(code)+1)
-            z[-1]=np.dot(b,c**(q-1))-Rational(1,q)
-        if q==3:
-            z=snp.zeros(len(code))
-            exec('z[0]='+code[0]+'-'+'np.dot(b,c**2)/2.+1/6.')
-        if q==4:
-            code2=runge_kutta_order_conditions(q-1)
-            z=snp.zeros(len(code)-1)
-            exec('z[0]='+code[1]+'-'+'np.dot(b,np.dot(A,c**2))/2.+1/24.')
-            exec('z[1]='+code2[0]+'-'+code[1]+'-'+code[2])
-        if q>4:
+        from sympy import Rational
+        import nodepy.rooted_trees as rt
+        if q > 4:
             raise NotImplementedError
-        return z
+        A, b, c = self.A, self.b, self.c
+        phi = lambda tree: _elementary_weight_value(rt.RootedTree(tree), A, b, c)
+        if q == 1:
+            z = [phi('T') - 1]
+        elif q == 2:
+            z = [phi('{T}') - Rational(1, 2)]
+        elif q == 3:
+            z = [Rational(1, 6) - phi('{{T}}')]
+        elif q == 4:
+            z = [Rational(1, 24) - phi('{{{T}}}'),
+                 phi('{T^2}')/2 - phi('{{T}}') - phi('{{T^2}}')/2 + phi('{{{T}}}')
+                 - phi('{T^3}')/2 + phi('{T{T}}')]
+        return snp.array(z)
 
     def stage_order(self,tol=1.e-14):
         r"""
@@ -2066,7 +2074,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         else:
             return u_new
 
-    def error_metrics(self, q=None, p=None, tol=1.e-14):
+    def error_metrics(self, q=None, p=None, tol=1.e-13):
         r"""Return full set of error metrics for an embedded RK pair.
             See :cite:`kennedy2000` p. 181
 
@@ -2410,6 +2418,86 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 #=====================================================
 #End of ExplicitRungeKuttaPair class
 #=====================================================
+
+#=====================================================
+# Direct evaluation of order conditions
+#=====================================================
+#
+# Butcher's elementary weight of a rooted tree t is Phi(t) = b . g(t), where
+# the stage vector g(t) is the componentwise product of A g(u) over the
+# subtrees u attached to the root of t, and g(t) is the vector of ones for
+# the tree with one node (so that A g(t) = c).  The order condition for t
+# is Phi(t) = 1/gamma(t).  The functions below evaluate these directly,
+# for floating-point or exact (SymPy) coefficients.
+
+def _is_exact(*arrays):
+    return any(np.asarray(x).dtype == object for x in arrays)
+
+
+def _expand(v):
+    "Expand each SymPy entry of the array *v*."
+    return np.array([sympy.expand(x) for x in v], dtype=object)
+
+
+def _stage_vector(tree, A, c):
+    r"""The stage vector `g(t)` of a :class:`RootedTree` *t*."""
+    exact = _is_exact(A, c)
+    nleaves, subtrees = tree._parse_subtrees()
+    if nleaves > 0:
+        g = c**nleaves
+    else:
+        g = np.ones(len(c), dtype=object if exact else float)
+    for subtree in subtrees:
+        Ag = np.dot(A, _stage_vector(subtree, A, c))
+        g = g * (_expand(Ag) if exact else Ag)
+    return g
+
+
+def _elementary_weight_value(tree, A, b, c):
+    r"""Butcher's elementary weight `\Phi(t)` of a :class:`RootedTree` *t*."""
+    return np.dot(b, _stage_vector(tree, A, c))
+
+
+def _order_condition_residuals_by_order(A, b, c):
+    r"""
+    Generator that yields, for `p = 1, 2, \dots`, the array of residuals
+    `\Phi(t) - 1/\gamma(t)` for all rooted trees `t` with `p` nodes, in the
+    order given by :func:`nodepy.rooted_trees.tree_ids`.
+
+    The vectors `A g(t)` are computed once for each tree and reused for
+    all larger trees containing it as a subtree.
+    """
+    import nodepy.rooted_trees as rt
+    exact = _is_exact(A, b, c)
+    one = sympy.Integer(1) if exact else 1.
+    # With exact coefficients, expanding the intermediate vectors keeps the
+    # expressions small (e.g. a + b*sqrt(15)), which makes later
+    # simplification much faster.
+    tidy = _expand if exact else (lambda v: v)
+    Ag = [c]    # Ag[i] is A g(t) for the tree t with id i
+    g_last = {} # Stage vectors of the trees of the previous order
+    p = 0
+    while True:
+        p += 1
+        # A g(t) for the trees of the previous order is needed now.
+        for i in sorted(g_last):
+            assert i == len(Ag)
+            Ag.append(tidy(np.dot(A, g_last[i])))
+        g_last = {}
+        residuals = []
+        for i in rt.tree_ids(p):
+            subtrees = rt.tree_subtrees(i)
+            if len(subtrees) == 0:
+                g = np.ones(len(b), dtype=object if exact else float)
+            else:
+                g = Ag[subtrees[0]]
+                for j in subtrees[1:]:
+                    g = g * Ag[j]
+            if i > 0:
+                g_last[i] = g
+            residuals.append(np.dot(b, g) - one/rt.tree_density(i))
+        yield np.array(residuals, dtype=object if exact else float)
+
 
 #=====================================================
 #Functions for generating order conditions
@@ -4155,7 +4243,7 @@ def python_to_matlab(code):
     #print('******************')
     return outline
 
-def relative_accuracy_efficiency(rk1,rk2,mode='float',tol=1.e-14):
+def relative_accuracy_efficiency(rk1,rk2,mode='float',tol=1.e-13):
     r"""
     Compute the accuracy efficiency of method rk1 relative to that of rk2,
     for two methods with the same order of accuracy.
@@ -4187,7 +4275,7 @@ def relative_accuracy_efficiency(rk1,rk2,mode='float',tol=1.e-14):
 
     return len(rk2)/len(rk1) * (A2/A1)**(1./(p+1))
 
-def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-14,p=None):
+def accuracy_efficiency(rk1,parallel=False,mode='float',tol=1.e-13,p=None):
     r"""
     Compute the accuracy efficiency of method rk1.
 
