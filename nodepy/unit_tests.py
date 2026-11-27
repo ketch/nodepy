@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import nodepy.linear_multistep_method as lmm
 import nodepy.runge_kutta_method as rk
 import unittest as ut
+import numpy as np
 
 class LinearMultistepTestCase(ut.TestCase):
     pass
@@ -281,6 +282,117 @@ class IVPTest(ut.TestCase):
     def test_vdp_has_no_exact_solution(self):
         from nodepy.ivp import load_ivp
         self.assertIsNone(load_ivp('vdp').exact)
+
+
+#=====================================================
+# Bundled methods must have their documented order
+#=====================================================
+
+class BundledMethodOrderTest(ut.TestCase):
+    """
+    Check every bundled method against the order given by its name or
+    documentation.  The expected orders below are taken from the method
+    names and descriptions, not computed.  Pairs list (order, embedded order);
+    the embedded order is checked only where the name or source states it.
+    """
+    # Floating-point coefficients are stored to about 16 digits, so the
+    # residuals of high-order conditions can exceed the default 1e-14.
+    tol = 1.e-12
+
+    rk_orders = {
+        'BE': 1, 'FE': 1, 'SSP22star': 2,
+        'LobattoIIIC4': 6, 'LobattoIIIC3': 4, 'LobattoIIIC2': 2,
+        'LobattoIIIA2': 2, 'LobattoIIIA3': 4, 'RadauIIA2': 3, 'RadauIIA3': 5,
+        'SDIRK54': 4, 'SDIRK23': 3, 'SDIRK34': 4, 'TR-BDF2': 2,
+        'SSP22': 2, 'Heun22': 2, 'SSP33': 3, 'Heun33': 3, 'NSSP32': 2,
+        'NSSP33': 3, 'SSP43': 3, 'SSP104': (4, 3),
+        'MTE22': 2, 'Mid22': 2, 'RK44': 4, 'BuRK65': 5, 'GL2': 4, 'GL3': 6,
+        'Fehlberg45': (5, 4), 'Fehlberg43': (4, 3), 'Merson43': (4, 3),
+        u'Söderlind43': (4, 3), 'Soderlind43': (4, 3), 'Zonneveld43': (4, 3),
+        'Tsit5': (5, 4), 'CK5': (5, 4), 'HH5': (5, 4), 'HH5S': (5, 4),
+        'DP5': (5, 4), 'CMR6': (6, 5), 'BS3': (3, 2), 'BS5': (5, 4),
+        'SS3': (3, 2), 'PD8': (8, 7), 'SSP75': 5, 'SSP85': 5, 'SSP95': 5,
+        'SSP54': 4, 'SSP53': 3, 'SSP63': 3,
+    }
+    low_storage_orders = {
+        'RK45[2N]': 4, 'DDAS47': 4, 'LDDC46': 4, 'RK34[2R]C': (3, 2),
+        'RK45[2R]C': (4, 3), 'RK45[3R]C': (4, 3), 'RK58[3R]C': (5, 4),
+        'RK59[2R]S': (5, 4), 'RK35[3S*]': 3, 'RK49[3S*]': 4, 'RK510[3S*]': 5,
+    }
+    tsrk_orders = {'order3': 3, 'order4': 4, 'order5': 5}
+    # ET112 pairs forward Euler (order 1) with the theta method, so its order is 1.
+    lmm_orders = {'eBDF5': 5, 'ET112': 1}
+
+    # Methods known not to have their documented order (ketch/nodepy issue 110).
+    # Remove an entry when its coefficients are corrected.
+    known_problems = {
+        'SSP53',  # Published coefficients satisfy the order conditions only to ~1e-10.
+    }
+
+    def _check(self, label, method, expected, order):
+        import io, contextlib
+        expected = expected if isinstance(expected, tuple) else (expected,)
+        with contextlib.redirect_stdout(io.StringIO()):  # order() may print warnings
+            found = [order(method)]
+            if len(expected) == 2:
+                found.append(order(method.embedded_method))
+        return tuple(found) != expected, (label, expected, tuple(found))
+
+    def test_documented_orders(self):
+        from nodepy import lsrk, tsrk
+        rk_order = lambda m: m.order(tol=self.tol)
+        cases = []
+        rks = rk.loadRKM()
+        self.assertEqual(set(rks), set(self.rk_orders), 'Update rk_orders for new methods')
+        for name, method in rks.items():
+            cases.append(self._check(name, method, self.rk_orders[name], rk_order))
+        lsrks = lsrk.load_low_storage()
+        self.assertEqual(set(lsrks), set(self.low_storage_orders))
+        for name, method in lsrks.items():
+            cases.append(self._check(name, method, self.low_storage_orders[name], rk_order))
+        tsrks = tsrk.loadTSRK()
+        self.assertEqual(set(tsrks), set(self.tsrk_orders))
+        for name, method in tsrks.items():
+            cases.append(self._check('tsrk '+name, method, self.tsrk_orders[name],
+                                     lambda m: m.order(tol=self.tol)))
+
+        lmms = lmm.loadLMM()
+        self.assertEqual(set(lmms), set(self.lmm_orders))
+        for name, method in lmms.items():
+            cases.append(self._check('lmm '+name, method, self.lmm_orders[name],
+                                     lambda m: m.order()))
+
+        wrong = {label: (expected, found) for bad, (label, expected, found) in cases if bad}
+        unexpected = {k: v for k, v in wrong.items() if k not in self.known_problems}
+        fixed = self.known_problems - set(wrong)
+        self.assertEqual(unexpected, {}, 'Methods without their documented order: '
+                         '{label: (expected, found)}')
+        self.assertEqual(fixed, set(), 'These now have their documented order; '
+                         'remove them from known_problems')
+
+
+class TSRKStabilityTest(ut.TestCase):
+    def test_principal_eigenvalue_approximates_exp(self):
+        # For a method of order p, the stability matrix has an eigenvalue
+        # within O(z^(p+1)) of exp(z).  This failed when the sign of b in
+        # stability_matrix was wrong.
+        from nodepy import tsrk
+        for name, p in [('order3', 3), ('order4', 4), ('order5', 5)]:
+            method = tsrk.loadTSRK(name)
+            for z in [-0.1, -0.01]:
+                ev = np.linalg.eigvals(method.stability_matrix(z))
+                err = np.min(np.abs(ev - np.exp(z)))
+                self.assertLess(err, 2*abs(z)**(p+1), (name, z, err))
+
+    def test_order5_real_stability_interval(self):
+        # Jackiewicz & Tracogna (1995), p. 1425: the interval of absolute
+        # stability is approximately (-0.486, 0).
+        from nodepy import tsrk
+        method = tsrk.loadTSRK('order5')
+        spectral_radius = lambda z: np.max(np.abs(np.linalg.eigvals(method.stability_matrix(z))))
+        for z in [-0.48, -0.3, -0.1, -0.01]:
+            self.assertLessEqual(spectral_radius(z), 1 + 1.e-12, z)
+        self.assertGreater(spectral_radius(-0.49), 1)
 
 
 if __name__== "__main__":

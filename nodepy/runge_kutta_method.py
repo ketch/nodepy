@@ -23,7 +23,7 @@ u"""
 
     >>> RK=loadRKM()
     >>> sorted(RK.keys()) # doctest:+ELLIPSIS
-    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun22', 'Heun33', 'Lambert65', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SS3', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP43', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
+    ['BE', 'BS3', 'BS5', 'BuRK65', 'CK5', 'CMR6', 'DP5', 'FE', 'Fehlberg43', 'Fehlberg45', 'GL2', 'GL3', 'HH5', 'HH5S', 'Heun22', 'Heun33', 'LobattoIIIA2', 'LobattoIIIA3', 'LobattoIIIC2', 'LobattoIIIC3', 'LobattoIIIC4', 'MTE22', 'Merson43', 'Mid22', 'NSSP32', 'NSSP33', 'PD8', 'RK44', 'RadauIIA2', 'RadauIIA3', 'SDIRK23', 'SDIRK34', 'SDIRK54', 'SS3', 'SSP104', 'SSP22', 'SSP22star', 'SSP33', 'SSP43', 'SSP53', 'SSP54', 'SSP63', 'SSP75', 'SSP85', 'SSP95', 'Soderlind43', ..., 'TR-BDF2', 'Tsit5', 'Zonneveld43']
 
     >>> print(RK['Mid22'])
     Midpoint Runge-Kutta
@@ -2716,7 +2716,6 @@ def loadRKM(which='All'):
           * 'Soderlind43': 4(3) pair of Söderlind (also available as 'Söderlind43')
           * 'Fehlberg43': 4(3) pair of Fehlberg :cite:`fehlberg1969`
           * 'Fehlberg45': 5(4) pair of Fehlberg :cite:`fehlberg1969`
-          * 'Lambert65':
           * 'Tsit5':      5(4) pair of Tsitouras :cite:`tsitouras2011`
           * 'HH5':        5(4) pair of Highham and Hall with lower error constant :cite:`higham1990`
           * 'HH5S':       5(4) pair of Highham and Hall with increased stepsize stability :cite:`higham1990`
@@ -2935,23 +2934,6 @@ def loadRKM(which='All'):
                     name='SSPRK(10,4)',description=
                     "The optimal ten-stage, fourth order SSP Runge-Kutta method",shortname='SSPRK(10,4)')
     #================================================
-    alpha=snp.zeros([7,6])
-    beta=snp.zeros([7,6])
-    alpha[1,0]=one
-    alpha[2,0:2]=[3*one/4,1*one/4]
-    alpha[3,0:3]=[3*one/8,1*one/8,1*one/2]
-    alpha[4,0:4]=[1*one/4,1*one/8,1*one/8,1*one/2]
-    alpha[5,0:5]=[89537*one/2880000,407023*one/2880000,1511*one/12000,87*one/200,4*one/15]
-    alpha[6,:]  =[4*one/9,1*one/15,zero,8*one/45,zero,14*one/45]
-    beta[1,0]=1*one/2
-    beta[2,0:2]=[zero,1*one/8]
-    beta[3,0:3]=[-1*one/8,-1*one/16,1*one/2]
-    beta[4,0:4]=[-5*one/64,-13*one/64,1*one/8,9*one/16]
-    beta[5,0:5]=[2276219*one/40320000,407023*one/672000,1511*one/2800,-261*one/140,8*one/7]
-    beta[6,:]  =[zero,-8*one/45,zero,2*one/3,zero,7*one/90]
-    RK['Lambert65']=ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,
-                        name='Lambert',shortname='Lambert65')
-    #================================================
     A=np.array([[0,0],[2*one/3,0]])
     b=np.array([1*one/4,3*one/4])
     RK['MTE22']=ExplicitRungeKuttaMethod(A,b,name='Minimal Truncation Error 22',shortname='MTE22')
@@ -3146,8 +3128,9 @@ def loadRKM(which='All'):
                 [1*one/4, 0, 0, 0],
                 [-387*one/625, 762*one/625, 0, 0],
                 [one/5, one/5, 3*one/5, 0]])
-    b=np.array([one/10, 2*one/5, one/4, one/4])
-    bhat=np.array([-one/90, 8*one/15, 5*one/18, one/5])
+    # b is the third-order method and bhat the second-order embedded method.
+    b=np.array([-one/90, 8*one/15, 5*one/18, one/5])
+    bhat=np.array([one/10, 2*one/5, one/4, one/4])
     RK['SS3']=ExplicitRungeKuttaPair(A,b,bhat,name='Sharp-Smart RK3(2)4',shortname='SS3')
      #================================================
     A=np.array([[0,0,0,0,0,0,0,0,0,0,0,0,0],

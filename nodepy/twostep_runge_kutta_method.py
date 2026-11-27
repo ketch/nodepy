@@ -36,7 +36,7 @@ with the rest of nodepy.
 
     >>> tsrk4.order()
     4
-    >>> tsrk5.order(tol=1.e-3)
+    >>> tsrk5.order()
     5
 
 * Get the radius of absolute monotonicity::
@@ -161,9 +161,9 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
 
             J = snp.eye(s+2)
             J[:s,:s] = J[:s,:s] - z*self.A
-            J[-1,:s] = z*self.b
+            J[-1,:s] = -z*self.b
 
-            M = snp.solve(J.astype('complex64'),K.astype('complex64'))
+            M = snp.solve(J.astype(complex),K.astype(complex))
             #M = snp.solve(J, K) # This version is slower
 
         else:
@@ -459,10 +459,15 @@ def TSRKeta_str(tree):
 
 def loadTSRK(which='All'):
     r"""
-        Load two particular TSRK methods (From :cite:`jackiewicz1995`).
+        Load TSRK methods of order 3, 4 and 5 from :cite:`jackiewicz1995`.
 
-        The method of order five satisfies the order conditions only
-        to four or five digits of accuracy.
+        The method of order five is the type 3 method on p. 1425 of
+        :cite:`jackiewicz1995`, which is printed there to six significant
+        digits.  Its coefficients here were recomputed to full double
+        precision by solving the conditions for order 5 and stage order 4,
+        starting from the printed values.  They agree with the printed
+        values to all printed digits, except that the paper gives
+        b_2 = -0.0761097 where the solution has b_2 = -0.0761087...
     """
     from sympy import Rational
     one  = Rational(1,1)
@@ -487,12 +492,14 @@ def loadTSRK(which='All'):
     b=np.array([-44709*one/32044,48803*one/96132])
     TSRK['order4']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat,type='General')
     #================================================
-    d=np.array([-0.210299,-0.0995138])
-    theta=-0.186912
-    Ahat=np.array([[1.97944,0.0387917],[2.5617,2.3738]])
+    # Type 3 method of order 5 and stage order 4 (A = 0); see the docstring.
+    d=np.array([-0.21029946333835516581,-0.099513765030839267394])
+    theta=-0.18691189405707631707
+    Ahat=np.array([[1.9794363455110040103,0.038791714286387901303],
+                   [2.5616993172948783036,2.3738022419485140426]])
     A=np.zeros([2,2])
-    bhat=np.array([1.45338,0.248242])
-    b=np.array([-0.812426,-0.0761097])
+    bhat=np.array([1.4533806811223953636,0.24824173133369345278])
+    b=np.array([-0.81242556519658011031,-0.076108741316585023136])
     TSRK['order5']=TwoStepRungeKuttaMethod(d,theta,A,b,Ahat,bhat,type='General')
     if which=='All': return TSRK
     else: return TSRK[which]
