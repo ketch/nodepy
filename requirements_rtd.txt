@@ -1,3 +1,0 @@
-numpy>=1.6
-matplotlib>=1.2
-sphinxcontrib-bibtex
