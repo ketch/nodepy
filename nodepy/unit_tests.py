@@ -482,5 +482,54 @@ class OrderConditionTest(ut.TestCase):
         self.assertEqual(methods['order4'].order(), 4)
 
 
+class ConstructorTest(ut.TestCase):
+    """Subclasses must initialize through their parent classes."""
+
+    def test_low_storage_attributes_from_parent(self):
+        from nodepy import lsrk
+        for name, method in lsrk.load_low_storage().items():
+            self.assertTrue(method.mtype.startswith('Explicit'), msg=name)
+            self.assertEqual(len(method.c), len(method), msg=name)
+            method._check_consistency()
+
+    def test_low_storage_invalid_arguments(self):
+        from nodepy import lsrk
+        pair = lsrk.load_low_storage('RK45[2R]C')
+        with self.assertRaises(ValueError):
+            lsrk.TwoRRungeKuttaMethod(pair.a, pair.b, bhat=pair.bhat)
+        betavec, gamma, delta = [0., 1.], [[0., 0.], [0., 1.]], [1., 0.]
+        with self.assertRaises(ValueError):
+            lsrk.TwoSRungeKuttaMethod(betavec, gamma, delta, '2S_pair')
+        with self.assertRaises(ValueError):
+            lsrk.TwoSRungeKuttaPair(betavec, gamma, delta, '2S')   # no bhat
+        with self.assertRaises(ValueError):
+            lsrk.TwoSRungeKuttaMethod(betavec, gamma, delta, '4S')
+
+    def test_continuous_method_keeps_order(self):
+        A = np.array([[0., 0.], [1., 0.]])
+        b = np.array([0.5, 0.5])
+        method = rk.ContinuousExplicitRungeKuttaMethod(A, b, b_dense=np.zeros((2, 3)), order=2)
+        self.assertEqual(method._p, 2)
+
+
+class WarningTest(ut.TestCase):
+    """Problems are reported with warnings, not print()."""
+
+    def test_explicit_method_as_RungeKuttaMethod_warns(self):
+        A = np.array([[0., 0.], [1., 0.]])
+        with self.assertWarns(UserWarning):
+            rk.RungeKuttaMethod(A, np.array([0.5, 0.5]))
+
+    def test_apparent_order_zero_warns(self):
+        A = np.array([[0., 0.], [1., 0.]])
+        with self.assertWarns(UserWarning):
+            p = rk.ExplicitRungeKuttaMethod(A, np.array([0.5, 0.6])).order()
+        self.assertEqual(p, 0)
+
+    def test_effective_order_limit_warns(self):
+        with self.assertWarns(UserWarning):
+            self.assertEqual(rk.loadRKM('RK44').effective_order(), 4)
+
+
 if __name__== "__main__":
     ut.main()

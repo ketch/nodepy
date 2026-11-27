@@ -182,35 +182,14 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
                   and whose second row contains the second subdiagonal
                   of `A`.
         """
-        self.b=b
-        self.a=a
-        A, _, c = twoR2butcher(a, b, regs)
-        self.A = A; self.c = c
         if bhat is not None:
-            self.bhat=bhat
-            self.embedded_method=ExplicitRungeKuttaMethod(self.A,self.bhat)
-        self.name=name
-        self.shortname=shortname
-        self.info=description
-        self.lstype=str(regs)+'R+_pair'
-
-        if order is not None:
-            self._p = order
-        else:
-            self._p = None
-
-        s = self.A.shape[0]
-        if self.A.dtype == object:
-            alpha = snp.normalize(np.zeros((s+1,s),dtype=object))
-            beta = snp.normalize(np.zeros((s+1,s),dtype=object))
-        else:
-            alpha = np.zeros((s+1,s))
-            beta = np.zeros((s+1,s))
-        beta[:-1,:] = self.A.copy()
-        beta[-1,:] = self.b.copy()
-
-        self.alpha=alpha
-        self.beta=beta
+            raise ValueError('TwoRRungeKuttaMethod does not take embedded weights '
+                             'bhat; use TwoRRungeKuttaPair instead.')
+        A, _, _ = twoR2butcher(a, b, regs)
+        super(TwoRRungeKuttaMethod,self).__init__(
+            A=A, b=b, name=name, shortname=shortname, description=description, order=order)
+        self.a=a
+        self.lstype=str(regs)+'R'
 
     def __num__(self):
         """
@@ -346,6 +325,44 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
 #=====================================================
 
 
+def _twoS_shu_osher(betavec, gamma, lstype):
+    r"""
+        Shu-Osher arrays `(\alpha, \beta)` of a 2S, 2S*, 2S_pair, 3S* or
+        3S*_pair low-storage method, from its low-storage coefficients
+        (in the notation of :cite:`ketcheson2010`).
+    """
+    m=len(betavec)-1
+    alpha=np.zeros([m+1,m])
+    if lstype in ('2S', '2S*', '2S_pair'):
+        beta =np.zeros([m+1,m])
+        for i in range(0,m): beta[i+1,i] = betavec[i+1]
+        for i in range(1,m):
+            beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
+            alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
+            alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
+    elif lstype in ('3S*', '3S*_pair'):
+        beta =np.vstack([np.zeros(m),np.diag(betavec[1:])])
+        if lstype == '3S*_pair':
+            alpha[1,0]=gamma[0][1]+gamma[1][1]+gamma[2][1]
+        for i in range(1,m):
+            beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
+            alpha[i+1,  0] =  gamma[2][i+1]-gamma[2][i]* \
+                                gamma[1][i+1]/gamma[1][i]
+            alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
+            alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
+    else:
+        raise ValueError('Unknown low-storage type: {}'.format(lstype))
+    return alpha, beta
+
+
+def _twoS_butcher(alpha, beta):
+    """Floating-point Butcher arrays from the Shu-Osher arrays of a 2S/3S* method."""
+    A, b = shu_osher_to_butcher(alpha, beta)
+    A = np.tril(np.array(A, dtype=np.float64), -1)
+    b = np.array(b, dtype=np.float64)
+    return A, b
+
+
 #=====================================================
 class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
 #=====================================================
@@ -372,48 +389,19 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
             low-storage coefficients and computing the Butcher
             coefficients.
        """
+        if lstype not in ('2S', '2S*', '3S*'):
+            raise ValueError('TwoSRungeKuttaMethod supports the types 2S, 2S* and 3S*, '
+                             'not {}; use TwoSRungeKuttaPair for pairs.'.format(lstype))
+        alpha, beta = _twoS_shu_osher(betavec, gamma, lstype)
+        A, b = _twoS_butcher(alpha, beta)
+        super(TwoSRungeKuttaMethod,self).__init__(
+            A=A, b=b, name=name, shortname=shortname, description=description, order=order)
+        # Keep the Shu-Osher form that corresponds to the low-storage implementation.
+        self.alpha, self.beta = alpha, beta
         self.betavec=betavec
         self.gamma=gamma
         self.delta=delta
         self.lstype=lstype
-        self.shortname=shortname
-
-        # Two-register methods
-        if lstype=='2S' or lstype=='2S*':
-            m=len(betavec)-1
-            alpha=np.zeros([m+1,m])
-            beta =np.zeros([m+1,m])
-            for i in range(0,m): beta[i+1,i] = betavec[i+1]
-            for i in range(1,m):
-                beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
-
-        # Three-register methods
-        elif lstype.startswith('3S*'):
-            m=len(betavec)-1
-            alpha=np.zeros([m+1,m])
-            beta =np.vstack([np.zeros(m),np.diag(betavec[1:])])
-            for i in range(1,m):
-                beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,  0] =  gamma[2][i+1]-gamma[2][i]* \
-                                    gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
-
-        self.alpha, self.beta = alpha, beta
-        self.A,self.b=shu_osher_to_butcher(alpha,beta)
-        # Change type of A to float64
-        # This can be a problem if A is symbolic
-        self.A=np.tril(self.A.astype(np.float64),-1)
-        self.c=np.sum(self.A,1)
-        self.name=name
-        self.info=description
-
-        if order is not None:
-            self._p = order
-        else:
-            self._p = None
 
     def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):
         """
@@ -492,90 +480,22 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
             low-storage coefficients and computing the Butcher
             coefficients.
         """
-        self.name=name
-        self.info=description
+        alpha, beta = _twoS_shu_osher(betavec, gamma, lstype)
+        A, b = _twoS_butcher(alpha, beta)
+        m=len(betavec)-1
+        if lstype=='2S_pair':
+            bhat=np.dot(delta,np.vstack([A,b]))/sum(delta)
+        elif lstype=='3S*_pair':
+            bhat=np.dot(delta[:m+1],np.vstack([A,b]))/sum(delta)
+        elif bhat is None:
+            raise ValueError('A {} pair requires the embedded weights bhat.'.format(lstype))
+        super(TwoSRungeKuttaPair,self).__init__(
+            A=A, b=b, bhat=np.array(bhat, dtype=np.float64), name=name, shortname=shortname,
+            description=description, order=(order, None))
         self.betavec=betavec
         self.gamma=gamma
         self.delta=delta
         self.lstype=lstype
-        self.shortname=shortname
-        self.alphahat = None
-        self._p_hat = None
-
-        if lstype=='2S_pair':
-            m=len(betavec)-1
-            alpha=np.zeros([m+1,m])
-            beta =np.zeros([m+1,m])
-            for i in range(0,m): beta[i+1,i] = betavec[i+1]
-            for i in range(1,m):
-                beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
-            self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            # Change type of A to float64
-            # This can be a problem if A is symbolic
-            self.A=np.tril(self.A.astype(np.float64),-1)
-            self.c=np.sum(self.A,1)
-            self.bhat=np.dot(delta,np.vstack([self.A,self.b]))/sum(delta)
-
-        elif lstype=='2S' or lstype=='2S*':
-            m=len(betavec)-1
-            alpha=np.zeros([m+1,m])
-            beta =np.zeros([m+1,m])
-            for i in range(0,m): beta[i+1,i] = betavec[i+1]
-            for i in range(1,m):
-                beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i  ] = 1. - alpha[i+1,i-1]
-            self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            # Change type of A to float64
-            # This can be a problem if A is symbolic
-            self.A=np.tril(self.A.astype(np.float64),-1)
-            self.c=np.sum(self.A,1)
-            self.bhat=bhat
-
-        elif lstype=='3S*_pair':
-            m=len(betavec)-1
-            alpha=np.zeros([m+1,m])
-            beta =np.zeros([m+1,m])
-            for i in range(0,m): beta[i+1,i] = betavec[i+1]
-            alpha[1,0]=gamma[0][1]+gamma[1][1]+gamma[2][1]
-            for i in range(1,m):
-                beta[ i+1,i-1]=-beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,  0]= gamma[2][i+1]-gamma[2][i]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i-1]=-gamma[0][i]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i  ]=1.-alpha[i+1,i-1]-alpha[i+1,0]
-            self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            # Change type of A to float64
-            # This can be a problem if A is symbolic
-            self.A=np.tril(self.A.astype(np.float64),-1)
-            self.c=np.sum(self.A,1)
-            self.bhat=np.dot(delta[:m+1],np.vstack([self.A,self.b]))/sum(delta)
-
-        elif lstype=='3S*':
-            m=len(betavec)-1
-            alpha=np.zeros([m+1,m])
-            beta =np.vstack([np.zeros(m),np.diag(betavec[1:])])
-            for i in range(1,m):
-                beta[ i+1,i-1] = -beta[i,i-1]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,  0] =  gamma[2][i+1]-gamma[2][i]* \
-                                    gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i-1] = -gamma[0][i]*gamma[1][i+1]/gamma[1][i]
-                alpha[i+1,i  ] = 1. - alpha[i+1,i-1]-alpha[i+1,0]
-            self.A,self.b=shu_osher_to_butcher(alpha,beta)
-            # Change type of A to float64
-            # This can be a problem if A is symbolic
-            self.A=np.tril(self.A.astype(np.float64),-1)
-            self.c=np.sum(self.A,1)
-            self.bhat=bhat
-
-        self.alpha, self.beta = alpha, beta
-
-        if order is not None:
-            self._p = order
-        else:
-            self._p = None
-        self.alpha = None
 
 
     def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):

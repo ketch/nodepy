@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 from __future__ import absolute_import
+import warnings
 import numpy as np
 import sympy
 import nodepy.snp as snp
@@ -104,7 +105,7 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
         else:
             return 0
         if np.abs(z)<1.e-10:
-            print("Warning: unable to determine exact imaginary stability interval")
+            warnings.warn('Unable to determine the exact imaginary stability interval.', stacklevel=2)
             return float(mr)
 
 
@@ -185,7 +186,7 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
         # Check if the stability region is bounded or not
         m,n = p.order,q.order
         if (m < n) or ((m == n) and (abs(p[m])<abs(q[n]))):
-            print('The stability region is unbounded')
+            warnings.warn('The stability region is unbounded.', stacklevel=2)
             if m > 0:
                 bounds = (-10*m,m,-5*m,5*m)
             else:
@@ -194,10 +195,10 @@ def plot_stability_region(p,q,N=200,color='r',filled=True,bounds=None,
             stable = lambda z : np.abs(p(z)/q(z))<=1.0
             bounds = find_plot_bounds(stable,guess=(-10,1,-5,5))
             if np.min(np.abs(np.array(bounds)))<1.e-14:
-                print('No stable region found; is this method zero-stable?')
+                warnings.warn('No stable region found; is this method zero-stable?', stacklevel=2)
 
         if (m == n) and (abs(p[m])==abs(q[n])):
-            print('The stability region may be unbounded')
+            warnings.warn('The stability region may be unbounded.', stacklevel=2)
 
     # Evaluate the stability function over a grid
     x=np.linspace(bounds[0],bounds[1],N)
