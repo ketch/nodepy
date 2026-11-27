@@ -55,6 +55,7 @@ from __future__ import print_function
 from __future__ import division
 
 from __future__ import absolute_import
+import warnings
 import numpy as np
 
 import nodepy.rooted_trees as rt
@@ -259,7 +260,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
             stable = lambda z : max(abs(np.linalg.eigvals(method.stability_matrix(z))))<=1.0
             bounds = find_plot_bounds(np.vectorize(stable),guess=(-10,1,-5,5))
             if np.min(np.abs(np.array(bounds)))<1.e-14:
-                print('No stable region found; is this method zero-stable?')
+                warnings.warn('No stable region found; is this method zero-stable?', stacklevel=2)
 
         x=np.linspace(bounds[0],bounds[1],N)
         y=np.linspace(bounds[2],bounds[3],N)

@@ -56,6 +56,7 @@ from __future__ import print_function
 from __future__ import division
 
 from __future__ import absolute_import
+import warnings
 import numpy as np
 import sympy
 
@@ -157,9 +158,9 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         if not isinstance(self,ExplicitRungeKuttaMethod):
             if not np.triu(self.A).any():
-                print("""Warning: this method appears to be explicit, but is
-                       being initialized as a RungeKuttaMethod rather than
-                       as an ExplicitRungeKuttaMethod.""")
+                warnings.warn('This method appears to be explicit, but is being '
+                              'initialized as a RungeKuttaMethod rather than as an '
+                              'ExplicitRungeKuttaMethod.', stacklevel=2)
 
         if order is not None:
             self._p = order
@@ -664,7 +665,8 @@ class RungeKuttaMethod(GeneralLinearMethod):
                                  '{}-stage method has order greater than {}; tol={} is too '
                                  'large.'.format(p, len(self), max_order, tol))
         if mode=='float' and p==0:
-            print('Apparent order is 0; this may be due to round-off.  Try order(mode="exact") or increase tol.')
+            warnings.warn('Apparent order is 0; this may be due to round-off.  '
+                          'Try order(mode="exact") or increase tol.', stacklevel=2)
         return p
 
     def order_condition_residuals(self,p):
@@ -699,15 +701,20 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
                 >>> from nodepy import rk
                 >>> RK4 = rk.loadRKM('RK44')
-                >>> RK4.effective_order()
-                Effective order is at least 4.  Higher effective order conditions not yet implemented.
+                >>> import warnings
+                >>> with warnings.catch_warnings(record=True) as w:
+                ...     warnings.simplefilter('always')
+                ...     RK4.effective_order()
                 4
+                >>> print(w[0].message)
+                Effective order is at least 4.  Higher effective order conditions are not implemented.
 
         """
         q=0
         while True:
             if q==4:
-                print("Effective order is at least 4.  Higher effective order conditions not yet implemented.")
+                warnings.warn('Effective order is at least 4.  Higher effective order '
+                              'conditions are not implemented.', stacklevel=2)
                 return q
             z=self.effective_order_condition_residuals(q+1)
             if np.any(abs(z)>tol): return q
@@ -1823,7 +1830,7 @@ class ContinuousRungeKuttaMethod(RungeKuttaMethod):
                  description='',mode='exact',order=None):
 
         super(ContinuousRungeKuttaMethod,self).__init__(A,b,alpha,beta,name,
-                                                   shortname,description)
+                                                   shortname,description,mode=mode,order=order)
         self.b_dense = b_dense
 
 class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRungeKuttaMethod):
@@ -2181,8 +2188,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         numhat, denhat = self.embedded_method.__num__().stability_function(mode='float')
 
         if (den.order > 0) or (denhat.order > 0):
-            print('Stepsize controller stability plots are only implemented for explicit schemes.')
-            return
+            raise NotImplementedError('Stepsize controller stability plots are only '
+                                      'implemented for explicit schemes.')
 
         # Plot the stability function
         fig_region = self.plot_stability_region(N=N, color=color, filled=filled, bounds=bounds,

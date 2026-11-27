@@ -518,8 +518,8 @@ class AdditiveLinearMultistepMethod(GeneralLinearMethod):
             if np.abs(f[-1]-f[-2]) < epsilon:
                 return f[-1]
             if len(f)>100:
-                print(f)
-                raise Exception('Unable to compute stiff damping factor: slow convergence')
+                raise RuntimeError('Unable to compute stiff damping factor: slow convergence. '
+                                   'Last values: {}'.format(f[-5:]))
 
 
 # ======================================================
