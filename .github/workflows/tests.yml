@@ -9,12 +9,19 @@ on:
 jobs:
   test:
     name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         # Oldest supported version, the version used for development, and the newest.
-        python-version: ["3.9", "3.13", "3.14"]
+        # actions/setup-python has no Python 3.9 build for Ubuntu releases after 24.04.
+        include:
+          - python-version: "3.9"
+            os: ubuntu-24.04
+          - python-version: "3.13"
+            os: ubuntu-latest
+          - python-version: "3.14"
+            os: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v7
