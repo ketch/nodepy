@@ -3,7 +3,6 @@ from __future__ import division
 
 from __future__ import absolute_import
 import numbers
-from six.moves import range
 
 #=====================================================
 class ODESolver(object):
@@ -12,10 +11,11 @@ class ODESolver(object):
     def __init__(self):
         pass
 
-    def __step__(self):
-        raise NotImplementedError
+    def __step__(self, *args, **kwargs):
+        raise NotImplementedError('Time stepping is not implemented for {}.'.format(
+                                  type(self).__name__))
 
-    def __call__(self,ivp,t0=0,N=5000,dt=None,errtol=None,controllertype='P',
+    def __call__(self,ivp,t0=None,N=5000,dt=None,errtol=None,controllertype='P',
                  x=None,diagnostics=False,use_butcher=False,max_steps=7500):
         """
             Calling an ODESolver numerically integrates the ODE
@@ -39,7 +39,8 @@ class ODESolver(object):
 
             **Input**:
                 - ivp -- An IVP instance (the initial value problem to be solved)
-                - t0 -- The initial time from which to integrate
+                - t0 -- The initial time from which to integrate.  Defaults
+                  to *ivp.t0*.
                 - N -- The # of steps to take (using a fixed step size)
                 - dt -- The step size to use
                 - errtol -- The local error tolerance to be observed (using
@@ -51,6 +52,11 @@ class ODESolver(object):
                 - diagnostics -- if True, return the number of rejected steps
                   and a list of step sizes used, in addition to the solution
                   values and times.
+                - max_steps -- The maximum number of steps (accepted or
+                  rejected) to take.  A RuntimeError is raised if the final
+                  time has not been reached after this many steps.  In
+                  fixed-step mode it is increased if necessary to allow the
+                  requested number of steps.
 
             **Output**:
                 - t -- A list of solution times
@@ -66,12 +72,14 @@ class ODESolver(object):
                 * Implement an option to not keep all output (for efficiency).
                 * Option to keep error estimate history
         """
-        # If a list of output times is specified and the method supports dense output,
-        # then we don't have to stop exactly at the output times.
-        if hasattr(self, 'b_dense') and not isinstance(ivp.T, numbers.Number):
-            dense_output = True
-        else:
-            dense_output = False
+        if t0 is None:
+            t0 = ivp.t0
+        if controllertype not in ('P', 'PI'):
+            raise ValueError("Unrecognized time step controller type '{}'; "
+                             "available options are 'P' and 'PI'.".format(controllertype))
+        if errtol is not None and not hasattr(self, 'embedded_method'):
+            raise ValueError('Adaptive time stepping (errtol) requires a method with an '
+                             'error estimator, such as an embedded Runge-Kutta pair.')
 
         numself = self.__num__()
         f=ivp.rhs; u0=ivp.u0; T=ivp.T
@@ -87,6 +95,10 @@ class ODESolver(object):
             t_final = T[-1]
             t_out = T
 
+        # If a list of output times is specified and the method supports dense output,
+        # then we don't have to stop exactly at the output times.
+        dense_output = hasattr(self, 'b_dense') and t_out is not None
+
         if t_out is not None:
             iout = 0
             next_output_time = T[iout]
@@ -97,14 +109,19 @@ class ODESolver(object):
 
         out_now = False
 
-        if not hasattr(self, 'b_dense'):
+        if not dense_output:
             if errtol is None:      # Fixed-timestep mode
                 if dt is None: dt = (t_final-t0)/float(N)
                 dt_standard = dt + 0
-                max_steps = max(max_steps, int(round(2*(t_final-t0)/dt)))
+                # A step that would end within this distance of the next output
+                # time is lengthened to end exactly on it.  Otherwise rounding
+                # errors in t_current can produce an extra step of length ~1e-16.
+                time_tol = 1.e-8*abs(dt_standard)
+                n_outputs = 0 if t_out is None else len(t_out)
+                max_steps = max(max_steps, int(round(2*(t_final-t0)/dt)) + n_outputs)
                 for istep in range(max_steps):
 
-                    if t_current+dt >= next_output_time:
+                    if t_current+dt >= next_output_time - time_tol:
                         dt = next_output_time - t_current
                         out_now = True
 
@@ -113,7 +130,10 @@ class ODESolver(object):
                     else:
                         uu, _ = numself.__step__(f,t_current,uu,dt,[],x=x,use_butcher=use_butcher)
 
-                    t_current += dt
+                    if out_now:
+                        t_current = next_output_time
+                    else:
+                        t_current += dt
                     if (out_now) or (t_out is None):
                         u.append(uu)
                         t.append(t_current)
@@ -124,6 +144,9 @@ class ODESolver(object):
                         dt = dt_standard
 
                     out_now = False
+                else:
+                    raise RuntimeError('Maximum number of steps ({}) reached at t = {} '
+                                       'before the final time {}.'.format(max_steps, t_current, t_final))
 
             else:                   # Error-control mode
                 p=self.embedded_method.p
@@ -141,19 +164,22 @@ class ODESolver(object):
                     unew,errest = numself.__step__(f,t_current,uu,dt,estimate_error=True,x=x,use_butcher=use_butcher)
 
                     if errest<=errtol:      # Step accepted
-                        t_current += dt
+                        if out_now:
+                            t_current = next_output_time
+                        else:
+                            t_current += dt
+                        uu = unew.copy()
+                        dthist.append(dt)
+                        errest_hist.append(errest)
                         if (out_now) or (t_out is None):
                             u.append(unew)
                             t.append(t_current)
-                            uu = unew.copy()
                         # Stop if final time reached:
                         if t_current >= t_final: break
                         if out_now:
                             iout += 1
                             next_output_time = T[iout]
                         errestold = errest #Should this happen if step is rejected?
-                        dthist.append(dt)
-                        errest_hist.append(errest)
                     else:
                         rejected_steps+=1
 
@@ -167,18 +193,17 @@ class ODESolver(object):
                       #Compute new dt using PI-controller
                       facopt = ((errtol/errest)**alpha
                                 *(errestold/errtol)**beta)
-                    else: print('Unrecognized time step controller type')
 
                     # Set new step size
                     dt = dt * min(facmax,max(facmin,kappa*facopt))
-
-                if istep==max_steps-1:
-                    print('Maximum number of steps reached; giving up.')
+                else:
+                    raise RuntimeError('Maximum number of steps ({}) reached at t = {} '
+                                       'before the final time {}.'.format(max_steps, t_current, t_final))
 
         else:  # dense output
             if errtol is None:      # Fixed-timestep mode
                 if dt is None: dt = (t_final-t0)/float(N)
-                dt_standard = dt + 0
+                max_steps = max(max_steps, int(round(2*(t_final-t0)/dt)))
                 for istep in range(max_steps):
 
                     thetas = []
@@ -201,6 +226,9 @@ class ODESolver(object):
                     if t_current >= t_final: break
 
                     out_now = False
+                else:
+                    raise RuntimeError('Maximum number of steps ({}) reached at t = {} '
+                                       'before the final time {}.'.format(max_steps, t_current, t_final))
 
             else:                   # Error-control mode
                 raise NotImplementedError

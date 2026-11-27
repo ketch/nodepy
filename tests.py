@@ -6,10 +6,9 @@ import doctest
 import nodepy
 import unittest
 import os
-import subprocess
-import tempfile
 import sys
 import nbformat
+from nbclient import NotebookClient
 
 if sys.version_info >= (3,0):
     kernel = 'python3'
@@ -17,18 +16,24 @@ else:
     kernel = 'python2'
 
 def _notebook_run(path):
-    """Execute a notebook via nbconvert and collect output.
+    """Execute a notebook with nbclient and collect output.
        :returns (parsed nb object, execution errors)
     """
-    with tempfile.NamedTemporaryFile(suffix=".ipynb") as fout:
-        args = ["jupyter", "nbconvert", "--to", "notebook", "--execute",
-                "--ExecutePreprocessor.timeout=120",
-                "--ExecutePreprocessor.kernel_name="+kernel,
-                "--output", fout.name, path]
-        subprocess.check_call(args)
-
-        fout.seek(0)
-        nb = nbformat.reads(fout.read().decode('utf-8'), nbformat.current_nbformat)
+    # Make the notebook kernels import this checkout of nodepy rather than
+    # an installed copy.  Kernels inherit the environment of this process.
+    repo = os.path.dirname(os.path.abspath(__file__))
+    old_pythonpath = os.environ.get('PYTHONPATH')
+    os.environ['PYTHONPATH'] = os.pathsep.join([repo] + ([old_pythonpath] if old_pythonpath else []))
+    try:
+        nb = nbformat.read(path, as_version=nbformat.current_nbformat)
+        client = NotebookClient(nb, timeout=120, kernel_name=kernel, allow_errors=True,
+                                resources={'metadata': {'path': os.path.dirname(os.path.abspath(path))}})
+        client.execute()
+    finally:
+        if old_pythonpath is None:
+            del os.environ['PYTHONPATH']
+        else:
+            os.environ['PYTHONPATH'] = old_pythonpath
 
     errors = [output for cell in nb.cells if "outputs" in cell
               for output in cell["outputs"]
@@ -47,7 +52,8 @@ def run_tests():
             _, errors = _notebook_run('./examples/'+filename)
             if errors != []:
                 retcode = 1
-                #raise(Exception)
+                for error in errors:
+                    print('  {}: {}'.format(error.ename, error.evalue))
 
     for module_name in ['runge_kutta_method',
                         'linear_multistep_method',
@@ -68,10 +74,12 @@ def run_tests():
                         'loadmethod']:
         module = nodepy.__getattribute__(module_name)
         result = doctest.testmod(module)
-        if result[0] != 0:
-            retcode = result[0]
+        if result.failed != 0:
+            retcode = 1
 
     test_results = unittest.main(module='nodepy.unit_tests', exit=False)
+    if not test_results.result.wasSuccessful():
+        retcode = 1
     return retcode
 
 if __name__ == '__main__':

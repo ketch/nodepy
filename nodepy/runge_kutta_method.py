@@ -61,7 +61,6 @@ import sympy
 
 import nodepy.snp as snp
 from nodepy.general_linear_method import GeneralLinearMethod
-from six.moves import range
 
 #=====================================================
 class RungeKuttaMethod(GeneralLinearMethod):
@@ -355,7 +354,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
                 but with everything divided by two.
                 The b_2 matrix block consists of m_1 (row) copies of b_2.
         """
-        if self.A.dtype is object:
+        if self.A.dtype == object:
             from sympy import Rational
             one = Rational(1,1)
             return compose(self,RK2,one,one)
@@ -381,25 +380,20 @@ class RungeKuttaMethod(GeneralLinearMethod):
             Returns a list of unnecessary stages.  If the method is
             DJ-irreducible, returns an empty list.
 
-            This routine may not work correctly for RK pairs, as it
-            doesn't check bhat.
+            For RK pairs, a stage is reported only if it influences
+            neither the main nor the embedded solution.
         """
         from copy import copy
         b=self.b; A=self.A
         Nset = [j for j in range(len(b)) if abs(b[j])<tol]
         while len(Nset)>0:      #Try successively smaller sets N
             Nsetold=copy(Nset)
-            for j in Nset:      #Test whether stage j matters
-                remove_j=False
+            for j in list(Nset):    #Test whether stage j matters
                 for i in range(len(self)):
                     if i not in Nset and abs(A[i,j])>tol: #Stage j matters
-                        remove_j=True
-                        continue
-                    if remove_j: continue
-                if remove_j:
-                    Nset.remove(j)
-                    continue
-            if Nset==Nsetold: return Nset
+                        Nset.remove(j)
+                        break
+            if Nset==Nsetold: break
         if hasattr(self,'embedded_method'):
             Nset2 = self.embedded_method._dj_reducible_stages(tol)
             Nset = [x for x in Nset if x in Nset2]
@@ -495,7 +489,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             self.alpha = alpha
             beta=np.delete(np.delete(self.beta,stage,1),stage,0)
             self.beta = beta
-        if hasattr(self,'alphahat'):
+        if getattr(self,'alphahat',None) is not None:
             for i in range(s+1):
                 if self.alphahat[i,stage] != 0: # Doing this check speeds things up
                     self.alphahat,self.betahat = shu_osher_zero_alpha_ij(self.alphahat,self.betahat,i,stage)
@@ -534,13 +528,15 @@ class RungeKuttaMethod(GeneralLinearMethod):
         from numpy import dot
         from sympy import Rational, simplify
         code=elementary_weight_str(tree)
-        A,b,c = self.A,self.b,self.c
+        namespace = {'A': self.A, 'b': self.b, 'c': self.c, 'dot': dot,
+                     'Rational': Rational, 'simplify': simplify}
 
-        if A.dtype == object:
-            exec('coeff = simplify({} - Rational(1, {}))'.format(code, tree.density()))
+        if self.A.dtype == object:
+            expr = 'simplify({} - Rational(1, {}))'.format(code, tree.density())
         else:
-            exec("coeff = ({} - 1.0 / {})".format(code, tree.density()))
-        return locals()["coeff"] / tree.symmetry()
+            expr = '({} - 1.0 / {})'.format(code, tree.density())
+        coeff = eval(expr, {}, namespace)
+        return coeff / tree.symmetry()
 
     def error_coeffs(self,p):
         r"""
@@ -581,12 +577,17 @@ class RungeKuttaMethod(GeneralLinearMethod):
         tau_1 = self.error_coeffs(q+1)
         tau_2 = self.error_coeffs(q+2)
 
-        A_qp1     = snp.norm(tau_1)
-        A_qp1_max = max([abs(tau) for tau in tau_1])
-        A_qp2     = snp.norm(tau_2)
-        A_qp2_max = max([abs(tau) for tau in tau_2])
+        # The maxima are found by comparing floating-point values because
+        # SymPy cannot always decide inequalities between exact expressions.
+        def max_abs(values):
+            return max([abs(v) for v in values], key=float)
 
-        D = max(np.max(np.abs(self.A)), np.max(np.abs(self.b)), np.max(np.abs(self.c)))
+        A_qp1     = snp.norm(tau_1)
+        A_qp1_max = max_abs(tau_1)
+        A_qp2     = snp.norm(tau_2)
+        A_qp2_max = max_abs(tau_2)
+
+        D = max_abs(np.concatenate([np.ravel(self.A), self.b, self.c]))
         return A_qp1, A_qp1_max, A_qp2, A_qp2_max, D
 
 
@@ -598,7 +599,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
 
         if mode == 'float':
             method = self.__num__()
-            from numpy import sqrt
+            from math import sqrt
         elif mode == 'exact':
             method = self
             from sympy import sqrt
@@ -905,7 +906,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
             d_true = self.num_seq_dep_stages()
             d_num  = len(p.coeffs)-1
             if d_num>d_true:
-                p = np.poly1d(p.coeffs[(d_num-d_true):])
+                p = snp.poly1d(p.coeffs[(d_num-d_true):])
 
         return p,q
 
@@ -1051,7 +1052,10 @@ class RungeKuttaMethod(GeneralLinearMethod):
             TODO: clean this up.
         """
 
-        p,q=self.stability_function()
+        # This algorithm is numerical (root finding and tolerances), so use
+        # floating-point coefficients; SymPy cannot always decide the
+        # comparisons below for exact coefficients.
+        p,q=self.stability_function(mode='float')
         for i in range(len(p)+1):
             if abs(p[i])<=tol2: p[i]=0.0
         for i in range(len(q)+1):
@@ -1176,7 +1180,7 @@ class RungeKuttaMethod(GeneralLinearMethod):
         M = B.dot(rk.A) + rk.A.T.dot(B) - np.outer(rk.b, rk.b)
         isposdef = np.all(np.linalg.eigvals(M) >= -10 * np.finfo(M.dtype).eps)
 
-        return isposdef
+        return bool(isposdef)
 
     #============================================================
     # Representations
@@ -1470,16 +1474,18 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
 
             **Input**:
                 - f  -- function being integrated
-                - t  -- array of previous solution times
-                - u  -- array of previous solution steps (*u[i]* is the
-                        solution at time *t[i]*)
+                - t  -- current time
+                - u  -- current solution value (at time *t*)
                 - dt -- length of time step to take
 
             **Output**:
-                - unew -- approximate solution at time *t[-1] + dt*
+                - unew -- approximate solution at time *t + dt*
 
             The implementation here is wasteful in terms of storage.
         """
+        if estimate_error:
+            raise ValueError('{} has no embedded method, so it cannot '
+                             'estimate the error.'.format(type(self).__name__))
         if self.alpha is None:
             use_butcher = True
 
@@ -1498,8 +1504,8 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
                 y[i][:] = u_old
                 for j in range(i):
                     y[i] += self.A[i,j]*dt*fy[j]
-                    if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
-                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
+                if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                else: fy[i][:] = f(t+self.c[i]*dt,y[i])
             u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])
 
         else:             # Use Shu-Osher coefficients
@@ -1794,7 +1800,7 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
             maxamp = max(maxamp, np.max(np.abs(thetaj(Z_stable))))
             maxamp_origin = max(maxamp_origin, np.abs(thetaj(0.)))
 
-        return maxamp, maxamp_origin
+        return float(maxamp), float(maxamp_origin)
 
 #=====================================================
 #End of ExplicitRungeKuttaMethod class
@@ -1820,13 +1826,13 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
 
             **Input**:
                 - f  -- function being integrated
-                - t  -- array of previous solution times
-                - u  -- array of previous solution steps (u[i] is the solution at time t[i])
+                - t  -- current time
+                - u  -- current solution value (at time t)
                 - dt -- length of time step to take
                 - thetas -- list of relative times at which to provide output
 
             **Output**:
-                - unew -- approximate solution at time t[-1]+dt
+                - unew -- approximate solution at time t+dt
                 - u_theta -- list of dense output values
 
             The implementation here is wasteful in terms of storage.
@@ -1849,8 +1855,8 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
                 y[i][:] = u_old
                 for j in range(i):
                     y[i] += self.A[i,j]*dt*fy[j]
-                    if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
-                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
+                if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                else: fy[i][:] = f(t+self.c[i]*dt,y[i])
             u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])
 
         else:             # Use Shu-Osher coefficients
@@ -1965,8 +1971,7 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
         worrying about the representation of the method.
         """
         numself = super(ExplicitRungeKuttaPair,self).__num__()
-        if self.A.dtype==object:
-            numself.bhat=np.array(self.bhat,dtype=np.float64)
+        numself.bhat=np.array(self.bhat,dtype=np.float64)
         if self.alphahat is not None:
             numself.alphahat=np.array(self.alphahat,dtype=np.float64)
             numself.betahat=np.array(self.betahat,dtype=np.float64)
@@ -2004,12 +2009,12 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
 
             **Input**:
                 - f  -- function being integrated
-                - t  -- array of previous solution times
-                - u  -- array of previous solution steps (u[i] is the solution at time t[i])
+                - t  -- current time
+                - u  -- current solution value (at time t)
                 - dt -- length of time step to take
 
             **Output**:
-                - unew -- approximate solution at time t[-1]+dt
+                - unew -- approximate solution at time t+dt
 
             The implementation here is wasteful in terms of storage.
         """
@@ -2031,8 +2036,8 @@ class ExplicitRungeKuttaPair(ExplicitRungeKuttaMethod):
                 y[i][:] = u_old
                 for j in range(i):
                     y[i] += self.A[i,j]*dt*fy[j]
-                    if x is not None: fy[i][:] = f(t[-1]+self.c[i]*dt,y[i],x)
-                    else: fy[i][:] = f(t+self.c[i]*dt,y[i])
+                if x is not None: fy[i][:] = f(t+self.c[i]*dt,y[i],x)
+                else: fy[i][:] = f(t+self.c[i]*dt,y[i])
             u_new=u_old+dt*sum([self.b[j]*fy[j] for j in range(m)])
             if estimate_error:
                 u_hat=u+dt*sum([self.bhat[j]*fy[j] for j in range(m)])
@@ -2552,9 +2557,15 @@ def elementary_weight_str(tree,style='python'):
             'dot(b,c**10)'
             >>> rk.elementary_weight_str(rt.RootedTree('{{T^11}T}'))
             'dot(b,dot(A,c**11))'
+            >>> rk.elementary_weight_str(rt.RootedTree('T'))
+            'sum(b)'
     """
     from nodepy.strmanip import mysimp
     from nodepy.rooted_trees import Dmap_str
+    if str(tree)=='T':  # The general formula below would give dot(b,1)
+        ewstr='sum(b)'
+        if style=='matlab': raise Exception("Use elementary_weight_str_matlab() instead.")
+        return ewstr
     ewstr='dot(b,'+tree.Gprod_str(RKeta_str,Dmap_str)+')'
     ewstr=ewstr.replace('1*','')
     ewstr=mysimp(ewstr)
@@ -2583,10 +2594,14 @@ def RKeta_str(tree):
 
 def discrete_adjoint(meth):
     """
-        Returns the discrete adjoint of a Runge-Kutta method
+        Returns the discrete adjoint of a Runge-Kutta method.
+        It is defined only if all the weights `b_i` are nonzero.
     """
-    A=np.zeros([len(meth),len(meth)])
     b=meth.b
+    if any(snp.is_zero(bi) for bi in b):
+        raise ValueError('The discrete adjoint is not defined for a method '
+                         'with a zero weight b_i.')
+    A=np.zeros_like(meth.A)
     for i in range(len(meth)):
         for j in range(len(meth)):
             #A[i,j]=meth.A[j,i]*b[j]/b[i]
@@ -4097,10 +4112,10 @@ def compose(RK1,RK2,h1=1,h2=1):
         >>> print(fe*fe)
         Runge-Kutta Method
         <BLANKLINE>
-         0     |
-         0.500 | 0.500
-        _______|______________
-               | 0.500  0.500
+         0   |
+         1/2 | 1/2
+        _____|__________
+             | 1/2  1/2
 
 
     TODO: Generalize this for any number of inputs
@@ -4108,7 +4123,7 @@ def compose(RK1,RK2,h1=1,h2=1):
     f1=h1/(h1+h2)
     f2=h2/(h1+h2)
     A=np.vstack([
-    np.hstack([RK2.A*f2,np.zeros([np.size(RK2.A,0),np.size(RK1.A,1)])]),
+    np.hstack([RK2.A*f2,np.zeros([np.size(RK2.A,0),np.size(RK1.A,1)],dtype=RK2.A.dtype)]),
         np.hstack([np.tile(RK2.b*f2,(len(RK1),1)),RK1.A*f1])]).squeeze()
     b=np.hstack([RK2.b*f2,RK1.b*f1]).squeeze()
     if RK1.is_explicit() and RK2.is_explicit():
@@ -4337,12 +4352,12 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         else:
             raise Exception("Unknown value of 'formula'")
 
-        p = np.poly1d(p1)    # Numerator
-        q = np.poly1d(q1)    # Denominator
+        p = snp.poly1d(p1)    # Numerator
+        q = snp.poly1d(q1)    # Denominator
 
     if m < p.order:
         c = p.coeffs[-(m+1):]
-        p = np.poly1d(c)
+        p = snp.poly1d(c)
 
     return p,q
 
@@ -4390,7 +4405,7 @@ def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):
             thet = thet.applyfunc(sympy.expand_mul)
 
     # Don't consider perturbations to first stage:
-    theta = [np.poly1d(theta_j.as_poly(z).all_coeffs()) for theta_j in thet[1:]]
+    theta = [snp.poly1d(theta_j.as_poly(z).all_coeffs()) for theta_j in thet[1:]]
     return theta
 
 

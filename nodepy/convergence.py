@@ -51,9 +51,9 @@ def ctest(methods,ivp,grids=[20,40,80,160,320,640],verbosity=0,parallel=False):
     # In case just one method is passed in (and not as a list):
     if not isinstance(methods,list): methods=[methods]
     err=[]
-    try:
+    if ivp.exact is not None:
         exsol = ivp.exact(ivp.T)
-    except:
+    else:
         bs5=rk.loadRKM('BS5')
         bigN=grids[-1]*4
         if verbosity>0: print('solving on fine grid with {} points'.format(bigN))
@@ -112,9 +112,9 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
     work=np.zeros([len(methods),len(tols)])
     for ivp in ivps:
         if verbosity>0: print("solving problem {}".format(ivp))
-        try:
+        if ivp.exact is not None:
             exsol = ivp.exact(ivp.T)
-        except:
+        else:
             bs5=rk.loadRKM('BS5')   #Use Bogacki-Shampine RK for fine solution
             lowtol=min(tols)/100.
             if verbosity>0: print('solving for "exact" solution with tol= {}'.format(lowtol))

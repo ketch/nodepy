@@ -78,7 +78,6 @@ At the moment, the following classes are implemented:
 """
 from __future__ import absolute_import
 from nodepy.runge_kutta_method import *
-from six.moves import range
 
 #=====================================================
 class TwoNRungeKuttaMethod(ExplicitRungeKuttaMethod):
@@ -219,7 +218,7 @@ class TwoRRungeKuttaMethod(ExplicitRungeKuttaMethod):
         This is useful whenever we need to operate numerically without
         worrying about the representation of the method.
         """
-        numself = super(TwoRRungeKuttaPair, self).__num__()
+        numself = super(TwoRRungeKuttaMethod, self).__num__()
         if self.a.dtype == object:
             numself.a = np.array(self.a, dtype=np.float64)
         else:
@@ -281,7 +280,7 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
             numself.a = self.a.copy()
         return numself
 
-    def __step__(self,f,t,u,dt,errest=False,x=None,**kwargs):
+    def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):
         """
             Take a time step on the ODE u'=f(t,u).
             The implementation here is special for 2R/3R low-storage methods
@@ -289,28 +288,39 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
 
             **Input**:
                 - f  -- function being integrated
-                - t  -- array of previous solution times
-                - u  -- array of previous solution steps
-                  (u[i,:] is the solution at time t[i])
+                - t  -- current time
+                - u  -- current solution value (at time t)
                 - dt -- length of time step to take
+                - x  -- if not None, passed to f as a third argument
+                - estimate_error -- if True, also return an error estimate
+                - use_butcher -- if True, use the generic Butcher-form
+                  implementation instead of the low-storage one
 
             **Output**:
-                - unew -- approximate solution at time t[-1]+dt
+                - unew -- approximate solution at time t+dt
+                - errest -- error estimate (only if *estimate_error* is True)
         """
+        if use_butcher:
+            return super(TwoRRungeKuttaPair, self).__step__(
+                f,t,u,dt,x=x,estimate_error=estimate_error,use_butcher=True)
+        if x is not None:
+            rhs = lambda t, u: f(t, u, x)
+        else:
+            rhs = f
         m=len(self); b=self.b; a=self.a
         S2=u[:]
         S1=u[:]
-        S1=dt*f(t,S1)
+        S1=dt*rhs(t,S1)
         uhat = u[:]
         if self.lstype.startswith('2'):
             S2=S2+self.b[0]*S1
             uhat = uhat + self.bhat[0]*S1
             for i in range(1,m):
                 S1 = S2 + (self.a[i-1]-self.b[i-1])*S1
-                S1=dt*f(t+self.c[i]*dt,S1)
+                S1=dt*rhs(t+self.c[i]*dt,S1)
                 S2=S2+self.b[i]*S1
                 uhat = uhat + self.bhat[i]*S1
-            if errest: return S2, np.max(np.abs(S2-uhat))
+            if estimate_error: return S2, np.max(np.abs(S2-uhat))
             else: return S2
         elif self.lstype.startswith('3'):
             S3=S2+self.b[0]*S1
@@ -318,15 +328,15 @@ class TwoRRungeKuttaPair(ExplicitRungeKuttaPair):
             S1=S3+(self.a[0,0]-self.b[0])*S1
             S2=(S1-S3)/(self.a[0,0]-self.b[0])
             for i in range(1,m-1):
-                S1=dt*f(t+self.c[i]*dt,S1)
+                S1=dt*rhs(t+self.c[i]*dt,S1)
                 S3=S3+self.b[i]*S1
                 uhat = uhat + self.bhat[i]*S1
                 S1=S3 + (self.a[0,i]-b[i])*S1 + (self.a[1,i-1]-b[i-1])*S2
                 S2=(S1-S3+(self.b[i-1]-self.a[1,i-1])*S2)/(self.a[0,i]-self.b[i])
-            S1=dt*f(t+self.c[m-1]*dt,S1)
+            S1=dt*rhs(t+self.c[m-1]*dt,S1)
             S3=S3+self.b[m-1]*S1
             uhat=uhat+self.bhat[m-1]*S1
-            if errest: return S3, np.max(np.abs(S3-uhat))
+            if estimate_error: return S3, np.max(np.abs(S3-uhat))
             else: return S3
         else:
             raise Exception('Error: only 2R and 3R methods implemented so far!')
@@ -405,7 +415,7 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
         else:
             self._p = None
 
-    def __step__(self,f,t,u,dt):
+    def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):
         """
             Take a time step on the ODE u'=f(t,u).
             The implementation here is special for 2S/2S*/3S* low-storage methods,
@@ -413,27 +423,38 @@ class TwoSRungeKuttaMethod(ExplicitRungeKuttaMethod):
 
             **Input**:
                 - f  -- function being integrated
-                - t  -- array of previous solution times
-                - u  -- array of previous solution steps
-                  (u[i,:] is the solution at time t[i])
+                - t  -- current time
+                - u  -- current solution value (at time t)
                 - dt -- length of time step to take
+                - x  -- if not None, passed to f as a third argument
+                - use_butcher -- if True, use the generic Butcher-form
+                  implementation instead of the low-storage one
 
             **Output**:
-                - unew -- approximate solution at time t[-1]+dt
+                - unew -- approximate solution at time t+dt
         """
+        if estimate_error:
+            raise ValueError('{} has no embedded method, so it cannot '
+                             'estimate the error.'.format(type(self).__name__))
+        if use_butcher:
+            return super(TwoSRungeKuttaMethod, self).__step__(f,t,u,dt,x=x,use_butcher=True)
+        if x is not None:
+            rhs = lambda t, u: f(t, u, x)
+        else:
+            rhs = f
         m=len(self)
-        S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
-        S2=np.zeros(np.size(S1))
+        S1=u+0. # by adding zero we get a copy; is there a better way?
+        S2=0.*S1
         if self.lstype.startswith('3S*'): S3=S1+0.
         for i in range(1,m+1):
             S2 = S2 + self.delta[i-1]*S1
             if self.lstype=='2S' or self.lstype=='2S*':
                 S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
-                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+                     + self.betavec[i]*dt*rhs(t+self.c[i-1]*dt,S1)
             elif self.lstype.startswith('3S*'):
                 S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
                      + self.gamma[2][i]*S3 \
-                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+                     + self.betavec[i]*dt*rhs(t+self.c[i-1]*dt,S1)
         return S1
 
 #=====================================================
@@ -557,57 +578,53 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
         self.alpha = None
 
 
-    def __step__(self,f,t,u,dt,errest=False,x=None):
+    def __step__(self,f,t,u,dt,x=None,estimate_error=False,use_butcher=False):
         """
             Take a time step on the ODE u'=f(t,u).
 
             **Input**:
                 - f  -- function being integrated
-                - t  -- array of previous solution times
-                - u  -- array of previous solution steps
-                  (u[i,:] is the solution at time t[i])
+                - t  -- current time
+                - u  -- current solution value (at time t)
                 - dt -- length of time step to take
+                - x  -- if not None, passed to f as a third argument
+                - estimate_error -- if True, also return an error estimate
+                - use_butcher -- if True, use the generic Butcher-form
+                  implementation instead of the low-storage one
 
             **Output**:
-                - S1 -- approximate solution at time t[-1]+dt
-                - S2 -- error estimate at time t[-1]+dt
+                - S1 -- approximate solution at time t+dt
+                - errest -- maximum norm of the difference between the
+                  solution and the embedded solution (only if
+                  *estimate_error* is True)
 
-            The implementation here is special for 2S low-storage
-            embedded pairs.
-            But it's not really fully low-storage yet.
+            The implementation here is special for 2S and 3S* low-storage
+            embedded pairs.  The embedded solution is accumulated from the
+            weights *bhat* in an extra register, so it is not fully
+            low-storage.
         """
+        if use_butcher:
+            return super(TwoSRungeKuttaPair, self).__step__(
+                f,t,u,dt,x=x,estimate_error=estimate_error,use_butcher=True)
+        if x is not None:
+            rhs = lambda t, u: f(t, u, x)
+        else:
+            rhs = f
         m=len(self)
-        S1=u[-1]+0. # by adding zero we get a copy; is there a better way?
-        S2=np.zeros(np.size(S1))
-        if self.lstype.startswith('3S*'): S3=S1+0.; S4=u[-1]+0.
-        elif self.lstype=='2S': S3=u[-1]+0.
+        three_register = self.lstype.startswith('3S*')
+        S1=u+0. # by adding zero we get a copy; is there a better way?
+        S2=0.*S1
+        if three_register: S3=u+0.
+        if estimate_error: uhat=u+0.
 
         for i in range(1,m+1):
             S2 = S2 + self.delta[i-1]*S1
-            if self.lstype=='2S_pair':
-                S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
-                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
-            elif self.lstype=='2S':
-                #Horribly inefficient hack:
-                S3 = S3+self.bhat[i-1]*dt*f(t[-1]+self.c[i-1]*dt,S1)
-                #End hack
-                S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
-                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
-            elif self.lstype=='3S*':
-                #Horribly inefficient hack:
-                S4 = S4+self.bhat[i-1]*dt*f(t[-1]+self.c[i-1]*dt,S1)
-                #End hack
-                S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 \
-                     + self.gamma[2][i]*S3 \
-                     + self.betavec[i]*dt*f(t[-1]+self.c[i-1]*dt,S1)
+            fS1 = rhs(t+self.c[i-1]*dt,S1)
+            if estimate_error: uhat = uhat + self.bhat[i-1]*dt*fS1
+            S1 = self.gamma[0][i]*S1 + self.gamma[1][i]*S2 + self.betavec[i]*dt*fS1
+            if three_register: S1 = S1 + self.gamma[2][i]*S3
 
-        #Now put the embedded solution in S2
-        if self.lstype=='2S_pair':
-            S2=1./sum(self.delta[1:m+1])*(S2+self.delta[m+1]*S1)
-        elif self.lstype=='2S': S2=S3
-        elif self.lstype=='3S*': S2=S4
-
-        if errest: return S1, np.max(np.abs(S1-S2))
+        if estimate_error: return S1, np.max(np.abs(S1-uhat))
         else: return S1
 
 
@@ -628,17 +645,13 @@ def load_LSRK(file,lstype='2S',has_emb=False):
     """
     from numpy import sum
     #Read in coefficients
-    f=open(file,'r')
-    coeff=[]
-    for line in f:
-        coeff.append(float(line))
-    f.close()
+    if lstype not in ('2S', '2S*', '2S_pair', '3S*', '3S*_pair'):
+        raise ValueError('Unknown low-storage type: {}'.format(lstype))
+    with open(file,'r') as f:
+        coeff=[float(line) for line in f]
     if has_emb:
-        f=open(file+'.bhat','r')
-        bhat=[]
-        for line in f:
-            bhat.append(float(line))
-        bhat = np.array(bhat)
+        with open(file+'.bhat','r') as f:
+            bhat = np.array([float(line) for line in f])
 
     # Determine number of stages
     if lstype=='2S' or lstype=='2S*': m=int(len(coeff)/3+1)
@@ -677,7 +690,7 @@ def load_LSRK(file,lstype='2S',has_emb=False):
             meth = TwoSRungeKuttaPair(beta,gamma,delta,lstype)
     ord=meth.order()
     if lstype=='2S_pair':
-        emb_ord=meth.embedded_order()
+        emb_ord=meth.embedded_method.order()
         eostr=str(emb_ord)
     else: eostr=''
     m=len(meth)
@@ -696,12 +709,11 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
     import re
 
     if has_emb:
-        f=open(file+'.bhat','r')
-        bhat=[]
-        for line in f:
-            bhat.append(float(line))
+        with open(file+'.bhat','r') as f:
+            bhat = np.array([float(line) for line in f])
 
-    data = open(file).read()
+    with open(file) as f:
+        data = f.read()
     regex = re.compile(r"#stage.*order.*\n(?P<nb_stages>[0-9]+?)\s+(?P<order>[0-9]+?)\s+A",re.DOTALL)
     expr_match = re.match(regex, data).groupdict()
 
@@ -747,7 +759,7 @@ def load_LSRK_RKOPT(file,lstype='2S',has_emb=False):
 
     ord = meth.order()
     if lstype=='2S_pair':
-        emb_ord=meth.embedded_order()
+        emb_ord=meth.embedded_method.order()
         eostr = str(emb_ord)
     else: eostr=''
 

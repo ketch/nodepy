@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from six.moves import range
 
 def bisect(rlo, rhi, acc, tol, fun, **kwargs):
     """
@@ -29,7 +28,8 @@ def permutations(str):
 def shortstring(x,printzeros=False):
     import numpy as np
     import sympy.core.numbers
-    if x==0 and printzeros==False:
+    from nodepy.snp import is_zero
+    if printzeros==False and is_zero(x):
         return ''
     elif x.__class__ is np.float64 or x.__class__ is sympy.Float:
         return '%6.3f' % x

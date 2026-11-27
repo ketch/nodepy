@@ -1,7 +1,31 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "nodepy"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A package for the analysis of numerical ODE solvers"
 readme = "README.md"
-requires-python = ">=3.7"
-dependencies = []
+requires-python = ">=3.9"
+authors = [
+    {name = "David Ketcheson", email = "dketch@gmail.com"},
+    ]
+license = {text = "modified BSD"}
+dependencies = [
+    "numpy>=2.0",
+    "sympy>=1.5",
+    "matplotlib>=2.0",
+    ]
+
+[project.urls]
+Homepage = "https://github.com/ketch/nodepy"
+
+[tool.setuptools]
+packages = ["nodepy", "nodepy.method_coefficients"]
+
+[tool.setuptools.dynamic]
+version = {attr = "nodepy.__version__"}
+
+[tool.setuptools.package-data]
+"nodepy.method_coefficients" = ["*"]

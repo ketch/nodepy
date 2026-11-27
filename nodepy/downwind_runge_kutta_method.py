@@ -34,7 +34,6 @@ import numpy as np
 import nodepy.snp as snp
 import nodepy.runge_kutta_method as rk
 from nodepy.general_linear_method import GeneralLinearMethod
-from six.moves import range
 
 #=====================================================
 class DownwindRungeKuttaMethod(GeneralLinearMethod):

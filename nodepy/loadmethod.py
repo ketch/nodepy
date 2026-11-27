@@ -21,6 +21,9 @@ path = os.path.dirname(os.path.realpath(__file__))
 path = os.path.join(path,'method_coefficients')
 
 def method_name_and_stages(file_name):
+    if file_name not in ('rk108.txt', 'rk108curtis.txt', 'rk1210.txt',
+                         'rk129hiroshi.txt', 'rk1412.txt'):
+        raise ValueError('Unknown method coefficient file: {}'.format(file_name))
     if ((file_name=='rk108.txt')):
         name=r"Feagin's 10(8) pair"
         stages=20
@@ -40,13 +43,14 @@ def method_name_and_stages(file_name):
 
 def load_rk_from_file(file_name='rk1210.txt', load_pair=True):
     name, stages = method_name_and_stages(file_name)
-    f = open(os.path.join(path,file_name))
+    with open(os.path.join(path,file_name)) as f:
+        lines = f.readlines()
     b = np.zeros((stages))
     bhat = np.zeros((stages))
     A = np.zeros((stages,stages))
     c = np.zeros((stages))
 
-    for line in f.readlines():
+    for line in lines:
         words = line.split()
         if words == []:
             continue

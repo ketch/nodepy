@@ -5,7 +5,6 @@ import numpy as np
 from sympy import factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
 from nodepy.utils import permutations
-from six.moves import range
 
 #=====================================================
 class RootedTree(str):
