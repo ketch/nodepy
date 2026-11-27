@@ -124,19 +124,59 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
                 - A vector $z$ of residuals (the amount by which each
                   order condition is violated)
 
+            The residuals are computed from the B-series of the stage
+            values: for each tree `t`, the elementary weight is
+
+            .. math::
+
+                \hat{b}^T (E^{-1} * (\eta * D))(t) + b^T (\eta * D)(t) + \theta E^{-1}(t),
+
+            where `*` is Butcher's product of functions on trees
+            (:meth:`nodepy.rooted_trees.RootedTree.Gprod`), `E^{-1}` is
+            the B-series of the exact solution one step back, `D` is the
+            differentiation map, and `\eta` is the stage-value B-series
+            (see :meth:`_stage_series`).
+
             TODO: Implement simple order conditions (a la Albrecht)
                     for Type I & II TSRKs
         """
-        from numpy import dot
-        d,theta,Ahat,A,bhat,b=self.d,self.theta,self.Ahat,self.A,self.bhat,self.b
-        e=np.ones(len(b))
-        b=b.T; bhat=bhat.T
-        c=dot(Ahat+A,e)-d
-        code=TSRKOrderConditions(p)
-        z=np.zeros(len(code))
-        for i in range(len(code)):
-            exec('z[i]='+code[i])
-        return z
+        if p < 1:
+            raise ValueError('The order p must be a positive integer.')
+        z = []
+        for i in rt.tree_ids(p):
+            tree = rt.tree_from_id(i)
+            weight = (self._dot(self.bhat, rt.Gprod(tree, rt.Emap, rt.Gprod, alphaargs=[-1],
+                                                    betaargs=[self._stage_series, rt.Dmap]))
+                      + self._dot(self.b, rt.Gprod(tree, self._stage_series, rt.Dmap))
+                      + self.theta*rt.Emap(tree, -1))
+            z.append(weight - rt.Emap(tree))
+        return np.array(z, dtype=float)
+
+    def _dot(self, v, x):
+        """Dot product of the vector *v* with *x*; a scalar *x* stands for
+        *x* times the vector of ones."""
+        return np.dot(v, x*np.ones(len(self)))
+
+    def _stage_series(self, tree):
+        r"""
+            The B-series `\eta(t)` of the stage values (a vector with one
+            entry per stage), relative to the current solution value:
+
+            .. math::
+
+                \eta(t) = d E^{-1}(t) + \hat{A} (E^{-1} * (\eta D))(t) + A (\eta D)(t),
+
+            with `\eta(\emptyset) = e` and `\eta(\tau) = c`.
+        """
+        if tree == '':
+            return np.ones(len(self))
+        if tree == 'T':
+            return np.dot(self.Ahat + self.A, np.ones(len(self))) - self.d
+        return (self.d*rt.Emap(tree, -1)
+                + np.dot(self.Ahat, rt.Gprod(tree, rt.Emap, rt.Dprod, alphaargs=[-1],
+                                             betaargs=[self._stage_series])
+                                    *np.ones(len(self)))
+                + np.dot(self.A, rt.Dprod(tree, self._stage_series)*np.ones(len(self))))
 
 
     def stability_matrix(self,z):

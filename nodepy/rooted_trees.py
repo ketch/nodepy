@@ -207,6 +207,7 @@ class RootedTree(str):
 
             **Reference**: :cite:`butcher2003` pp. 275-276
         """
+        if not isinstance(extraargs,list): extraargs=[extraargs]
         if self=='': return [RootedTree('')],[0]
         if self=='T': return [RootedTree('T')],[1]
         t,u=self._factor()
@@ -342,8 +343,8 @@ class RootedTree(str):
         trees,factors=self.lamda(alpha,*alphaargs)
         s=0
         for i in range(len(trees)):
-            s+=factors[i]*beta(trees[i],*betaargs)
-        s+=alpha(self,*alphaargs)*beta(RootedTree(""),*betaargs)
+            s=s+factors[i]*beta(trees[i],*betaargs)
+        s=s+alpha(self,*alphaargs)*beta(RootedTree(""),*betaargs)
         return s
 
     def Gprod_str(self,alpha,beta,alphaargs=[],betaargs=[]):
@@ -682,7 +683,7 @@ def Dprod(tree,alpha):
     nleaves,subtrees=tree._parse_subtrees()
     result=alpha(RootedTree('T'))**nleaves
     for subtree in subtrees:
-        result*=alpha(subtree)
+        result=result*alpha(subtree)
     return result
 
 def Dprod_str(tree,alpha):
@@ -913,6 +914,120 @@ def py2tex(codestr):
     strout=strout.replace(".^","^")
     strout='$'+strout+'$'
     return strout
+
+
+#=====================================================
+# Rooted trees of any order, for evaluating order conditions
+#=====================================================
+#
+# Each tree is identified by an integer id.  A tree is stored as the tuple
+# of ids of the subtrees attached to its root, in non-increasing order;
+# the tree with a single node has id 0 and no subtrees.  Ids are assigned
+# in order of increasing number of nodes, so all subtrees of a tree have
+# smaller ids than the tree itself.  The table is extended on demand.
+
+_tree_subtrees = [()]     # Subtree ids of each tree
+_tree_order = [1]         # Number of nodes of each tree
+_tree_density = [1]       # Butcher's gamma(t)
+_tree_symmetry = [1]      # Butcher's sigma(t)
+_tree_ids_by_order = [[], [0]]   # _tree_ids_by_order[p]: ids of the trees with p nodes
+
+
+def tree_ids(p):
+    r"""
+    Return the ids of all rooted trees with `p` nodes.  Unlike
+    :func:`list_trees`, this works for any order `p`.
+
+    The trees can be examined with :func:`tree_subtrees`,
+    :func:`tree_density`, :func:`tree_symmetry` and :func:`tree_from_id`.
+
+    **Examples**::
+
+        >>> from nodepy import rooted_trees as rt
+        >>> [len(rt.tree_ids(p)) for p in range(1, 11)]
+        [1, 1, 2, 4, 9, 20, 48, 115, 286, 719]
+        >>> [rt.tree_from_id(i) for i in rt.tree_ids(4)]
+        ['{{T^2}}', '{{{T}}}', '{T{T}}', '{T^3}']
+    """
+    while len(_tree_ids_by_order) <= p:
+        _add_trees_of_next_order()
+    return _tree_ids_by_order[p]
+
+
+def tree_subtrees(i):
+    "Ids of the subtrees attached to the root of tree *i*."
+    return _tree_subtrees[i]
+
+
+def tree_density(i):
+    r"The density `\gamma(t)` of tree *i*."
+    return _tree_density[i]
+
+
+def tree_symmetry(i):
+    r"The symmetry `\sigma(t)` of tree *i*."
+    return _tree_symmetry[i]
+
+
+def tree_from_id(i):
+    """
+    The :class:`RootedTree` with id *i*.
+
+    **Examples**::
+
+        >>> from nodepy import rooted_trees as rt
+        >>> i = rt.tree_ids(4)[2]
+        >>> tree = rt.tree_from_id(i)
+        >>> tree
+        '{T{T}}'
+        >>> rt.tree_density(i), tree.density()
+        (8, 8)
+    """
+    subtrees = _tree_subtrees[i]
+    if len(subtrees) == 0:
+        return RootedTree('T')
+    nleaves = subtrees.count(0)
+    s = '{' + _powerString('T', nleaves, powchar='^')
+    for j in subtrees:
+        if j != 0:
+            s += tree_from_id(j)
+    return RootedTree(s + '}')
+
+
+def _add_trees_of_next_order():
+    """Add to the table all trees with one more node than the largest
+    trees currently in it."""
+    p = len(_tree_ids_by_order)    # Number of nodes of the new trees
+    # last_id[k]: largest id of a tree with at most k nodes
+    last_id = [-1]
+    for k in range(1, p):
+        last_id.append(_tree_ids_by_order[k][-1])
+
+    new_trees = []
+    def add_subtrees(subtrees, remaining, max_id):
+        # Extend the non-increasing tuple *subtrees* with subtrees of total
+        # order *remaining*, each with id at most *max_id*.
+        if remaining == 0:
+            new_trees.append(subtrees)
+            return
+        for j in range(min(max_id, last_id[remaining]), -1, -1):
+            add_subtrees(subtrees + (j,), remaining - _tree_order[j], j)
+    add_subtrees((), p-1, last_id[p-1])
+
+    ids = []
+    for subtrees in new_trees:
+        density = p
+        symmetry = 1
+        for j in set(subtrees):
+            multiplicity = subtrees.count(j)
+            density *= _tree_density[j]**multiplicity
+            symmetry *= _tree_symmetry[j]**multiplicity * int(factorial(multiplicity))
+        ids.append(len(_tree_subtrees))
+        _tree_subtrees.append(subtrees)
+        _tree_order.append(p)
+        _tree_density.append(density)
+        _tree_symmetry.append(symmetry)
+    _tree_ids_by_order.append(ids)
 
 
 if __name__ == "__main__":

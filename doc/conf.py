@@ -78,7 +78,7 @@ version = '.'.join(release.split('.')[:2])
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build','oc_butcher_high_order']
+exclude_patterns = ['_build']
 
 autodoc_member_order = 'bysource'
 autoclass_content='both'

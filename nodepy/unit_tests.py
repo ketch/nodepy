@@ -393,5 +393,94 @@ class TSRKStabilityTest(ut.TestCase):
         self.assertGreater(spectral_radius(-0.49), 1)
 
 
+#=====================================================
+# Tests of the direct evaluation of order conditions
+#=====================================================
+
+class RootedTreeTableTest(ut.TestCase):
+
+    def test_number_of_trees(self):
+        import nodepy.rooted_trees as rt
+        # OEIS A000081
+        counts = [1, 1, 2, 4, 9, 20, 48, 115, 286, 719, 1842, 4766, 12486, 32973]
+        self.assertEqual([len(rt.tree_ids(p)) for p in range(1, 15)], counts)
+
+    def test_trees_match_list_trees(self):
+        import nodepy.rooted_trees as rt
+        def canonical(tree):
+            # Trees as nested sorted tuples, so that equal trees compare equal
+            nleaves, subtrees = tree._parse_subtrees()
+            return tuple(sorted([()]*nleaves + [canonical(s) for s in subtrees]))
+        for p in range(1, 9):
+            trees = [rt.tree_from_id(i) for i in rt.tree_ids(p)]
+            self.assertEqual(sorted(map(canonical, trees)), sorted(map(canonical, rt.list_trees(p))))
+            for i, tree in zip(rt.tree_ids(p), trees):
+                self.assertEqual(tree.density(), rt.tree_density(i))
+                self.assertEqual(tree.symmetry(), rt.tree_symmetry(i))
+
+    def test_lamda_with_extra_arguments(self):
+        # lamda must give the same result as lamda_str when the function
+        # takes an extra argument.
+        import sympy
+        import nodepy.rooted_trees as rt
+        for p in range(2, 6):
+            for tree in rt.list_trees(p):
+                trees, factors = tree.lamda(rt.Emap, -1)
+                trees_str, factors_str = tree.lamda_str(rt.Emap_str, -1)
+                self.assertEqual(trees, trees_str)
+                self.assertEqual([sympy.sympify(f) for f in factors],
+                                 [sympy.sympify(f) for f in factors_str])
+
+
+class OrderConditionTest(ut.TestCase):
+
+    def test_residuals_match_exact_arithmetic(self):
+        # Floating-point residuals agree with residuals computed exactly
+        # from the same (binary) coefficients.
+        from fractions import Fraction
+        import numpy as np
+        exact = lambda x: np.array([Fraction(v) for v in np.ravel(x)], dtype=object).reshape(np.shape(x))
+        m = rk.loadRKM('DP5').__num__()
+        float_residuals = rk._order_condition_residuals_by_order(m.A, m.b, m.c)
+        exact_residuals = rk._order_condition_residuals_by_order(exact(m.A), exact(m.b), exact(m.c))
+        for p in range(1, 8):
+            zf, ze = next(float_residuals), next(exact_residuals)
+            self.assertLess(np.max(np.abs(zf - ze.astype(float))), 1.e-14)
+
+    def test_float_and_exact_order_agree(self):
+        for name in ['RK44', 'SSP104', 'GL3', 'RadauIIA3', 'LobattoIIIC4', 'SDIRK34']:
+            method = rk.loadRKM(name)
+            self.assertEqual(method.order(), method.order(mode='exact'), msg=name)
+
+    def test_high_order_methods(self):
+        from nodepy.loadmethod import load_rk_from_file
+        for filename, order in [('rk108.txt', 10), ('rk1210.txt', 12), ('rk1412.txt', 14)]:
+            method = load_rk_from_file(filename)
+            self.assertEqual(method.order(tol=1.e-12), order, msg=filename)
+            # The principal error norm needs trees of order p+1 > 10.
+            self.assertGreater(method.principal_error_norm(tol=1.e-12), 0.)
+
+    def test_principal_error_norm_matches_error_coefficients(self):
+        import numpy as np
+        import nodepy.rooted_trees as rt
+        dp5 = rk.loadRKM('DP5').__num__()
+        coefficients = [dp5.error_coefficient(tree) for tree in rt.list_trees(6)]
+        self.assertAlmostEqual(dp5.principal_error_norm(), np.sqrt(np.sum(np.square(coefficients))), 14)
+
+    def test_order_too_large_for_tolerance(self):
+        with self.assertRaises(ValueError):
+            rk.loadRKM('FE').order(tol=10.)
+
+    def test_effective_order(self):
+        self.assertEqual(rk.loadRKM('SSP22').effective_order(), 2)
+        self.assertEqual(rk.loadRKM('SSP33').effective_order(), 3)
+
+    def test_twostep_order(self):
+        from nodepy import tsrk
+        methods = tsrk.loadTSRK()
+        self.assertEqual(methods['order3'].order(), 3)
+        self.assertEqual(methods['order4'].order(), 4)
+
+
 if __name__== "__main__":
     ut.main()
