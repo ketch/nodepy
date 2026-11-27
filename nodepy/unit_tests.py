@@ -325,9 +325,7 @@ class BundledMethodOrderTest(ut.TestCase):
 
     # Methods known not to have their documented order (ketch/nodepy issue 110).
     # Remove an entry when its coefficients are corrected.
-    known_problems = {
-        'SSP53',  # Published coefficients satisfy the order conditions only to ~1e-10.
-    }
+    known_problems = set()
 
     def _check(self, label, method, expected, order):
         import io, contextlib

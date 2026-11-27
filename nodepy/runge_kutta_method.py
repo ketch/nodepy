@@ -2728,7 +2728,7 @@ def loadRKM(which='All'):
           * 'SSP85':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP95':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP54':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
-          * 'SSP53':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
+          * 'SSP53':      Optimal 5-stage, 3rd-order SSP method; see the comment in the code
           * 'SSP63':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
 
         Diagonally Implicit methods:
@@ -3205,14 +3205,32 @@ def loadRKM(which='All'):
                                            description='From Ruuth-Spiteri paper',
                                            shortname='SSPRK54')
     #================================================
-    A = np.array([[0,0,0,0,0],
-                  [0.37726891511710,0,0,0,0],
-                  [0.37726891511710,0.37726891511710, 0,0,0],
-                  [0.16352294089771,0.16352294089771,0.16352294089771, 0,0],
-                  [0.14904059394856,0.14831273384724,0.14831273384724,0.34217696850008, 0]])
-    b = np.array([0.19707596384481,0.11780316509765,0.11709725193772,0.27015874934251,0.29786487010104])
-    RK['SSP53'] = ExplicitRungeKuttaMethod(A,b,name='SSP 53',
-                                           description='From Ruuth-Spiteri paper',
+    # Optimal five-stage, third-order SSP method.  The optimal methods form a
+    # two-parameter family, all with SSP coefficient r, the real root of
+    # r**3 - 5*r**2 + 10*r - 10 = 0.  The method of Ruuth & Spiteri is one
+    # member, but its published coefficients satisfy the order conditions only
+    # to about 1e-10.  This is the member with beta[4,0] = alpha[5,1] = 0,
+    # whose coefficients are exact algebraic numbers in Q(r).  Its Butcher
+    # coefficients differ from Ruuth & Spiteri's by up to 2e-3.  The canonical
+    # Shu-Osher form (beta = alpha/r for the F terms) is
+    #   u1 = u0 + dt/r F(u0),   u2 = u1 + dt/r F(u1),
+    #   u3 = (1-a32) u0 + a32 (u2 + dt/r F(u2)),
+    #   u4 = (1-a43) u0 + a43 (u3 + dt/r F(u3)),
+    #   u_new = a50 (u0 + dt/r F(u0)) + (1-a50) (u4 + dt/r F(u4)).
+    r = (5 + np.cbrt(35 + 15*np.sqrt(6)) - np.cbrt(15*np.sqrt(6) - 35))/3
+    a32 = (3*r**2 - 5*r + 9)/39
+    a43 = (-17*r**2 + 120*r - 82)/128
+    a50 = (50*r**2 - 169*r + 160)/301
+    alpha = np.zeros([6,6]); beta = np.zeros([6,6])
+    alpha[1,0] = 1;       beta[1,0] = 1/r
+    alpha[2,1] = 1;       beta[2,1] = 1/r
+    alpha[3,0] = 1-a32;   alpha[3,2] = a32;   beta[3,2] = a32/r
+    alpha[4,0] = 1-a43;   alpha[4,3] = a43;   beta[4,3] = a43/r
+    alpha[5,0] = a50;     beta[5,0] = a50/r
+    alpha[5,4] = 1-a50;   beta[5,4] = (1-a50)/r
+    K = np.linalg.solve(np.eye(6) - alpha, beta)   # Butcher arrays [A; b]
+    RK['SSP53'] = ExplicitRungeKuttaMethod(K[:5,:5],K[5,:5],name='SSP 53',
+                                           description='Optimal 5-stage, 3rd-order SSP method',
                                            shortname='SSPRK53')
     #================================================
     alpha = np.array([[0,0,0,0,0,0],
