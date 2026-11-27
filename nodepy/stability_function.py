@@ -2,8 +2,8 @@ from __future__ import print_function
 
 from __future__ import absolute_import
 import numpy as np
-from six.moves import range
 import sympy
+import nodepy.snp as snp
 
 def E_polynomial(p, q=None):
     r"""
@@ -87,7 +87,7 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
     if mr == np.inf:
         # Stability region boundary does not touch/cross the imaginary axis
         # If it's explicit, it must be unstable for all imaginary values
-        if len(q.coeffs==1): return 0
+        if len(q.coeffs)==1: return 0
         z = 1j/2.
     else:
         z = mr*1j/2.
@@ -98,14 +98,14 @@ def imaginary_stability_interval(p,q=None,eps=1.e-14):
         # This could be wrong if the stability boundary is tangent to the imaginary axis at mr
         val = np.abs(p(z)/q(z))
         if val<1:
-            return mr
+            return float(mr)
         elif val==1:
             z = z/2.
         else:
             return 0
         if np.abs(z)<1.e-10:
             print("Warning: unable to determine exact imaginary stability interval")
-            return mr
+            return float(mr)
 
 
 def real_stability_interval(p,q=None,eps=1.e-12):
@@ -141,10 +141,10 @@ def real_stability_interval(p,q=None,eps=1.e-12):
     for i in range(len(roots)-1):
         z = -(roots[i]+roots[i+1])/2
         if np.abs(p(z)/q(z))>1.+eps:
-            return roots[i]
+            return float(roots[i])
     z = -roots[-1]*2
     if np.abs(p(z)/q(z))>1.+eps:
-        return roots[-1]
+        return float(roots[-1])
     return np.inf
 
 
@@ -281,11 +281,11 @@ def pade_exp(k,j):
     for n in range(1,k+1):
         newcoeff=Pcoeffs[0]*(k-n+one)/(j+k-n+one)/n
         Pcoeffs=[newcoeff]+Pcoeffs
-    P=np.poly1d(Pcoeffs)
+    P=snp.poly1d(Pcoeffs)
     for n in range(1,j+1):
         newcoeff=-one*Qcoeffs[0]*(j-n+one)/(j+k-n+one)/n
         Qcoeffs=[newcoeff]+Qcoeffs
-    Q=np.poly1d(Qcoeffs)
+    Q=snp.poly1d(Qcoeffs)
     return P,Q
 
 def taylor(p):
@@ -305,7 +305,7 @@ poly1d([-1/60, 3/20, -3/5, 1], dtype=object)
 
     coeffs = np.array( [1/factorial(k) for k in range(p+1) ] )
 
-    return np.poly1d(coeffs[::-1])
+    return snp.poly1d(coeffs[::-1])
 
 if __name__ == "__main__":
     import doctest

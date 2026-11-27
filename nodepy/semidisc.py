@@ -13,7 +13,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 import numpy as np
 from nodepy.ivp import IVP
-from six.moves import range
 
 class LinearSemiDiscretization(IVP):
     """
@@ -55,7 +54,7 @@ def load_semidisc(sdName,N=100,xMin=0.,xMax=1.,order=1):
     elif sdName == 'spectral difference advection':
         sd.L,sd.xSol,sd.u0 = spectral_difference_matrix(N,sd.xCenter,dx,order)
     else:
-        print('unrecognized sdname')
+        raise ValueError('Unrecognized semi-discretization name: {}'.format(sdName))
 
     # Define RHS
     # In this case is simply L*u

@@ -36,8 +36,6 @@ import matplotlib.pyplot as plt
 from sympy import symbols, latex
 from nodepy.snp import printable
 from nodepy.general_linear_method import GeneralLinearMethod
-from six.moves import map
-from six.moves import range
 from sympy import Rational
 try:
     import sympy.combinatorial as combinatorial
@@ -139,8 +137,8 @@ class LinearMultistepMethod(GeneralLinearMethod):
         **Reference**: :cite:`hairer1993` p. 370, eq. 2.4
 
         """
-        rho=np.poly1d(self.alpha[::-1])
-        sigma=np.poly1d(self.beta[::-1])
+        rho=snp.poly1d(self.alpha[::-1])
+        sigma=snp.poly1d(self.beta[::-1])
         return rho, sigma
 
     def order(self,tol=1.e-10):
@@ -221,12 +219,20 @@ class LinearMultistepMethod(GeneralLinearMethod):
             >>> bdf2=lm.backward_difference_formula(2)
             >>> bdf2.ssp_coefficient()
             0
+
+            If `\beta_j=0` for all `j<k`, the SSP coefficient is infinite:
+
+            >>> lm.backward_difference_formula(1).ssp_coefficient()
+            oo
         """
         if np.any(self.alpha[:-1]>0) or np.any(self.beta<0):
             return 0
 
-        return min([-self.alpha[j]/self.beta[j]
-                    for j in range(len(self.alpha)-1) if self.beta[j]!=0])
+        ratios = [-self.alpha[j]/self.beta[j]
+                  for j in range(len(self.alpha)-1) if self.beta[j]!=0]
+        if len(ratios) == 0:
+            return sympy.oo if self.alpha.dtype == object else np.inf
+        return min(ratios)
 
     def plot_stability_region(self,N=100,bounds=None,color='r',filled=True, alpha=1.,
                               to_file=False,longtitle=False):

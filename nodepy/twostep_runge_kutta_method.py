@@ -61,7 +61,6 @@ import nodepy.rooted_trees as rt
 import nodepy.snp as snp
 from nodepy.strmanip import *
 from nodepy.general_linear_method import GeneralLinearMethod
-from six.moves import range
 
 #=====================================================
 class TwoStepRungeKuttaMethod(GeneralLinearMethod):
@@ -136,7 +135,6 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         code=TSRKOrderConditions(p)
         z=np.zeros(len(code))
         for i in range(len(code)):
-            exec('yy='+code[i])
             exec('z[i]='+code[i])
         return z
 
@@ -421,11 +419,12 @@ def tsrk_elementary_weight(tree):
     """
         Constructs Butcher's elementary weights
         for Two-step Runge-Kutta methods
+
+        Not implemented: it depends on TSRKeta, which does not work.
+        Use tsrk_elementary_weight_str instead.
     """
-    from sympy import Symbol
-    bhat,b,theta=Symbol('bhat',False),Symbol('b',False),Symbol('theta',False)
-    ew=bhat*tree.Gprod(rt.Emap,rt.Gprod,betaargs=[TSRKeta,Dmap],alphaargs=[-1])+b*tree.Gprod(TSRKeta,rt.Dmap)+theta*tree.Emap(-1)
-    return ew
+    raise NotImplementedError('tsrk_elementary_weight does not work; '
+                              'use tsrk_elementary_weight_str instead.')
 
 def tsrk_elementary_weight_str(tree):
     """
@@ -499,19 +498,21 @@ def loadTSRK(which='All'):
     else: return TSRK[which]
 
 
-def load_type2_TSRK(s,p,type='Type II'):
+def load_type2_TSRK(s,p,type='Type II',path='/Users/ketch/Research/Projects/MRK/methods/TSRK/'):
     r"""
     Load a TSRK method from its coefficients in an ASCII file
     (usually from MATLAB).  The coefficients are stored in the
     following order: [s d theta A b Ahat bhat].
+
+    The file read is *path*/explicitzr<s><p>.tsrk.
     """
-    path='/Users/ketch/Research/Projects/MRK/methods/TSRK/'
-    file=path+'explicitzr'+str(s)+str(p)+'.tsrk'
-    f=open(file,'r')
+    import os
+    file=os.path.join(path,'explicitzr'+str(s)+str(p)+'.tsrk')
     coeff=[]
-    for line in f:
-        for word in line.split():
-            coeff.append(float(word))
+    with open(file,'r') as f:
+        for line in f:
+            for word in line.split():
+                coeff.append(float(word))
 
     s=int(coeff[0])
     A=np.zeros([s,s])

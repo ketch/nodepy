@@ -5,7 +5,6 @@ that understand numpy arrays of floats or symbolic objects.
 from __future__ import absolute_import
 import sympy
 import numpy as np
-from six.moves import map
 
 dtypes = {'exact': object, 'numeric': np.float64}
 
@@ -22,6 +21,39 @@ def normalize(*arrays):
                     onedarray[i]=sympy.S(elem)
     if len(arrays)==1: return arrays[0]
     else: return arrays
+
+
+class poly1d(np.poly1d):
+    """
+    A numpy.poly1d whose string form also works when the coefficients are
+    SymPy objects.  (numpy.poly1d formats each coefficient with
+    f'{c:.4g}', which SymPy numbers do not support.)
+
+    Numerical coefficients are printed as floating-point numbers, like
+    numpy.poly1d does; coefficients that contain symbols are printed by SymPy.
+    """
+    def __str__(self):
+        if self.coeffs.dtype != object:
+            return super(poly1d, self).__str__()
+        try:
+            coeffs = np.array([complex(c) for c in self.coeffs])
+        except TypeError:   # Coefficients contain free symbols
+            x = sympy.Symbol(self.variable)
+            n = len(self.coeffs) - 1
+            return str(sum(c*x**(n-k) for k, c in enumerate(self.coeffs)))
+        if np.all(coeffs.imag == 0):
+            coeffs = coeffs.real
+        return str(np.poly1d(coeffs, variable=self.variable))
+
+
+def is_zero(x):
+    """
+    True if x is zero.  Unlike x == 0, this is also True for a SymPy Float
+    zero, which SymPy does not consider equal to the integer 0.
+    """
+    if isinstance(x, sympy.Basic):
+        return x.is_zero is True
+    return x == 0
 
 
 def ones(n,mode='exact'):

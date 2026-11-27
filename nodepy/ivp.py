@@ -19,7 +19,7 @@ This module implements the initial value problem as a class.
     # Integrate this problem with a Runge-Kutta method
     >>> rk4 = rk.loadRKM('RK44')
     >>> t, y = rk4(myivp)
-    >>> y[-1][0] # doctest: +ELLIPSIS
+    >>> print(y[-1][0]) # doctest: +ELLIPSIS
     2.06115362252...e-09
 
     # Load a large set of non-stiff problems
@@ -32,7 +32,6 @@ from __future__ import print_function
 
 from __future__ import absolute_import
 import numpy as np
-from six.moves import range
 
 class IVP(object):
     """
@@ -126,7 +125,7 @@ def load_ivp(ivpname='All'):
     u0=np.array([2.,-0.65])
     rhs = lambda t,u: np.array([u[1], 1./eps*(-u[0]+(1.-u[0]**2)*u[1])])
     description = 'Van der Pol oscillator with epsilon = 1/10.'
-    ivps[name] = IVP(f=rhs, u0=u0, T=5., exact=exact, name=name, desc=description)
+    ivps[name] = IVP(f=rhs, u0=u0, T=5., exact=None, name=name, desc=description)
 
     if ivpname.lower() == 'all':
         return ivps
@@ -446,7 +445,7 @@ def detest_suite_minus():
     return [detest(dtkey) for dtkey in detestkeys]
 
 def detest_stiff_suite():
-    """The entire non-stiff DETEST suite of problems."""
+    """The implemented problems of the stiff DETEST suite."""
     detestkeys=['A1', 'A2', 'A3', 'A4']
     return [detest_stiff(dtkey) for dtkey in detestkeys]
 
@@ -475,7 +474,7 @@ def detest_stiff(testkey):
         ivp.rhs = _A4rhs_stiff
         ivp.dt0 = 1.e-5
     else:
-        print('Unknown Detest problem; returning empty IVP')
+        raise ValueError('Unknown stiff DETEST problem: {}'.format(testkey))
     return ivp
 
 def _A2rhs_stiff(t,u):
