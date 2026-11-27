@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest supported version, the version used for development, and the newest.
+        python-version: ["3.9", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install nodepy and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # networkx and scipy are optional dependencies used by some doctests
+          # and example notebooks; ipywidgets is used by the notebooks.
+          python -m pip install . nbformat nbclient ipykernel ipywidgets networkx scipy
+
+      - name: Run doctests, unit tests and example notebooks
+        run: python tests.py
