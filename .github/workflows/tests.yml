@@ -30,7 +30,18 @@ jobs:
           python -m pip install ".[test]"
 
       - name: Run doctests, unit tests and example notebooks
-        run: python -m pytest --cov --cov-report=term-missing
+        run: python -m pytest --cov --cov-report=term-missing --cov-report=xml
+
+      # Coverage is uploaded from one job only.  The token is the repository
+      # secret CODECOV_TOKEN, copied from the repository's page on codecov.io.
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.13'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          disable_search: true
+          fail_ci_if_error: true
 
   docs:
     name: Documentation
