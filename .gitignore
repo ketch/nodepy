@@ -2,3 +2,5 @@
 nodepy.egg-info/
 **/.ipynb_checkpoints/
 doc/_build/
+.coverage
+coverage.xml
