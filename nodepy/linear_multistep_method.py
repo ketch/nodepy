@@ -233,7 +233,7 @@ class LinearMultistepMethod(GeneralLinearMethod):
         return min(ratios)
 
     def plot_stability_region(self,N=100,bounds=None,color='r',filled=True, alpha=1.,
-                              to_file=False,longtitle=False):
+                              to_file=False,longtitle=False,fignum=None):
         r"""
             The region of absolute stability of a linear multistep method is
             the set
@@ -265,6 +265,11 @@ class LinearMultistepMethod(GeneralLinearMethod):
                 - bounds  -- limits of plotting region
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+                - fignum  -- number of an existing figure to draw in; by default
+                  a new figure is created
+
+            **Output**:
+                - The matplotlib figure
         """
         rho, sigma = self.__num__().characteristic_polynomials()
         mag = lambda z: _root_condition(rho-z*sigma)
@@ -287,12 +292,12 @@ class LinearMultistepMethod(GeneralLinearMethod):
 
         R=1.5-vmag(Z)
 
+        fig = plt.figure(fignum)
         if filled:
             plt.contourf(X,Y,R,[0,1],colors=color,alpha=alpha)
         else:
             plt.contour(X,Y,R,[0,1],colors=color,alpha=alpha)
 
-        fig = plt.gcf()
         ax = fig.get_axes()
         if longtitle:
             plt.setp(ax,title='Absolute Stability Region for '+self.name)
