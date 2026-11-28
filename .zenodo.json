@@ -1,6 +1,6 @@
 {
     "description": "NodePy: A package for the analysis of numierical ODE solvers",
-    "license": "bsd-license",
+    "license": "bsd-3-clause",
     "title": "NodePy: A package for the analysis of numierical ODE solvers",
     "upload_type": "software",
     "creators": [

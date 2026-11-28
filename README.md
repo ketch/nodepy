@@ -7,14 +7,14 @@
 
 <a href="https://pypi.org/project/nodepy/"><img alt="PyPI" src="https://img.shields.io/pypi/v/nodepy"></a>
 [![Downloads](https://static.pepy.tech/badge/nodepy)](https://pepy.tech/project/nodepy)
-[![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-success.svg)](https://opensource.org/licenses/BSD-2-Clause)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-success.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275157.svg)](https://doi.org/10.5281/zenodo.4275157)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02515/status.svg)](https://doi.org/10.21105/joss.02515)
 
 
 # Installation
-NodePy requires Python 3.5 or later.  To install with pip, do:
+NodePy requires Python 3.10 or later.  To install with pip, do:
 
     pip install nodepy
 
@@ -76,8 +76,7 @@ measure test coverage.
 
 # License
 
-NodePy is distributed under the terms of the [modified Berkeley Software
-Distribution (BSD) license](LICENSE.txt).
+NodePy is distributed under the terms of the [BSD 3-Clause License](LICENSE.txt).
 
 
 # Funding
