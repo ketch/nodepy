@@ -52,10 +52,7 @@ u"""
     * :cite:`butcher2003`
     * :cite:`hairer1993`
 """
-from __future__ import print_function
-from __future__ import division
 
-from __future__ import absolute_import
 import warnings
 import numpy as np
 import sympy
@@ -951,7 +948,6 @@ class RungeKuttaMethod(GeneralLinearMethod):
         plt.draw()
 
 
-
     def plot_stability_region(self,N=200,color='r',filled=True,bounds=None,
                               plotroots=False,alpha=1.,scalefac=1.,
                               to_file=False, longtitle=True,fignum=None):
@@ -1537,7 +1533,6 @@ class ExplicitRungeKuttaMethod(RungeKuttaMethod):
         return u_new
 
 
-
     def imaginary_stability_interval(self,mode='exact',eps=1.e-14):
         r"""
             Length of imaginary axis half-interval contained in the
@@ -1899,7 +1894,6 @@ class ContinuousExplicitRungeKuttaMethod(ContinuousRungeKuttaMethod,ExplicitRung
             u_theta = None
 
         return u_new, u_theta
-
 
 
 #=====================================================
@@ -3524,7 +3518,6 @@ def SSPRK3(m):
     return ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name=name,shortname=name)
 
 
-
 def SSPRKm(m):
     r""" Construct the optimal m-stage, linearly mth order SSP
         Explicit Runge-Kutta method (`m \ge 2`).
@@ -4172,7 +4165,6 @@ def extrap_pair(p, base='euler'):
     return ExplicitRungeKuttaPair(alpha=alpha1, beta=beta1, alphahat=alphahat, betahat=betahat, name=name, shortname=shortname, order=order).dj_reduce()
 
 
-
 #============================================================
 # Miscellaneous functions
 #============================================================
@@ -4474,7 +4466,6 @@ def _stability_function(alpha,beta,explicit,m,formula,mode='exact'):
         p = snp.poly1d(c)
 
     return p,q
-
 
 
 def _internal_stability_polynomials(alpha,beta,explicit,m,formula,mode='exact'):

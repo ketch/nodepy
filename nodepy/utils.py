@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 def bisect(rlo, rhi, acc, tol, fun, **kwargs):
     """
         Performs a bisection search.

@@ -15,9 +15,7 @@ Functions for running convergence and performance tests.
 
     >>> work, error = convergence.ctest([rk4,SSP2,SSP104],myivp)
 """
-from __future__ import print_function
 
-from __future__ import absolute_import
 import numpy as np
 import nodepy.runge_kutta_method as rk
 
@@ -144,7 +142,6 @@ def ptest(methods,ivps,tols=[1.e-1,1.e-2,1.e-4,1.e-6],verbosity=0,parallel=False
     plt.legend(loc='best')
     plt.draw()
     return work,err
-
 
 
 if __name__ == "__main__":

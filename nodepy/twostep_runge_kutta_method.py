@@ -51,10 +51,7 @@ with the rest of nodepy.
     [jackiewicz1995,butcher1997,hairer1997]
 
 """
-from __future__ import print_function
-from __future__ import division
 
-from __future__ import absolute_import
 import warnings
 import numpy as np
 

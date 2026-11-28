@@ -9,19 +9,12 @@ on:
 jobs:
   test:
     name: Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # Oldest supported version, the version used for development, and the newest.
-        # actions/setup-python has no Python 3.9 build for Ubuntu releases after 24.04.
-        include:
-          - python-version: "3.9"
-            os: ubuntu-24.04
-          - python-version: "3.13"
-            os: ubuntu-latest
-          - python-version: "3.14"
-            os: ubuntu-latest
+        python-version: ["3.10", "3.13", "3.14"]
 
     steps:
       - uses: actions/checkout@v7
@@ -34,12 +27,10 @@ jobs:
       - name: Install nodepy and test dependencies
         run: |
           python -m pip install --upgrade pip
-          # networkx and scipy are optional dependencies used by some doctests
-          # and example notebooks; ipywidgets is used by the notebooks.
-          python -m pip install . nbformat nbclient ipykernel ipywidgets networkx scipy
+          python -m pip install ".[test]"
 
       - name: Run doctests, unit tests and example notebooks
-        run: python tests.py
+        run: python -m pytest --cov --cov-report=term-missing
 
   docs:
     name: Documentation

@@ -11,7 +11,6 @@ Load some high-order RK pairs.
     "Feagin's 12(10) pair"
 
 """
-from __future__ import absolute_import
 import os
 import numpy as np
 

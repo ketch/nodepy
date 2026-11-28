@@ -1,6 +1,3 @@
-from __future__ import print_function
-
-from __future__ import absolute_import
 import numpy as np
 from sympy import factorial, sympify, Rational
 #from sage.combinat.combinat import permutations
@@ -421,7 +418,6 @@ class RootedTree(str):
         plt.xticks([])
         plt.yticks([])
         plt.axis('off')
-
 
 
     def _parse_subtrees(self):

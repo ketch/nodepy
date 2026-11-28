@@ -2,7 +2,6 @@
 This module enables exact computation in NodePy by introducing functions
 that understand numpy arrays of floats or symbolic objects.
 """
-from __future__ import absolute_import
 import sympy
 import numpy as np
 
