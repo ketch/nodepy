@@ -17,8 +17,8 @@ NodePy requires Python 3.10 or later.  To install with pip, do:
 
     pip install nodepy
 
-This will automatically fetch dependencies also.  It will not fetch
-optional dependencies, which include networkx, cvxpy and scipy (that are used
+This will also automatically fetch dependencies.  It will not fetch
+optional dependencies, which include `networkx`, `cvxpy` and `scipy` (that are used
 only in a few specialized routines and/or examples).  The optional dependencies
 can be installed with `pip`.
 
@@ -49,7 +49,7 @@ http://github.com/ketch/nodepy
 
 # Citation
 
-If you use NodePy in a published work, please cite it as follows:
+If you use NodePy in published work, please cite it as follows:
 
     Ketcheson, D. I.  NodePy software version <version number>,
     http://github.com/ketch/nodepy/.
