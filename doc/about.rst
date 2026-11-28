@@ -32,7 +32,7 @@ reprinted below.
 
 See https://opensource.org/license/bsd-3-clause for more details.
 
-Copyright (c) 2008-2020 David I. Ketcheson.  All rights reserved.
+Copyright (c) 2008-2026 David I. Ketcheson.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
