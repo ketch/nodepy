@@ -2822,9 +2822,9 @@ def loadRKM(which='All'):
           * 'SSP75':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP85':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
           * 'SSP95':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
-          * 'SSP54':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
-          * 'SSP53':      Optimal 5-stage, 3rd-order SSP method; see the comment in the code
-          * 'SSP63':      Ruuth-Spiteri optimal downwind SSP :cite:`ruuth2004`
+          * 'SSP54':      Optimal 5-stage, 4th-order SSP method of Kraaijevanger :cite:`kraaijevanger1991` and Spiteri-Ruuth :cite:`spiteri2002`
+          * 'SSP53':      Optimal 5-stage, 3rd-order SSP method from the family containing the methods of :cite:`spiteri2002` and :cite:`ruuth2006`; see the comment in the code
+          * 'SSP63':      Optimal 6-stage, 3rd-order SSP method of Ruuth :cite:`ruuth2006`
 
         Diagonally Implicit methods:
 
@@ -3283,30 +3283,48 @@ def loadRKM(which='All'):
                                          description='From Ruuth-Spiteri paper',
                                          shortname='SSPRK95')
     #================================================
-    # The coefficients given here are not exactly those from the original paper.
-    # They have been improved to be accurate to 30 digits; the original method
-    # coefficients are accurate only to about 10 digits.
-    A = np.array([[0,0,0,0,0],
-                  [0.391752226869253785640632115627,0,0,0,0],
-                  [0.217669096357834985920253802915, 0.368410592709066783214662112772, 0,0,0],
-                  [0.0826920866830935842609242437786, 0.139958502107426395108400626025, \
-                    0.251891774371960822884363746140, 0,0],
-                  [0.0679662835740483884329695316049, 0.115034698453668419467815057942, \
-                    0.207034898772936576352392025561, 0.544974750295139481064416383368, 0]])
-    b = np.array([0.146811876157875933686947006683, 0.248482909391317264243714136087, \
-                    0.104258830279481225354037031167, 0.274438901048480694917546480567, \
-                    0.226007483122844881797755345495])
+    # Optimal five-stage, fourth-order SSP method (Kraaijevanger 1991; Spiteri &
+    # Ruuth 2002; Ruuth 2006 proved it optimal), in canonical Shu-Osher form
+    # (beta = alpha/r for the F terms; each stage also has a multiple of u0 so
+    # that its alpha's sum to one):
+    #   u1 = u0 + a10 dt/r F(u0)
+    #   u2 = (1-a21) u0 + a21 (u1 + dt/r F(u1))
+    #   u3 = (1-a32) u0 + a32 (u2 + dt/r F(u2))
+    #   u4 = (1-a43) u0 + a43 (u3 + dt/r F(u3))
+    #   u_new = (1-a51-a53-a54) u0 + a51 (u1 + dt/r F(u1))
+    #           + a53 (u3 + dt/r F(u3)) + a54 (u4 + dt/r F(u4))
+    # With this sparsity pattern the eight order conditions determine the eight
+    # values below.  They were computed to 700 digits; r is an algebraic number
+    # of degree 167 over Q, and the a's lie in Q(r).  The 2002 coefficients
+    # satisfy the order conditions only to about 1e-10.
+    r   = 1.50818004918983792280394238804
+    a10 = 0.590832892341420170957903537198
+    a21 = 0.555629506348767435446866746921
+    a32 = 0.379898148511596956060493398669
+    a43 = 0.821920045606868811779872375082
+    a51 = 0.287389178564962746518285272323
+    a53 = 0.133743627067130938349876555961
+    a54 = 0.340859977185510849934857861978
+    alpha = np.zeros([6,6]); beta = np.zeros([6,6])
+    for (i, j), a in {(1,0): a10, (2,1): a21, (3,2): a32, (4,3): a43,
+                      (5,1): a51, (5,3): a53, (5,4): a54}.items():
+        alpha[i,j] = a; beta[i,j] = a/r
+    for i in range(1, 6):
+        alpha[i,0] += 1 - alpha[i,:i].sum()            # u0 terms (no F)
+    K = np.linalg.solve(np.eye(6) - alpha, beta)       # Butcher arrays [A; b]
+    A, b = K[:5,:5], K[5,:5]
     RK['SSP54'] = ExplicitRungeKuttaMethod(A,b,name='SSP 54',
-                                           description='From Ruuth-Spiteri paper',
+                                           description='Optimal 5-stage, 4th-order SSP method of Kraaijevanger (1991) and Spiteri & Ruuth (2002)',
                                            shortname='SSPRK54')
     #================================================
     # Optimal five-stage, third-order SSP method.  The optimal methods form a
     # two-parameter family, all with SSP coefficient r, the real root of
-    # r**3 - 5*r**2 + 10*r - 10 = 0.  The method of Ruuth & Spiteri is one
-    # member, but its published coefficients satisfy the order conditions only
-    # to about 1e-10.  This is the member with beta[4,0] = alpha[5,1] = 0,
-    # whose coefficients are exact algebraic numbers in Q(r).  Its Butcher
-    # coefficients differ from Ruuth & Spiteri's by up to 2e-3.  The canonical
+    # r**3 - 5*r**2 + 10*r - 10 = 0.  The methods of Spiteri & Ruuth (2002) and
+    # Ruuth (2006) are two other members; the 2002 coefficients satisfy the
+    # order conditions only to about 1e-10.  This is the member with
+    # beta[4,0] = alpha[5,1] = 0, whose coefficients are exact algebraic numbers
+    # in Q(r).  Its Butcher coefficients differ from the 2002 method's by up
+    # to 2e-3.  The canonical
     # Shu-Osher form (beta = alpha/r for the F terms) is
     #   u1 = u0 + dt/r F(u0),   u2 = u1 + dt/r F(u1),
     #   u3 = (1-a32) u0 + a32 (u2 + dt/r F(u2)),
@@ -3344,7 +3362,7 @@ def loadRKM(which='All'):
                      [0,0,0,0,x,0],
                      [0,0,0,0,0,0.240103497065900]])
     RK['SSP63'] = ExplicitRungeKuttaMethod(alpha=alpha,beta=beta,name='SSP 63',
-                                           description='From Ruuth 2006 paper',
+                                           description='Optimal 6-stage, 3rd-order SSP method of Ruuth (2006)',
                                            shortname='SSPRK63')
 
     if which=='All':

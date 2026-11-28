@@ -531,5 +531,16 @@ class WarningTest(ut.TestCase):
             self.assertEqual(rk.loadRKM('RK44').effective_order(), 4)
 
 
+class OptimalSSPCoefficientTest(ut.TestCase):
+    """SSP coefficients of the optimal SSP methods, as printed by Ruuth (2006)."""
+    known = {'SSP53': 2.65062919143939, 'SSP54': 1.50818004918983,
+             'SSP63': 3.51839230899685}
+
+    def test_ssp_coefficients(self):
+        for name, value in self.known.items():
+            computed = rk.loadRKM(name).absolute_monotonicity_radius(acc=1.e-13)
+            self.assertAlmostEqual(computed, value, 11, msg=name)
+
+
 if __name__== "__main__":
     ut.main()
