@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 def collect_powers(s,v):
     """
         Collect repeated multiplications of string v in s and replace them by exponentiation.

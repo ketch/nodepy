@@ -76,7 +76,6 @@ At the moment, the following classes are implemented:
     >>> rk3S.principal_error_norm() # doctest: +ELLIPSIS
     0.00035742076...
 """
-from __future__ import absolute_import
 from nodepy.runge_kutta_method import *
 
 #=====================================================
@@ -546,7 +545,6 @@ class TwoSRungeKuttaPair(ExplicitRungeKuttaPair):
 
         if estimate_error: return S1, np.max(np.abs(S1-uhat))
         else: return S1
-
 
 
 #=====================================================

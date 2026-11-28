@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from nodepy.ode_solver import ODESolver
 import nodepy.rooted_trees as rt
 

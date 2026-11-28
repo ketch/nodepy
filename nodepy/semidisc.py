@@ -8,9 +8,7 @@
 In NodePy a semi-discretization is a family of IVPs parameterized by grid size.
 For now, only semi-discretizations of one-dimensional PDEs are supported.
 """
-from __future__ import print_function
 
-from __future__ import absolute_import
 import numpy as np
 from nodepy.ivp import IVP
 
@@ -202,7 +200,6 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
                     extrSolToFlux[iFlux,iSol] = extrSolToFlux[iFlux,iSol]*(fluxPnts[iFlux]-solPnts[iCon])/(solPnts[iSol]-solPnts[iCon])
 
 
-
     # Riemann flux settings
     #######################
     upwindPar = 1.0 # If fully upwind (upwindPar =1). For advection equation upwindPar = 1.0
@@ -222,7 +219,6 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
         for iSol in range(0,nbrSolPnts):
             fluxCurrCell[iFlux,iSol] = extrSolToFlux[iFlux,iSol]  # We assume convective velocity = 1, i.e. the flux function is
                                                                   # f= a*u
-
 
 
     # Flux at the boundaries flux points
@@ -251,7 +247,6 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
                     derivFluxInSolPnts[iSol,iFlux] = derivFluxInSolPnts[iSol,iFlux] + contribution
             # Factor 2 comes from Jacobian determinant
             derivFluxInSolPnts[iSol,iFlux] = derivFluxInSolPnts[iSol,iFlux]*2.0/dx
-
 
 
     # Compute the products between the matrix of the derivatives and the solution contributions
@@ -305,7 +300,5 @@ def spectral_difference_matrix(nbrCells,xCenter,dx,order):
 
 
     return L,xSolPnts,u0
-
-
 
 

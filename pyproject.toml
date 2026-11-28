@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,15 +7,30 @@ name = "nodepy"
 dynamic = ["version"]
 description = "A package for the analysis of numerical ODE solvers"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     {name = "David Ketcheson", email = "dketch@gmail.com"},
     ]
-license = {text = "modified BSD"}
+license = "BSD-2-Clause"
+license-files = ["LICENSE.txt"]
 dependencies = [
     "numpy>=2.0",
     "sympy>=1.5",
     "matplotlib>=2.0",
+    ]
+
+[project.optional-dependencies]
+# Everything needed to run the full test suite, including the example notebooks.
+# networkx and scipy are optional dependencies used by some doctests and notebooks.
+test = [
+    "pytest",
+    "pytest-cov",
+    "nbformat",
+    "nbclient",
+    "ipykernel",
+    "ipywidgets",
+    "networkx",
+    "scipy",
     ]
 
 [project.urls]
@@ -29,3 +44,16 @@ version = {attr = "nodepy.__version__"}
 
 [tool.setuptools.package-data]
 "nodepy.method_coefficients" = ["*"]
+
+[tool.pytest.ini_options]
+# Doctests in the package, the unit tests in nodepy/unit_tests.py,
+# and the example notebooks (tests/test_notebooks.py).
+testpaths = ["nodepy", "tests"]
+python_files = ["test_*.py", "unit_tests.py"]
+addopts = "--doctest-modules"
+markers = [
+    "notebook: executes an example notebook (slow; deselect with -m 'not notebook')",
+    ]
+
+[tool.coverage.run]
+source = ["nodepy"]

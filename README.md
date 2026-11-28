@@ -7,7 +7,7 @@
 
 <a href="https://pypi.org/project/nodepy/"><img alt="PyPI" src="https://img.shields.io/pypi/v/nodepy"></a>
 [![Downloads](https://static.pepy.tech/badge/nodepy)](https://pepy.tech/project/nodepy)
-[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-success.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![License: BSD-2-Clause](https://img.shields.io/badge/License-BSD%202--Clause-success.svg)](https://opensource.org/licenses/BSD-2-Clause)
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4275157.svg)](https://doi.org/10.5281/zenodo.4275157)
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.02515/status.svg)](https://doi.org/10.21105/joss.02515)
@@ -65,6 +65,14 @@ If you encounter an error or need help, please [raise an issue](https://github.c
 
 Contributions of new features or other improvements are very welcome!  Please
 [submit a pull request](https://github.com/ketch/nodepy/pulls) or contact the authors.
+
+To run the tests (doctests, unit tests and the example notebooks):
+
+    pip install -e ".[test]"
+    pytest
+
+Add `-m "not notebook"` to skip the notebooks, which are slow, and `--cov` to
+measure test coverage.
 
 # License
 

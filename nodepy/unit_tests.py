@@ -2,7 +2,6 @@
 Unit tests for NodePy.
 This needs to be updated.
 """
-from __future__ import absolute_import
 import nodepy.linear_multistep_method as lmm
 import nodepy.runge_kutta_method as rk
 import unittest as ut
