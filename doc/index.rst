@@ -59,7 +59,7 @@ looking into this.
 Dependencies
 ============
 
-  * Works with Python 3.9+
+  * Works with Python 3.10+
   * Requires: NumPy 2.0+, Matplotlib, SymPy
   * Optional: networkx (for some Runge-Kutta stage dependency graphing),
     cvxpy (for finding optimal downwind perturbations),

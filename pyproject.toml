@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 authors = [
     {name = "David Ketcheson", email = "dketch@gmail.com"},
     ]
-license = "BSD-2-Clause"
+license = "BSD-3-Clause"
 license-files = ["LICENSE.txt"]
 dependencies = [
     "numpy>=2.0",
