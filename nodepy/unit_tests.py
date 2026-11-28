@@ -541,5 +541,46 @@ class OptimalSSPCoefficientTest(ut.TestCase):
             self.assertAlmostEqual(computed, value, 11, msg=name)
 
 
+class StabilityRegionPlotTest(ut.TestCase):
+    """plot_stability_region must draw in its own figure, not in whatever
+    figure happens to be current (which may have log-scaled axes)."""
+
+    def _methods(self):
+        from nodepy import tsrk
+        return {'Adams-Bashforth 2': lmm.Adams_Bashforth(2),
+                'TSRK order3': tsrk.loadTSRK('order3')}
+
+    def test_new_figure_by_default(self):
+        import warnings
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        try:
+            for name, method in self._methods().items():
+                log_fig = plt.figure()
+                plt.loglog([1, 10], [1, 10])
+                with warnings.catch_warnings():
+                    warnings.simplefilter('error')
+                    fig = method.plot_stability_region(N=20)
+                self.assertIsNot(fig, log_fig, msg=name)
+                ax = fig.get_axes()[0]
+                self.assertEqual((ax.get_xscale(), ax.get_yscale()), ('linear', 'linear'), msg=name)
+                self.assertLess(ax.get_xlim()[0], 0, msg=name)
+        finally:
+            plt.close('all')
+
+    def test_existing_figure_with_fignum(self):
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        try:
+            for name, method in self._methods().items():
+                existing = plt.figure()
+                fig = method.plot_stability_region(N=20, fignum=existing.number)
+                self.assertIs(fig, existing, msg=name)
+        finally:
+            plt.close('all')
+
+
 if __name__== "__main__":
     ut.main()

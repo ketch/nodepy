@@ -30,7 +30,7 @@ with the rest of nodepy.
       \end{array}
     \end{align}
 
-    >>> tsrk4.plot_stability_region()
+    >>> fig = tsrk4.plot_stability_region()
 
 * Check their order of accuracy::
 
@@ -234,7 +234,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         return numself
 
     def plot_stability_region(self,N=50,bounds=None,
-                    color='r',filled=True,scaled=False):
+                    color='r',filled=True,scaled=False,fignum=None):
         r"""
             Plot the region of absolute stability
             of a Two-step Runge-Kutta method, i.e. the set
@@ -248,6 +248,11 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
                 - bounds  -- limits of plotting region
                 - color   -- color to use for this plot
                 - filled  -- if true, stability region is filled in (solid); otherwise it is outlined
+                - fignum  -- number of an existing figure to draw in; by default
+                  a new figure is created
+
+            **Output**:
+                - The matplotlib figure
         """
         method = self.__num__() # Use floating-point coefficients for efficiency
 
@@ -269,6 +274,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         Mroot = np.vectorize(maxroot)
         R = Mroot(Z)
 
+        fig = plt.figure(fignum)
         if filled:
             plt.contourf(X,Y,R,[0,1],colors=color)
         else:
@@ -277,6 +283,7 @@ class TwoStepRungeKuttaMethod(GeneralLinearMethod):
         plt.plot([0,0],[bounds[2],bounds[3]],'--k',linewidth=2)
         plt.plot([bounds[0],bounds[1]],[0,0],'--k',linewidth=2)
         plt.axis('Image')
+        return fig
 
     def absolute_monotonicity_radius(self,acc=1.e-10,rmax=200,
                     tol=3.e-16):
